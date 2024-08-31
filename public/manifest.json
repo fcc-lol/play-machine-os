@@ -1,0 +1,9 @@
+{
+  "short_name": "play-machine-os",
+  "name": "play-machine-os",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+
