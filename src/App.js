@@ -2,7 +2,7 @@ import React from "react";
 import { SerialDataProvider } from "./SerialDataContext";
 import ReadSerialData from "./ReadSerialData";
 import Menu from "./components/Menu";
-import DebugView from "./components/DebugView";
+import Simulator from "./components/Simulator";
 import styled from "styled-components";
 
 const AppContainer = styled.div`
@@ -13,6 +13,12 @@ const AppContainer = styled.div`
   position: absolute;
   overflow: hidden;
   cursor: none;
+  user-select: none;
+
+  * {
+    cursor: none;
+    user-select: none;
+  }
 `;
 
 function App() {
@@ -20,9 +26,9 @@ function App() {
     <SerialDataProvider>
       <AppContainer>
         <ReadSerialData />
-        {/* <DebugView /> */}
         <Menu />
       </AppContainer>
+      <Simulator />
     </SerialDataProvider>
   );
 }

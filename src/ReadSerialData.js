@@ -3,7 +3,7 @@ import React, {
   useCallback,
   useMemo,
   useState,
-  useRef,
+  useRef
 } from "react";
 import { useSerial } from "./SerialDataContext";
 
@@ -22,7 +22,7 @@ const idToLabel = {
   potentiometer_6: "knob_4",
   potentiometer_7: "knob_1",
   potentiometer_8: "knob_5",
-  potentiometer_9: "knob_3",
+  potentiometer_9: "knob_3"
 };
 
 const convertRange = (value, r1, r2) =>
@@ -31,7 +31,7 @@ const convertRange = (value, r1, r2) =>
 const roundToNearestTenth = (number) => Math.round(number);
 
 function ReadSerialData() {
-  const { serialData, setSerialData, isConnected, setIsConnected } =
+  const { setSerialData, isConnected, setIsConnected, isSimulatorMode } =
     useSerial();
   const [lastProcessedTime, setLastProcessedTime] = useState(0);
   const dataBufferRef = useRef("");
@@ -158,6 +158,11 @@ function ReadSerialData() {
   }, [connectSerial, readSerialData, setIsConnected]);
 
   useEffect(() => {
+    if (isSimulatorMode) {
+      console.log("Running in simulator mode - skipping serial connection");
+      return;
+    }
+
     if (!("serial" in navigator)) {
       console.log("Web Serial API not supported!");
       alert("Web Serial API not supported!");
@@ -174,14 +179,15 @@ function ReadSerialData() {
       .catch((error) => {
         console.error(error);
       });
-  }, [autoConnectSerial, readSerialData]);
+  }, [autoConnectSerial, readSerialData, isSimulatorMode]);
 
   const connectButton = useMemo(
     () =>
-      !isConnected && (
+      !isConnected &&
+      !isSimulatorMode && (
         <button onClick={startSerialCommunication}>Connect</button>
       ),
-    [isConnected, startSerialCommunication]
+    [isConnected, startSerialCommunication, isSimulatorMode]
   );
 
   return connectButton;
