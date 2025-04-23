@@ -37,6 +37,15 @@ const MenuItem = styled.div`
   font-weight: bold;
   flex: none;
   text-transform: ${(props) => props.theme.textTransform};
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const CurrentThemeIndicator = styled.span`
+  font-size: 1rem;
+  opacity: 0.7;
+  margin-left: 1rem;
 `;
 
 const Menu = ({
@@ -49,19 +58,26 @@ const Menu = ({
   setSelectedIndices
 }) => {
   const currentMenu = menuStack[menuStack.length - 1];
-  const currentMenuItems = currentMenu.items;
-
-  const { handleThemeSelection, previewTheme } = ThemeSettings({
-    currentMenu,
-    currentMenuItems,
-    setSelectedIndices,
-    onThemeSelect: (selectedItem) => {
-      if (selectedItem.back) {
-        const newStack = menuStack.slice(0, -1);
-        setMenuStack(newStack);
-      }
+  const currentMenuItems = useMemo(() => {
+    // Add back menu item to all submenus except the main menu
+    if (menuStack.length > 1) {
+      return [...currentMenu.items, { id: "back", label: "Back" }];
     }
-  });
+    return currentMenu.items;
+  }, [currentMenu.items, menuStack.length]);
+
+  const { handleThemeSelection, previewTheme, menuItemsWithCurrentTheme } =
+    ThemeSettings({
+      currentMenu,
+      currentMenuItems,
+      setSelectedIndices,
+      onThemeSelect: (selectedItem) => {
+        if (selectedItem.back) {
+          const newStack = menuStack.slice(0, -1);
+          setMenuStack(newStack);
+        }
+      }
+    });
 
   const getCurrentSelectedIndex = useCallback(() => {
     return selectedIndices[currentMenu.title] || 0;
@@ -76,6 +92,20 @@ const Menu = ({
     },
     [currentMenu.title, setSelectedIndices]
   );
+
+  // Set initial selected index when entering a new menu
+  useEffect(() => {
+    if (currentMenu.title === "Theme Settings") {
+      const storedTheme = localStorage.getItem("theme");
+      const themeToUse = storedTheme || "hacker"; // Default to hacker if no theme is stored
+      const themeIndex = currentMenuItems.findIndex(
+        (item) => item.id === themeToUse
+      );
+      if (themeIndex !== -1) {
+        setCurrentSelectedIndex(themeIndex);
+      }
+    }
+  }, [currentMenu.title, currentMenuItems, setCurrentSelectedIndex]);
 
   const handleButtonDown = useCallback(() => {
     const newIndex = (getCurrentSelectedIndex() + 1) % currentMenuItems.length;
@@ -115,7 +145,10 @@ const Menu = ({
 
   const handleButtonA = useCallback(() => {
     const selectedItem = currentMenuItems[getCurrentSelectedIndex()];
-    if (selectedItem.screen) {
+    if (selectedItem.id === "back") {
+      const newStack = menuStack.slice(0, -1);
+      setMenuStack(newStack);
+    } else if (selectedItem.screen) {
       onScreenSelect(selectedItem.screen);
     } else if (selectedItem.submenu) {
       setSelectedIndices((prev) => ({
@@ -178,12 +211,15 @@ const Menu = ({
 
   const renderedMenuItems = useMemo(
     () =>
-      currentMenuItems.map((item, index) => (
+      menuItemsWithCurrentTheme.map((item, index) => (
         <MenuItem key={item.id} selected={index === getCurrentSelectedIndex()}>
           {item.label}
+          {item.isCurrentTheme && (
+            <CurrentThemeIndicator>Current</CurrentThemeIndicator>
+          )}
         </MenuItem>
       )),
-    [currentMenuItems, getCurrentSelectedIndex]
+    [menuItemsWithCurrentTheme, getCurrentSelectedIndex]
   );
 
   return (

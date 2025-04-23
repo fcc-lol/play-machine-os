@@ -57,7 +57,7 @@ export const ThemeProvider = ({ children, theme = Object.keys(themes)[0] }) => {
     setThemeValues(themes[currentTheme]);
   }, [currentTheme]);
 
-  const changeTheme = (themeName) => {
+  const changeTheme = (themeName, saveToStorage = false) => {
     if (!themes[themeName]) {
       console.warn(
         `Theme "${themeName}" not found. Available themes: ${Object.keys(
@@ -67,7 +67,9 @@ export const ThemeProvider = ({ children, theme = Object.keys(themes)[0] }) => {
       return;
     }
     setCurrentTheme(themeName);
-    localStorage.setItem("theme", themeName);
+    if (saveToStorage) {
+      localStorage.setItem("theme", themeName);
+    }
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useTheme } from "../../../ThemeContext";
 
 export const ThemeSettings = ({
@@ -17,9 +17,14 @@ export const ThemeSettings = ({
       const storedTheme = localStorage.getItem("theme");
       const themeToUse = storedTheme || currentTheme;
 
-      const currentThemeIndex = currentMenuItems.findIndex(
+      // Find the index of the current theme in the original menu items (excluding the back item)
+      const originalMenuItems = currentMenuItems.filter(
+        (item) => item.id !== "back"
+      );
+      const currentThemeIndex = originalMenuItems.findIndex(
         (item) => item.id === themeToUse
       );
+
       if (currentThemeIndex !== -1) {
         setSelectedIndices((prev) => ({
           ...prev,
@@ -31,10 +36,12 @@ export const ThemeSettings = ({
   }, [currentMenuItems, currentTheme, setSelectedIndices, currentMenu.title]);
 
   const handleThemeSelection = (selectedItem) => {
-    if (selectedItem.id) {
+    if (selectedItem.id === "back") {
+      // Just return true to allow navigation back, no theme changes needed
+      return true;
+    } else if (selectedItem.id) {
       // Apply the theme permanently and save to localStorage
-      changeTheme(selectedItem.id);
-      localStorage.setItem("theme", selectedItem.id);
+      changeTheme(selectedItem.id, true);
       onThemeSelect?.(selectedItem);
       return true;
     }
@@ -42,13 +49,25 @@ export const ThemeSettings = ({
   };
 
   const previewTheme = (selectedItem) => {
-    if (selectedItem.id) {
-      changeTheme(selectedItem.id);
+    if (selectedItem.id === "back") {
+      // Preview the current theme from localStorage
+      const storedTheme = localStorage.getItem("theme") || currentTheme;
+      changeTheme(storedTheme, false);
+    } else if (selectedItem.id) {
+      // Just preview the theme without saving to localStorage
+      changeTheme(selectedItem.id, false);
     }
   };
 
+  // Add current theme information to menu items
+  const menuItemsWithCurrentTheme = currentMenuItems.map((item) => ({
+    ...item,
+    isCurrentTheme: item.id === localStorage.getItem("theme")
+  }));
+
   return {
     handleThemeSelection,
-    previewTheme
+    previewTheme,
+    menuItemsWithCurrentTheme
   };
 };
