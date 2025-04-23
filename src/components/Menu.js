@@ -1,11 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef
-} from "react";
-import { useSerial } from "../SerialDataContext";
+import React, { useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { menuConfig } from "../config/menuConfig";
 
@@ -38,77 +31,107 @@ const MenuItem = styled.div`
   flex: none;
 `;
 
-const Menu = () => {
-  const { serialData, isConnected } = useSerial();
-  const [menuStack, setMenuStack] = useState([menuConfig.root]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const lastButtonPressTime = useRef({});
-
+const Menu = ({
+  onScreenSelect,
+  menuStack,
+  setMenuStack,
+  menuAction,
+  onMenuActionProcessed,
+  selectedIndices,
+  setSelectedIndices
+}) => {
   const currentMenu = menuStack[menuStack.length - 1];
   const currentMenuItems = currentMenu.items;
 
-  const DEBOUNCE_TIME = 200; // milliseconds
+  const getCurrentSelectedIndex = () => {
+    return selectedIndices[currentMenu.title] || 0;
+  };
 
-  const isButtonDebounced = (buttonId) => {
-    const now = Date.now();
-    const lastPress = lastButtonPressTime.current[buttonId] || 0;
-    if (now - lastPress < DEBOUNCE_TIME) {
-      return true;
-    }
-    lastButtonPressTime.current[buttonId] = now;
-    return false;
+  const setCurrentSelectedIndex = (index) => {
+    setSelectedIndices((prev) => ({
+      ...prev,
+      [currentMenu.title]: index
+    }));
   };
 
   const handleButtonDown = useCallback(() => {
-    if (isButtonDebounced("down")) return;
-    setSelectedIndex((prevIndex) => (prevIndex + 1) % currentMenuItems.length);
-  }, [currentMenuItems.length]);
+    setCurrentSelectedIndex(
+      (getCurrentSelectedIndex() + 1) % currentMenuItems.length
+    );
+  }, [
+    currentMenuItems.length,
+    getCurrentSelectedIndex,
+    setCurrentSelectedIndex
+  ]);
 
   const handleButtonUp = useCallback(() => {
-    if (isButtonDebounced("up")) return;
-    setSelectedIndex(
-      (prevIndex) =>
-        (prevIndex - 1 + currentMenuItems.length) % currentMenuItems.length
+    setCurrentSelectedIndex(
+      (getCurrentSelectedIndex() - 1 + currentMenuItems.length) %
+        currentMenuItems.length
     );
-  }, [currentMenuItems.length]);
+  }, [
+    currentMenuItems.length,
+    getCurrentSelectedIndex,
+    setCurrentSelectedIndex
+  ]);
 
   const handleButtonA = useCallback(() => {
-    if (isButtonDebounced("a")) return;
-    const selectedItem = currentMenuItems[selectedIndex];
-    if (selectedItem.submenu) {
+    const selectedItem = currentMenuItems[getCurrentSelectedIndex()];
+    if (selectedItem.screen) {
+      onScreenSelect(selectedItem.screen);
+    } else if (selectedItem.submenu) {
+      setSelectedIndices((prev) => ({
+        ...prev,
+        [selectedItem.submenu.title]: 0
+      }));
       setMenuStack([...menuStack, selectedItem.submenu]);
-      setSelectedIndex(0);
-    }
-  }, [currentMenuItems, selectedIndex, menuStack]);
-
-  const handleButtonB = useCallback(() => {
-    if (isButtonDebounced("b")) return;
-    if (menuStack.length > 1) {
-      setMenuStack(menuStack.slice(0, -1));
-      setSelectedIndex(0);
-    }
-  }, [menuStack]);
-
-  useEffect(() => {
-    if (serialData.button_down && serialData.button_down.value === true) {
-      handleButtonDown();
-    }
-
-    if (serialData.button_up && serialData.button_up.value === true) {
-      handleButtonUp();
-    }
-
-    if (serialData.button_a && serialData.button_a.value === true) {
-      handleButtonA();
-    }
-
-    if (serialData.button_b && serialData.button_b.value === true) {
-      handleButtonB();
     }
   }, [
-    serialData,
-    handleButtonDown,
+    currentMenuItems,
+    menuStack,
+    onScreenSelect,
+    setMenuStack,
+    getCurrentSelectedIndex,
+    setSelectedIndices
+  ]);
+
+  const handleButtonB = useCallback(() => {
+    if (menuStack.length > 1) {
+      const newStack = menuStack.slice(0, -1);
+      setMenuStack(newStack);
+    }
+  }, [menuStack, setMenuStack]);
+
+  useEffect(() => {
+    if (!menuAction) return;
+
+    console.log("Menu.js received action:", menuAction);
+
+    switch (menuAction) {
+      case "up":
+        handleButtonUp();
+        break;
+      case "down":
+        handleButtonDown();
+        break;
+      case "a":
+        handleButtonA();
+        break;
+      case "b":
+        handleButtonB();
+        break;
+      default:
+        break;
+    }
+
+    if (onMenuActionProcessed) {
+      onMenuActionProcessed();
+    }
+  }, [
+    menuAction,
+    onMenuActionProcessed,
     handleButtonUp,
+    handleButtonDown,
     handleButtonA,
     handleButtonB
   ]);
@@ -116,14 +139,12 @@ const Menu = () => {
   const renderedMenuItems = useMemo(
     () =>
       currentMenuItems.map((item, index) => (
-        <MenuItem key={item.id} selected={index === selectedIndex}>
+        <MenuItem key={item.id} selected={index === getCurrentSelectedIndex()}>
           {item.label}
         </MenuItem>
       )),
-    [currentMenuItems, selectedIndex]
+    [currentMenuItems, selectedIndices, currentMenu.title]
   );
-
-  if (!isConnected) return null;
 
   return (
     <Root>

@@ -32,8 +32,8 @@ export const menuConfig = {
         submenu: {
           title: "ABOUT",
           items: [
-            { id: "version", label: "Version" },
-            { id: "credits", label: "Credits" }
+            { id: "version", label: "Version", screen: "Version" },
+            { id: "credits", label: "Credits", screen: "Credits" }
           ]
         }
       },
