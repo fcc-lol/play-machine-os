@@ -1,0 +1,43 @@
+export const menuConfig = {
+  root: {
+    title: "MAIN MENU",
+    items: [
+      {
+        id: "apps",
+        label: "APPS",
+        submenu: {
+          title: "APPLICATIONS",
+          items: [
+            { id: "app1", label: "App 1" },
+            { id: "app2", label: "App 2" },
+            { id: "app3", label: "App 3" }
+          ]
+        }
+      },
+      {
+        id: "settings",
+        label: "SETTINGS",
+        submenu: {
+          title: "SETTINGS",
+          items: [
+            { id: "display", label: "Display" },
+            { id: "sound", label: "Sound" },
+            { id: "system", label: "System" }
+          ]
+        }
+      },
+      {
+        id: "about",
+        label: "ABOUT",
+        submenu: {
+          title: "ABOUT",
+          items: [
+            { id: "version", label: "Version" },
+            { id: "credits", label: "Credits" }
+          ]
+        }
+      },
+      { id: "exit", label: "EXIT" }
+    ]
+  }
+};

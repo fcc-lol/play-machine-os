@@ -4,59 +4,67 @@ import styled from "styled-components";
 
 const SimulatorContainer = styled.div`
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 20px;
-  border-radius: 10px;
-  color: #00ff00;
-  font-family: "Courier New", monospace;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  background: rgba(0, 0, 0, 0.9);
+  padding: 1.25rem;
+  border-radius: 0.625rem;
+  color: #ffffff;
+  font-family: system-ui;
   z-index: 1000;
   cursor: default;
 `;
 
 const ButtonGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+  width: 18.75rem;
+  margin: 0 auto 1.25rem;
 `;
 
 const SimButton = styled.button`
-  background: ${(props) => (props.active ? "#00ff00" : "#333")};
-  color: ${(props) => (props.active ? "#000" : "#00ff00")};
-  border: 2px solid #00ff00;
-  padding: 10px;
+  background: ${(props) => (props.active ? "#ffffff" : "#333333")};
+  color: ${(props) => (props.active ? "#000000" : "#ffffff")};
+  border: 0.125rem solid #ffffff;
+  font-family: system-ui;
+  font-size: 1.5rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 100%;
   cursor: pointer;
-  font-family: "Courier New", monospace;
   font-weight: bold;
   transition: all 0.2s;
+  grid-column: ${(props) => props.gridColumn || "auto"};
+  grid-row: ${(props) => props.gridRow || "auto"};
 
   &:hover {
-    background: #00ff00;
-    color: #000;
+    background: #ffffff;
+    color: #000000;
   }
 `;
 
 const SliderContainer = styled.div`
-  margin: 10px 0;
+  margin: 0.625rem 0;
 `;
 
 const SliderLabel = styled.div`
-  margin-bottom: 5px;
-  font-size: 0.9em;
+  margin-bottom: 0.3125rem;
+  font-size: 0.9rem;
 `;
 
 const Slider = styled.input`
   width: 100%;
-  margin: 5px 0;
+  margin: 0.3125rem 0;
 `;
 
 const KnobContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 20px;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
 `;
 
 const Knob = styled.div`
@@ -64,8 +72,8 @@ const Knob = styled.div`
 `;
 
 const KnobValue = styled.div`
-  font-size: 0.8em;
-  margin-top: 5px;
+  font-size: 0.8rem;
+  margin-top: 0.3125rem;
 `;
 
 const Simulator = () => {
@@ -94,12 +102,12 @@ const Simulator = () => {
   };
 
   const buttons = [
-    { id: "button_up", label: "↑" },
-    { id: "button_right", label: "→" },
-    { id: "button_down", label: "↓" },
-    { id: "button_left", label: "←" },
-    { id: "button_a", label: "A" },
-    { id: "button_b", label: "B" }
+    { id: "button_up", label: "↑", gridColumn: "5", gridRow: "1" },
+    { id: "button_right", label: "→", gridColumn: "6", gridRow: "2" },
+    { id: "button_down", label: "↓", gridColumn: "5", gridRow: "3" },
+    { id: "button_left", label: "←", gridColumn: "4", gridRow: "2" },
+    { id: "button_a", label: "A", gridColumn: "1", gridRow: "2" },
+    { id: "button_b", label: "B", gridColumn: "2", gridRow: "2" }
   ];
 
   const sliders = [
@@ -129,6 +137,8 @@ const Simulator = () => {
             onMouseDown={() => handleButtonDown(button.id)}
             onMouseUp={() => handleButtonUp(button.id)}
             onMouseLeave={() => handleButtonUp(button.id)}
+            gridColumn={button.gridColumn}
+            gridRow={button.gridRow}
           >
             {button.label}
           </SimButton>
