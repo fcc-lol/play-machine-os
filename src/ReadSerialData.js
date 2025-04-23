@@ -6,29 +6,31 @@ import React, {
   useRef
 } from "react";
 import { useSerial } from "./SerialDataContext";
-
-const idToLabel = {
-  button_1: "button_right",
-  button_2: "button_a",
-  button_3: "button_up",
-  button_4: "button_left",
-  button_5: "button_b",
-  button_6: "button_down",
-  potentiometer_1: "vertical_slider_1",
-  potentiometer_2: "vertical_slider_3",
-  potentiometer_3: "vertical_slider_2",
-  potentiometer_4: "horizontal_slider",
-  potentiometer_5: "knob_2",
-  potentiometer_6: "knob_4",
-  potentiometer_7: "knob_1",
-  potentiometer_8: "knob_5",
-  potentiometer_9: "knob_3"
-};
+import styled from "styled-components";
+import hardwareConfig from "./config/Hardware.json";
 
 const convertRange = (value, r1, r2) =>
   ((value - r1[0]) * (r2[1] - r2[0])) / (r1[1] - r1[0]) + r2[0];
 
 const roundToNearestTenth = (number) => Math.round(number);
+
+const ConnectButton = styled.button`
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1000;
+
+  &:hover {
+    background-color: #45a049;
+  }
+`;
 
 function ReadSerialData() {
   const { setSerialData, isConnected, setIsConnected, isSimulatorMode } =
@@ -52,17 +54,23 @@ function ReadSerialData() {
 
         if (id.includes("button_")) {
           value = rawValue.trim().toLowerCase() === "true";
+          const label = hardwareConfig.buttons[id] || id;
+          processedData[label] = { value };
         } else if (id.includes("potentiometer_")) {
-          const rawNumValue = parseFloat(rawValue);
-          const value0to100 =
-            id === "potentiometer_4"
-              ? convertRange(rawNumValue, [0, 1023], [0, 100])
-              : convertRange(rawNumValue, [0, 1023], [100, 0]);
-          value = roundToNearestTenth(value0to100);
+          const config = hardwareConfig.potentiometers[id];
+          if (config) {
+            const rawNumValue = parseFloat(rawValue);
+            const value0to100 = convertRange(
+              rawNumValue,
+              config.range,
+              config.inverted
+                ? [config.outputRange[1], config.outputRange[0]]
+                : config.outputRange
+            );
+            value = roundToNearestTenth(value0to100);
+            processedData[config.label] = { value };
+          }
         }
-
-        const label = idToLabel[id] || id;
-        processedData[label] = { value };
       }
 
       setSerialData((prevData) => ({ ...prevData, ...processedData }));
@@ -185,7 +193,9 @@ function ReadSerialData() {
     () =>
       !isConnected &&
       !isSimulatorMode && (
-        <button onClick={startSerialCommunication}>Connect</button>
+        <ConnectButton onClick={startSerialCommunication}>
+          Connect to Hardware
+        </ConnectButton>
       ),
     [isConnected, startSerialCommunication, isSimulatorMode]
   );

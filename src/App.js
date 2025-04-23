@@ -4,6 +4,7 @@ import { ThemeProvider, useTheme } from "./ThemeContext";
 import ReadSerialData from "./ReadSerialData";
 import Menu from "./components/UI/Menu";
 import Hardware from "./components/Simulator/Hardware";
+import DebugView from "./components/UI/DebugView";
 import styled, {
   StyleSheetManager,
   ThemeProvider as StyledThemeProvider
@@ -35,13 +36,6 @@ const AppContainer = styled.div`
   margin: 0;
   position: absolute;
   overflow: hidden;
-  cursor: none;
-  user-select: none;
-
-  * {
-    cursor: none;
-    user-select: none;
-  }
 `;
 
 const ScreenContainer = styled.div`
@@ -62,7 +56,7 @@ const DEBOUNCE_TIME = 200; // milliseconds
 
 // Move all logic into an inner component
 function AppContent() {
-  const { serialData } = useSerial();
+  const { serialData, isConnected } = useSerial();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [menuStack, setMenuStack] = useState([menuConfig.root]);
   const [previousMenuStack, setPreviousMenuStack] = useState([menuConfig.root]);
@@ -156,7 +150,19 @@ function AppContent() {
     <>
       <AppContainer>
         <ReadSerialData />
-        <ScreenContainer>{renderScreen()}</ScreenContainer>
+        <ScreenContainer>
+          {!isConnected ? (
+            <div style={{ textAlign: "center", color: "#ffffff" }}>
+              <h2>Connect to Hardware</h2>
+              <p>Click the Connect button in the top-left corner to start</p>
+            </div>
+          ) : (
+            <>
+              {renderScreen()}
+              <DebugView />
+            </>
+          )}
+        </ScreenContainer>
       </AppContainer>
       <Hardware />
     </>

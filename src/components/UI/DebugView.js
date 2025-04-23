@@ -1,15 +1,10 @@
 import React from "react";
-import { useSerial } from "../SerialDataContext";
+import { useSerial } from "../../SerialDataContext";
 import styled from "styled-components";
 
 const DebugContainer = styled.div`
-  margin-top: 1rem;
   color: #ffffff;
-`;
-
-const DebugTitle = styled.h3`
-  font-size: 1rem;
-  font-weight: bold;
+  margin-top: -5rem;
 `;
 
 const DebugList = styled.ul`
@@ -18,17 +13,15 @@ const DebugList = styled.ul`
 `;
 
 const DebugListItem = styled.li`
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 `;
 
-const DebugView = () => {
+export default function DebugView() {
   const { serialData, isConnected } = useSerial();
 
   return (
     isConnected && (
       <DebugContainer>
-        <DebugTitle>Debug View</DebugTitle>
-        <p>Number of data points: {Object.keys(serialData).length}</p>
         <DebugList>
           {Object.entries(serialData).map(([key, value]) => (
             <DebugListItem key={key}>
@@ -39,6 +32,4 @@ const DebugView = () => {
       </DebugContainer>
     )
   );
-};
-
-export default DebugView;
+}
