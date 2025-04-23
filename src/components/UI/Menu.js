@@ -1,35 +1,42 @@
 import React, { useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
+import { ThemeSettings } from "./Menus/ThemeSettings";
 
 const Root = styled.div`
-  color: #ffffff;
+  color: ${(props) => props.theme.menuText};
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
+  background: ${(props) => props.theme.menuBackground};
 `;
 
 const MenuTitle = styled.div`
   padding: 1rem 4rem;
   margin: 0;
-  color: rgba(0, 255, 0, 1);
+  color: ${(props) => props.theme.menuText};
   font-size: 1.2rem;
-  font-family: "Courier New", Courier, monospace;
+  font-family: ${(props) => props.theme.fontFamily};
   font-weight: bold;
-  border-bottom: 1px solid rgba(0, 255, 0, 0.3);
+  border-bottom: 1px solid ${(props) => props.theme.border};
+  text-transform: ${(props) => props.theme.textTransform};
 `;
 
 const MenuItem = styled.div`
   padding: 1rem 4rem;
   margin: 0;
   background-color: ${(props) =>
-    props.selected ? "rgba(0, 255, 0, 1)" : "#000"};
-  color: ${(props) => (props.selected ? "#000" : "rgba(0, 255, 0, 1)")};
+    props.selected
+      ? props.theme.menuSelectedBackground
+      : props.theme.menuBackground};
+  color: ${(props) =>
+    props.selected ? props.theme.menuSelectedText : props.theme.menuText};
   cursor: pointer;
   font-size: 1.5rem;
-  font-family: "Courier New", Courier, monospace;
+  font-family: ${(props) => props.theme.fontFamily};
   font-weight: bold;
   flex: none;
+  text-transform: ${(props) => props.theme.textTransform};
 `;
 
 const Menu = ({
@@ -43,6 +50,18 @@ const Menu = ({
 }) => {
   const currentMenu = menuStack[menuStack.length - 1];
   const currentMenuItems = currentMenu.items;
+
+  const { handleThemeSelection, previewTheme } = ThemeSettings({
+    currentMenu,
+    currentMenuItems,
+    setSelectedIndices,
+    onThemeSelect: (selectedItem) => {
+      if (selectedItem.back) {
+        const newStack = menuStack.slice(0, -1);
+        setMenuStack(newStack);
+      }
+    }
+  });
 
   const getCurrentSelectedIndex = useCallback(() => {
     return selectedIndices[currentMenu.title] || 0;
@@ -59,24 +78,39 @@ const Menu = ({
   );
 
   const handleButtonDown = useCallback(() => {
-    setCurrentSelectedIndex(
-      (getCurrentSelectedIndex() + 1) % currentMenuItems.length
-    );
+    const newIndex = (getCurrentSelectedIndex() + 1) % currentMenuItems.length;
+    setCurrentSelectedIndex(newIndex);
+
+    // Preview theme if we're in the theme menu
+    const selectedItem = currentMenuItems[newIndex];
+    if (currentMenu.title === "Theme Settings") {
+      previewTheme(selectedItem);
+    }
   }, [
-    currentMenuItems.length,
+    currentMenuItems,
+    currentMenu.title,
     getCurrentSelectedIndex,
-    setCurrentSelectedIndex
+    setCurrentSelectedIndex,
+    previewTheme
   ]);
 
   const handleButtonUp = useCallback(() => {
-    setCurrentSelectedIndex(
+    const newIndex =
       (getCurrentSelectedIndex() - 1 + currentMenuItems.length) %
-        currentMenuItems.length
-    );
+      currentMenuItems.length;
+    setCurrentSelectedIndex(newIndex);
+
+    // Preview theme if we're in the theme menu
+    const selectedItem = currentMenuItems[newIndex];
+    if (currentMenu.title === "Theme Settings") {
+      previewTheme(selectedItem);
+    }
   }, [
-    currentMenuItems.length,
+    currentMenuItems,
+    currentMenu.title,
     getCurrentSelectedIndex,
-    setCurrentSelectedIndex
+    setCurrentSelectedIndex,
+    previewTheme
   ]);
 
   const handleButtonA = useCallback(() => {
@@ -89,6 +123,8 @@ const Menu = ({
         [selectedItem.submenu.title]: 0
       }));
       setMenuStack([...menuStack, selectedItem.submenu]);
+    } else if (currentMenu.title === "Theme Settings") {
+      handleThemeSelection(selectedItem);
     }
   }, [
     currentMenuItems,
@@ -96,7 +132,9 @@ const Menu = ({
     onScreenSelect,
     setMenuStack,
     getCurrentSelectedIndex,
-    setSelectedIndices
+    setSelectedIndices,
+    handleThemeSelection,
+    currentMenu.title
   ]);
 
   const handleButtonB = useCallback(() => {
@@ -108,8 +146,6 @@ const Menu = ({
 
   useEffect(() => {
     if (!menuAction) return;
-
-    console.log("Menu.js received action:", menuAction);
 
     switch (menuAction) {
       case "up":

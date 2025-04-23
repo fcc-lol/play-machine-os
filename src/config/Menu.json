@@ -1,12 +1,12 @@
 {
   "root": {
-    "title": "MAIN MENU",
+    "title": "Main Menu",
     "items": [
       {
         "id": "apps",
-        "label": "APPS",
+        "label": "Apps",
         "submenu": {
-          "title": "APPLICATIONS",
+          "title": "Applications",
           "items": [
             { "id": "app1", "label": "App 1" },
             { "id": "app2", "label": "App 2" },
@@ -16,28 +16,61 @@
       },
       {
         "id": "settings",
-        "label": "SETTINGS",
+        "label": "Settings",
         "submenu": {
-          "title": "SETTINGS",
+          "title": "Settings",
           "items": [
-            { "id": "display", "label": "Display" },
-            { "id": "sound", "label": "Sound" },
-            { "id": "system", "label": "System" }
+            {
+              "id": "theme",
+              "label": "Theme",
+              "submenu": {
+                "title": "Theme Settings",
+                "items": [
+                  { "id": "hacker", "label": "Hacker", "back": true },
+                  { "id": "monochrome", "label": "Monochrome", "back": true },
+                  { "id": "sunset", "label": "Sunset", "back": true }
+                ]
+              }
+            },
+            {
+              "id": "sound",
+              "label": "Sound",
+              "submenu": {
+                "title": "Sound Settings",
+                "items": [
+                  { "id": "volume", "label": "Volume" },
+                  { "id": "mute", "label": "Mute" },
+                  { "id": "equalizer", "label": "Equalizer" }
+                ]
+              }
+            },
+            {
+              "id": "system",
+              "label": "System",
+              "submenu": {
+                "title": "System Settings",
+                "items": [
+                  { "id": "language", "label": "Language" },
+                  { "id": "timezone", "label": "Timezone" },
+                  { "id": "updates", "label": "System Updates" }
+                ]
+              }
+            }
           ]
         }
       },
       {
         "id": "about",
-        "label": "ABOUT",
+        "label": "About",
         "submenu": {
-          "title": "ABOUT",
+          "title": "About",
           "items": [
             { "id": "version", "label": "Version", "screen": "Version" },
             { "id": "credits", "label": "Credits", "screen": "Credits" }
           ]
         }
       },
-      { "id": "exit", "label": "EXIT" }
+      { "id": "exit", "label": "Exit" }
     ]
   }
 }
