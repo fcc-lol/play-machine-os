@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
-import { menuConfig } from "../config/menuConfig";
 
 const Root = styled.div`
   color: #ffffff;
@@ -43,16 +42,19 @@ const Menu = ({
   const currentMenu = menuStack[menuStack.length - 1];
   const currentMenuItems = currentMenu.items;
 
-  const getCurrentSelectedIndex = () => {
+  const getCurrentSelectedIndex = useCallback(() => {
     return selectedIndices[currentMenu.title] || 0;
-  };
+  }, [selectedIndices, currentMenu.title]);
 
-  const setCurrentSelectedIndex = (index) => {
-    setSelectedIndices((prev) => ({
-      ...prev,
-      [currentMenu.title]: index
-    }));
-  };
+  const setCurrentSelectedIndex = useCallback(
+    (index) => {
+      setSelectedIndices((prev) => ({
+        ...prev,
+        [currentMenu.title]: index
+      }));
+    },
+    [currentMenu.title, setSelectedIndices]
+  );
 
   const handleButtonDown = useCallback(() => {
     setCurrentSelectedIndex(
@@ -143,7 +145,7 @@ const Menu = ({
           {item.label}
         </MenuItem>
       )),
-    [currentMenuItems, selectedIndices, currentMenu.title]
+    [currentMenuItems, getCurrentSelectedIndex]
   );
 
   return (

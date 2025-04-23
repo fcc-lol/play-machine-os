@@ -1,6 +1,4 @@
-import React, { useEffect } from "react";
-
-const Credits = ({ onBack }) => {
+const Credits = () => {
   return (
     <div className="screen">
       <h1>Credits</h1>

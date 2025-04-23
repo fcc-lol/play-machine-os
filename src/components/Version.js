@@ -1,9 +1,4 @@
-import React, { useEffect } from "react";
-import { menuConfig } from "../config/menuConfig";
-
-const Version = ({ onBack }) => {
-  // Removed useEffect and useSerial
-
+const Version = () => {
   return (
     <div className="screen">
       <h1>Version Information</h1>
