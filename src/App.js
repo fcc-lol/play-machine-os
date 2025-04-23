@@ -5,7 +5,8 @@ import Menu from "./components/Menu";
 import Simulator from "./components/Simulator";
 import Version from "./components/Version";
 import Credits from "./components/Credits";
-import styled from "styled-components";
+import styled, { StyleSheetManager } from "styled-components";
+import isPropValid from "@emotion/is-prop-valid";
 import { menuConfig } from "./config/menuConfig";
 
 const AppContainer = styled.div`
@@ -139,9 +140,11 @@ function AppContent() {
 // App component now just sets up the provider
 function App() {
   return (
-    <SerialDataProvider>
-      <AppContent />
-    </SerialDataProvider>
+    <StyleSheetManager shouldForwardProp={isPropValid}>
+      <SerialDataProvider>
+        <AppContent />
+      </SerialDataProvider>
+    </StyleSheetManager>
   );
 }
 
