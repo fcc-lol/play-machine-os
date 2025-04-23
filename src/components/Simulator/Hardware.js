@@ -81,8 +81,8 @@ const buttons = [
   { id: "button_right", label: "→", gridColumn: "6", gridRow: "2" },
   { id: "button_down", label: "↓", gridColumn: "5", gridRow: "3" },
   { id: "button_left", label: "←", gridColumn: "4", gridRow: "2" },
-  { id: "button_a", label: "A", gridColumn: "1", gridRow: "2" },
-  { id: "button_b", label: "B", gridColumn: "2", gridRow: "2" }
+  { id: "button_a", label: "A", gridColumn: "2", gridRow: "2" },
+  { id: "button_b", label: "B", gridColumn: "1", gridRow: "2" }
 ];
 
 const sliders = [

@@ -128,25 +128,31 @@ function ReadSerialData() {
         const ports = await navigator.serial.getPorts();
         const targetPort = ports.find((port) => {
           const info = port.getInfo();
+          // Arduino typically uses these vendor IDs:
+          // - 0x2341 (Arduino LLC)
+          // - 0x2A03 (Arduino SA)
+          // - 0x1A86 (CH340/CH341)
           return (
-            info.usbVendorId === vendorId && info.usbProductId === productId
+            (info.usbVendorId === vendorId &&
+              info.usbProductId === productId) ||
+            info.usbVendorId === 0x2341 || // Arduino LLC
+            info.usbVendorId === 0x2a03 || // Arduino SA
+            info.usbVendorId === 0x1a86 // CH340/CH341
           );
         });
 
         if (targetPort) {
-          console.log("Device found and attempting to connect...");
+          console.log("Arduino device found and attempting to connect...");
           await targetPort.open({ baudRate: 9600 });
-          console.log("Connected to the specific USB device automatically.");
+          console.log("Connected to Arduino device automatically.");
           setIsConnected(true);
           return targetPort;
         } else {
-          console.log(
-            "Specific USB device not found or not previously granted."
-          );
+          console.log("Arduino device not found or not previously granted.");
         }
       } catch (error) {
         console.error(
-          "There was an error connecting to the specific USB device:",
+          "There was an error connecting to the Arduino device:",
           error
         );
       }
@@ -178,7 +184,8 @@ function ReadSerialData() {
     }
 
     console.log("Web Serial API is supported!");
-    autoConnectSerial(9025, 32822)
+    // Try to connect to any Arduino device
+    autoConnectSerial(0x2341, 0x0043) // Default Arduino Uno VID/PID
       .then((port) => {
         if (port) {
           readSerialData(port);

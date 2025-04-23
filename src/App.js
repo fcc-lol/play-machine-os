@@ -4,7 +4,6 @@ import { ThemeProvider, useTheme } from "./ThemeContext";
 import ReadSerialData from "./ReadSerialData";
 import Menu from "./components/UI/Menu";
 import Hardware from "./components/Simulator/Hardware";
-import DebugView from "./components/UI/DebugView";
 import styled, {
   StyleSheetManager,
   ThemeProvider as StyledThemeProvider
@@ -50,6 +49,13 @@ const ScreenContainer = styled.div`
   justify-content: center;
   color: ${(props) => props.theme.text};
   font-family: ${(props) => props.theme.fontFamily};
+  cursor: none;
+  user-select: none;
+
+  * {
+    cursor: none;
+    user-select: none;
+  }
 `;
 
 const DEBOUNCE_TIME = 200; // milliseconds
@@ -157,10 +163,7 @@ function AppContent() {
               <p>Click the Connect button in the top-left corner to start</p>
             </div>
           ) : (
-            <>
-              {renderScreen()}
-              <DebugView />
-            </>
+            renderScreen()
           )}
         </ScreenContainer>
       </AppContainer>
