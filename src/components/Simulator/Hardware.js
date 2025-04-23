@@ -1,5 +1,5 @@
 import React from "react";
-import { useSerial } from "../SerialDataContext";
+import { useSerial } from "../../SerialDataContext";
 import styled from "styled-components";
 
 const SimulatorContainer = styled.div`
@@ -76,7 +76,31 @@ const KnobValue = styled.div`
   margin-top: 0.3125rem;
 `;
 
-const Simulator = () => {
+const buttons = [
+  { id: "button_up", label: "↑", gridColumn: "5", gridRow: "1" },
+  { id: "button_right", label: "→", gridColumn: "6", gridRow: "2" },
+  { id: "button_down", label: "↓", gridColumn: "5", gridRow: "3" },
+  { id: "button_left", label: "←", gridColumn: "4", gridRow: "2" },
+  { id: "button_a", label: "A", gridColumn: "1", gridRow: "2" },
+  { id: "button_b", label: "B", gridColumn: "2", gridRow: "2" }
+];
+
+const sliders = [
+  { id: "vertical_slider_1", label: "Vertical Slider 1" },
+  { id: "vertical_slider_2", label: "Vertical Slider 2" },
+  { id: "vertical_slider_3", label: "Vertical Slider 3" },
+  { id: "horizontal_slider", label: "Horizontal Slider" }
+];
+
+const knobs = [
+  { id: "knob_1", label: "Knob 1" },
+  { id: "knob_2", label: "Knob 2" },
+  { id: "knob_3", label: "Knob 3" },
+  { id: "knob_4", label: "Knob 4" },
+  { id: "knob_5", label: "Knob 5" }
+];
+
+const Hardware = () => {
   const { serialData, setSerialData, isSimulatorMode } = useSerial();
 
   if (!isSimulatorMode) {
@@ -100,30 +124,6 @@ const Simulator = () => {
     newData[sliderId] = { value: parseInt(value) };
     setSerialData(newData);
   };
-
-  const buttons = [
-    { id: "button_up", label: "↑", gridColumn: "5", gridRow: "1" },
-    { id: "button_right", label: "→", gridColumn: "6", gridRow: "2" },
-    { id: "button_down", label: "↓", gridColumn: "5", gridRow: "3" },
-    { id: "button_left", label: "←", gridColumn: "4", gridRow: "2" },
-    { id: "button_a", label: "A", gridColumn: "1", gridRow: "2" },
-    { id: "button_b", label: "B", gridColumn: "2", gridRow: "2" }
-  ];
-
-  const sliders = [
-    { id: "vertical_slider_1", label: "Vertical Slider 1" },
-    { id: "vertical_slider_2", label: "Vertical Slider 2" },
-    { id: "vertical_slider_3", label: "Vertical Slider 3" },
-    { id: "horizontal_slider", label: "Horizontal Slider" }
-  ];
-
-  const knobs = [
-    { id: "knob_1", label: "Knob 1" },
-    { id: "knob_2", label: "Knob 2" },
-    { id: "knob_3", label: "Knob 3" },
-    { id: "knob_4", label: "Knob 4" },
-    { id: "knob_5", label: "Knob 5" }
-  ];
 
   return (
     <SimulatorContainer>
@@ -178,4 +178,4 @@ const Simulator = () => {
   );
 };
 
-export default Simulator;
+export default Hardware;

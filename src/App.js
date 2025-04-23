@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { SerialDataProvider, useSerial } from "./SerialDataContext";
 import ReadSerialData from "./ReadSerialData";
-import Menu from "./components/Menu";
-import Simulator from "./components/Simulator";
-import Version from "./components/Version";
-import Credits from "./components/Credits";
+import Menu from "./components/UI/Menu";
+import Hardware from "./components/Simulator/Hardware";
+import Version from "./components/Screens/Version";
+import Credits from "./components/Screens/Credits";
 import styled, { StyleSheetManager } from "styled-components";
 import isPropValid from "@emotion/is-prop-valid";
-import { menuConfig } from "./config/menuConfig";
+import menuConfig from "./config/Menu.json";
 
 const AppContainer = styled.div`
   background: #000000;
@@ -132,7 +132,7 @@ function AppContent() {
         <ReadSerialData />
         <ScreenContainer>{renderScreen()}</ScreenContainer>
       </AppContainer>
-      <Simulator />
+      <Hardware />
     </>
   );
 }
