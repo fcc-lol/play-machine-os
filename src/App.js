@@ -28,8 +28,11 @@ screenFiles.keys().forEach((fileName) => {
   );
 });
 
-const AppContainer = styled.div`
-  background: ${(props) => props.theme.background};
+const AppContainer = styled.div.attrs((props) => ({
+  style: {
+    background: props.theme.background
+  }
+}))`
   width: 1024px;
   height: 600px;
   margin: 0;
@@ -37,7 +40,12 @@ const AppContainer = styled.div`
   overflow: hidden;
 `;
 
-const ScreenContainer = styled.div`
+const ScreenContainer = styled.div.attrs((props) => ({
+  style: {
+    color: props.theme.text,
+    fontFamily: props.theme.fontFamily
+  }
+}))`
   position: absolute;
   top: 0;
   left: 0;
@@ -47,22 +55,20 @@ const ScreenContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: ${(props) => props.theme.text};
-  font-family: ${(props) => props.theme.fontFamily};
-  cursor: none;
-  user-select: none;
+  // cursor: none;
+  // user-select: none;
 
-  * {
-    cursor: none;
-    user-select: none;
-  }
+  // * {
+  //   cursor: none;
+  //   user-select: none;
+  // }
 `;
 
 const DEBOUNCE_TIME = 200; // milliseconds
 
 // Move all logic into an inner component
 function AppContent() {
-  const { serialData, isConnected } = useSerial();
+  const { serialData, isInputConnected, isOutputConnected } = useSerial();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [menuStack, setMenuStack] = useState([menuConfig.root]);
   const [previousMenuStack, setPreviousMenuStack] = useState([menuConfig.root]);
@@ -157,10 +163,12 @@ function AppContent() {
       <AppContainer>
         <ReadSerialData />
         <ScreenContainer>
-          {!isConnected ? (
+          {!isInputConnected || !isOutputConnected ? (
             <div style={{ textAlign: "center", color: "#ffffff" }}>
               <h2>Connect to Hardware</h2>
               <p>Click the Connect button in the top-left corner to start</p>
+              {!isInputConnected && <p>Input device not connected</p>}
+              {!isOutputConnected && <p>Output device not connected</p>}
             </div>
           ) : (
             renderScreen()

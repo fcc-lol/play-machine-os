@@ -15,6 +15,11 @@
         }
       },
       {
+        "id": "output",
+        "label": "Output Control",
+        "screen": "OutputControl"
+      },
+      {
         "id": "settings",
         "label": "Settings",
         "submenu": {
