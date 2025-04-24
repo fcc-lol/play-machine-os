@@ -155,9 +155,6 @@ function ReadSerialData() {
   const connectToPort = useCallback(
     async (isInput) => {
       const portRef = isInput ? inputPortRef : outputPortRef;
-      const setIsConnected = isInput
-        ? setIsInputConnected
-        : setIsOutputConnected;
 
       try {
         if (portRef.current) {
