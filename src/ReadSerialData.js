@@ -37,6 +37,9 @@ function ReadSerialData() {
     useSerial();
   const [lastProcessedTime, setLastProcessedTime] = useState(0);
   const dataBufferRef = useRef("");
+  const portRef = useRef(null);
+  const readerRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const processSerialData = useCallback(
     (dataString) => {
@@ -81,11 +84,24 @@ function ReadSerialData() {
 
   const readSerialData = useCallback(
     async (port) => {
-      const reader = port.readable.getReader();
+      // If there's already a reader, release it first
+      if (readerRef.current) {
+        const currentReader = readerRef.current;
+        readerRef.current = null; // Clear the reference first
+        try {
+          await currentReader.cancel();
+          currentReader.releaseLock();
+        } catch (error) {
+          console.error("Error releasing previous reader:", error);
+        }
+      }
 
       try {
+        const newReader = port.readable.getReader();
+        readerRef.current = newReader;
+
         while (true) {
-          const { value, done } = await reader.read();
+          const { value, done } = await newReader.read();
           if (done) {
             console.log("Stream closed");
             break;
@@ -105,63 +121,57 @@ function ReadSerialData() {
       } catch (error) {
         console.error("Error reading from serial port:", error);
       } finally {
-        reader.releaseLock();
+        if (readerRef.current) {
+          const currentReader = readerRef.current;
+          readerRef.current = null; // Clear the reference first
+          try {
+            await currentReader.cancel();
+            currentReader.releaseLock();
+          } catch (error) {
+            console.error("Error releasing reader:", error);
+          }
+        }
       }
     },
     [processSerialData]
   );
 
-  const connectSerial = useCallback(async () => {
+  const connectToPort = useCallback(async () => {
     try {
-      const port = await navigator.serial.requestPort();
-      await port.open({ baudRate: 9600 });
-      setIsConnected(true);
-      return port;
+      if (portRef.current) {
+        console.log("Using existing port connection");
+        return portRef.current;
+      }
+
+      const ports = await navigator.serial.getPorts();
+      const targetPort = ports.find((port) => {
+        const info = port.getInfo();
+        return (
+          info.usbVendorId === 0x2341 || // Arduino
+          info.usbVendorId === 0x1a86 // CH340/CH341
+        );
+      });
+
+      if (targetPort) {
+        console.log("Arduino device found and attempting to connect...");
+        await targetPort.open({ baudRate: 9600 });
+        console.log("Connected to Arduino device automatically.");
+        setIsConnected(true);
+        portRef.current = targetPort;
+        return targetPort;
+      } else {
+        console.log("Arduino device not found or not previously granted.");
+      }
     } catch (error) {
-      console.error("There was an error opening the serial port:", error);
+      console.error(
+        "There was an error connecting to the Arduino device:",
+        error
+      );
     }
   }, [setIsConnected]);
 
-  const autoConnectSerial = useCallback(
-    async (vendorId, productId) => {
-      try {
-        const ports = await navigator.serial.getPorts();
-        const targetPort = ports.find((port) => {
-          const info = port.getInfo();
-          // Arduino typically uses these vendor IDs:
-          // - 0x2341 (Arduino LLC)
-          // - 0x2A03 (Arduino SA)
-          // - 0x1A86 (CH340/CH341)
-          return (
-            (info.usbVendorId === vendorId &&
-              info.usbProductId === productId) ||
-            info.usbVendorId === 0x2341 || // Arduino LLC
-            info.usbVendorId === 0x2a03 || // Arduino SA
-            info.usbVendorId === 0x1a86 // CH340/CH341
-          );
-        });
-
-        if (targetPort) {
-          console.log("Arduino device found and attempting to connect...");
-          await targetPort.open({ baudRate: 9600 });
-          console.log("Connected to Arduino device automatically.");
-          setIsConnected(true);
-          return targetPort;
-        } else {
-          console.log("Arduino device not found or not previously granted.");
-        }
-      } catch (error) {
-        console.error(
-          "There was an error connecting to the Arduino device:",
-          error
-        );
-      }
-    },
-    [setIsConnected]
-  );
-
   const startSerialCommunication = useCallback(async () => {
-    const port = await connectSerial();
+    const port = await connectToPort();
     if (port) {
       port.ondisconnect = () => {
         console.log("Device disconnected");
@@ -169,7 +179,7 @@ function ReadSerialData() {
       };
       await readSerialData(port);
     }
-  }, [connectSerial, readSerialData, setIsConnected]);
+  }, [connectToPort, readSerialData, setIsConnected]);
 
   useEffect(() => {
     if (isSimulatorMode) {
@@ -183,18 +193,52 @@ function ReadSerialData() {
       return;
     }
 
-    console.log("Web Serial API is supported!");
-    // Try to connect to any Arduino device
-    autoConnectSerial(0x2341, 0x0043) // Default Arduino Uno VID/PID
-      .then((port) => {
-        if (port) {
-          readSerialData(port);
+    // Only log and attempt connection once
+    if (!isInitialized) {
+      console.log("Web Serial API is supported!");
+      setIsInitialized(true);
+
+      // Only try to connect if we don't already have a port
+      if (!portRef.current) {
+        connectToPort()
+          .then((port) => {
+            if (port) {
+              readSerialData(port);
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      }
+    }
+  }, [connectToPort, readSerialData, isSimulatorMode, isInitialized]);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup function to close the port and release reader when component unmounts
+      if (readerRef.current) {
+        const currentReader = readerRef.current;
+        readerRef.current = null; // Clear the reference first
+        try {
+          currentReader.cancel().catch(console.error);
+          currentReader.releaseLock();
+        } catch (error) {
+          console.error("Error during cleanup:", error);
         }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, [autoConnectSerial, readSerialData, isSimulatorMode]);
+      }
+      if (portRef.current) {
+        const currentPort = portRef.current;
+        portRef.current = null; // Clear the reference first
+        try {
+          currentPort.close();
+        } catch (error) {
+          console.error("Error closing port:", error);
+        } finally {
+          setIsConnected(false);
+        }
+      }
+    };
+  }, [setIsConnected]);
 
   const connectButton = useMemo(
     () =>
