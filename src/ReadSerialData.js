@@ -143,8 +143,9 @@ function ReadSerialData() {
         return portRef.current;
       }
 
+      // First, check for previously granted ports
       const ports = await navigator.serial.getPorts();
-      const targetPort = ports.find((port) => {
+      const previouslyGrantedPort = ports.find((port) => {
         const info = port.getInfo();
         return (
           info.usbVendorId === 0x2341 || // Arduino
@@ -152,32 +153,48 @@ function ReadSerialData() {
         );
       });
 
-      if (targetPort) {
-        console.log("Arduino device found and attempting to connect...");
-        await targetPort.open({ baudRate: 9600 });
-        console.log("Connected to Arduino device automatically.");
+      if (previouslyGrantedPort) {
+        console.log("Found previously granted port, attempting to connect...");
+        await previouslyGrantedPort.open({ baudRate: 9600 });
+        console.log("Connected to previously granted device.");
         setIsConnected(true);
-        portRef.current = targetPort;
-        return targetPort;
-      } else {
-        console.log("Arduino device not found or not previously granted.");
+        portRef.current = previouslyGrantedPort;
+        return previouslyGrantedPort;
+      }
+
+      // If no previously granted port found, request a new one
+      const port = await navigator.serial.requestPort({
+        filters: [
+          { usbVendorId: 0x2341 }, // Arduino
+          { usbVendorId: 0x1a86 } // CH340/CH341
+        ]
+      });
+
+      if (port) {
+        console.log("New port selected, attempting to connect...");
+        await port.open({ baudRate: 9600 });
+        console.log("Connected to new device successfully.");
+        setIsConnected(true);
+        portRef.current = port;
+        return port;
       }
     } catch (error) {
-      console.error(
-        "There was an error connecting to the Arduino device:",
-        error
-      );
+      console.error("There was an error connecting to the device:", error);
     }
   }, [setIsConnected]);
 
   const startSerialCommunication = useCallback(async () => {
-    const port = await connectToPort();
-    if (port) {
-      port.ondisconnect = () => {
-        console.log("Device disconnected");
-        setIsConnected(false);
-      };
-      await readSerialData(port);
+    try {
+      const port = await connectToPort();
+      if (port) {
+        port.ondisconnect = () => {
+          console.log("Device disconnected");
+          setIsConnected(false);
+        };
+        await readSerialData(port);
+      }
+    } catch (error) {
+      console.error("Error starting serial communication:", error);
     }
   }, [connectToPort, readSerialData, setIsConnected]);
 
@@ -193,12 +210,12 @@ function ReadSerialData() {
       return;
     }
 
-    // Only log and attempt connection once
+    // Only log once and attempt to connect to previously granted port
     if (!isInitialized) {
       console.log("Web Serial API is supported!");
       setIsInitialized(true);
 
-      // Only try to connect if we don't already have a port
+      // Try to connect to previously granted port
       if (!portRef.current) {
         connectToPort()
           .then((port) => {
@@ -207,7 +224,10 @@ function ReadSerialData() {
             }
           })
           .catch((error) => {
-            console.error(error);
+            console.error(
+              "Error connecting to previously granted port:",
+              error
+            );
           });
       }
     }
