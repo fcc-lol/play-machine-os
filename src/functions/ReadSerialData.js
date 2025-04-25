@@ -328,17 +328,12 @@ function ReadSerialData() {
       return;
     }
 
+    // Only initialize the API support message
     if (!isInitialized) {
       console.log("Web Serial API is supported!");
       setIsInitialized(true);
-
-      if (!inputPortRef.current || !outputPortRef.current) {
-        startSerialCommunication().catch((error) => {
-          console.error("Error connecting to devices:", error);
-        });
-      }
     }
-  }, [startSerialCommunication, isSimulatorMode, isInitialized]);
+  }, [isSimulatorMode, isInitialized]);
 
   useEffect(() => {
     return () => {
@@ -392,6 +387,10 @@ function ReadSerialData() {
   // Add function to write to output device
   const writeToOutputDevice = useCallback(
     async (data) => {
+      if (isSimulatorMode) {
+        return; // Skip writing in simulator mode
+      }
+
       if (!outputPortRef.current || !isOutputConnected) {
         console.error("Output device not connected");
         return;
@@ -410,7 +409,7 @@ function ReadSerialData() {
         console.error("Error writing to output device:", error);
       }
     },
-    [isOutputConnected]
+    [isOutputConnected, isSimulatorMode]
   );
 
   // Set the write function in the context
@@ -419,10 +418,10 @@ function ReadSerialData() {
   }, [writeToOutputDevice, writeToOutputDeviceRef]);
 
   useEffect(() => {
-    if (isOutputConnected) {
+    if (isOutputConnected && !isSimulatorMode) {
       writeToOutputDevice("10,10,10,1");
     }
-  }, [isOutputConnected, writeToOutputDevice]);
+  }, [isOutputConnected, writeToOutputDevice, isSimulatorMode]);
 
   return connectButton;
 }

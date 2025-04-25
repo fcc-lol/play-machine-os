@@ -4,32 +4,38 @@ import styled from "styled-components";
 
 const SimulatorContainer = styled.div`
   position: fixed;
-  bottom: 1.25rem;
-  right: 1.25rem;
+  bottom: 1rem;
+  right: 1rem;
   background: rgba(0, 0, 0, 0.9);
-  padding: 1.25rem;
-  border-radius: 0.625rem;
+  padding: 2rem 3rem;
+  border-radius: 0.5rem;
   color: #ffffff;
   font-family: system-ui;
   z-index: 1000;
   cursor: default;
-  width: 24rem;
+  width: 23rem;
   font-family: monospace;
   text-transform: uppercase;
+  gap: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  * {
+    outline: none;
+  }
 `;
 
 const ButtonGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  gap: 0.625rem;
-  margin-bottom: 1.25rem;
-  width: 18.75rem;
-  margin: 0 auto 1.25rem;
+  gap: 0;
+  width: 19rem;
 `;
 
-const SimButton = styled.button`
-  background: ${(props) => (props.active ? "#ffffff" : "#333333")};
+const Button = styled.button`
+  background: ${(props) => (props.active ? "#ffffff" : "transparent")};
   color: ${(props) => (props.active ? "#000000" : "#ffffff")};
   border: 0.125rem solid #ffffff;
   font-family: system-ui;
@@ -42,6 +48,7 @@ const SimButton = styled.button`
   transition: all 0.2s;
   grid-column: ${(props) => props.gridColumn || "auto"};
   grid-row: ${(props) => props.gridRow || "auto"};
+  margin-right: ${(props) => (props.id === "button_b" ? "1rem" : "0")};
 
   &:hover {
     background: #ffffff;
@@ -53,46 +60,71 @@ const VerticalSlidersContainer = styled.div`
   display: flex;
   gap: 1.25rem;
   justify-content: center;
-  margin-bottom: 1.25rem;
 `;
 
 const SliderContainer = styled.div`
-  margin: 0.625rem 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.5rem;
+
   ${(props) =>
     props.vertical &&
     `
-    height: 12rem;
     justify-content: center;
   `}
 `;
 
 const Slider = styled.input`
-  width: 100%;
+  width: 8rem;
   margin: 0.5rem 0;
+  -webkit-appearance: none;
+  background: transparent;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.5rem;
+    height: 100%;
+    background: #ffffff;
+    cursor: pointer;
+  }
+
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 1.5rem;
+    background: #000000;
+    border: 0.125rem solid #ffffff;
+    cursor: pointer;
+  }
+
   ${(props) =>
     props.vertical &&
     `
-    writing-mode: bt-lr;
-    -webkit-appearance: slider-vertical;
-    width: 1rem;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 1.5rem;
     height: 8rem;
-    padding: 0 1rem;
 
+    &::-webkit-slider-thumb {
+      width: 100%;
+      height: 1.5rem;
+    }
   `}
 `;
 
 const KnobContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.625rem;
-  margin-top: 1.25rem;
+  gap: 1rem;
 `;
 
 const Knob = styled.div`
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 `;
 
 const Label = styled.div`
@@ -134,6 +166,8 @@ const Hardware = () => {
 
   // Initialize serialData with localStorage values
   useEffect(() => {
+    if (!isSimulatorMode) return;
+
     const allControls = [...sliders, ...knobs];
     const initialData = {};
     allControls.forEach((control) => {
@@ -143,33 +177,37 @@ const Hardware = () => {
       };
     });
     setSerialData(initialData);
-  }, [setSerialData]);
+  }, [setSerialData, isSimulatorMode]);
 
   const handleButtonDown = useCallback(
     (buttonId) => {
+      if (!isSimulatorMode) return;
+
       const newData = { ...serialData };
       newData[buttonId] = { value: true };
       setSerialData(newData);
     },
-    [serialData, setSerialData]
+    [serialData, setSerialData, isSimulatorMode]
   );
 
   const handleButtonUp = useCallback(
     (buttonId) => {
+      if (!isSimulatorMode) return;
+
       const newData = { ...serialData };
       newData[buttonId] = { value: false };
       setSerialData(newData);
     },
-    [serialData, setSerialData]
+    [serialData, setSerialData, isSimulatorMode]
   );
 
   const handleSliderChange = (sliderId, value) => {
+    if (!isSimulatorMode) return;
+
     const newData = { ...serialData };
     newData[sliderId] = { value: parseInt(value) };
     setSerialData(newData);
-    if (isSimulatorMode) {
-      localStorage.setItem(`slider_${sliderId}`, value);
-    }
+    localStorage.setItem(`slider_${sliderId}`, value);
   };
 
   useEffect(() => {
@@ -252,22 +290,6 @@ const Hardware = () => {
 
   return (
     <SimulatorContainer>
-      <ButtonGrid>
-        {buttons.map((button) => (
-          <SimButton
-            key={button.id}
-            active={serialData[button.id]?.value || false}
-            onMouseDown={() => handleButtonDown(button.id)}
-            onMouseUp={() => handleButtonUp(button.id)}
-            onMouseLeave={() => handleButtonUp(button.id)}
-            gridColumn={button.gridColumn}
-            gridRow={button.gridRow}
-          >
-            {button.label}
-          </SimButton>
-        ))}
-      </ButtonGrid>
-
       <VerticalSlidersContainer>
         {sliders.map((slider) => (
           <SliderContainer key={slider.id} vertical={true}>
@@ -284,10 +306,10 @@ const Hardware = () => {
           </SliderContainer>
         ))}
       </VerticalSlidersContainer>
-
       <KnobContainer>
         {knobs.map((knob) => (
           <Knob key={knob.id}>
+            <Label>{knob.label}</Label>
             <Slider
               type="range"
               min="0"
@@ -295,11 +317,26 @@ const Hardware = () => {
               value={serialData[knob.id]?.value || 0}
               onChange={(e) => handleSliderChange(knob.id, e.target.value)}
             />
-            <Label>{knob.label}</Label>
             <Value>{serialData[knob.id]?.value || 0}%</Value>
           </Knob>
         ))}
       </KnobContainer>
+      <ButtonGrid>
+        {buttons.map((button) => (
+          <Button
+            key={button.id}
+            id={button.id}
+            active={serialData[button.id]?.value || false}
+            onMouseDown={() => handleButtonDown(button.id)}
+            onMouseUp={() => handleButtonUp(button.id)}
+            onMouseLeave={() => handleButtonUp(button.id)}
+            gridColumn={button.gridColumn}
+            gridRow={button.gridRow}
+          >
+            {button.label}
+          </Button>
+        ))}
+      </ButtonGrid>
     </SimulatorContainer>
   );
 };
