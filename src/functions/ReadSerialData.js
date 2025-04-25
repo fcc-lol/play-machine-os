@@ -320,18 +320,17 @@ function ReadSerialData() {
     if (isSimulatorMode) {
       console.log("Running in simulator mode - skipping serial connection");
       return;
-    }
+    } else {
+      if (!("serial" in navigator)) {
+        console.log("Web Serial API not supported!");
+        alert("Web Serial API not supported!");
+        return;
+      }
 
-    if (!("serial" in navigator)) {
-      console.log("Web Serial API not supported!");
-      alert("Web Serial API not supported!");
-      return;
-    }
-
-    // Only initialize the API support message
-    if (!isInitialized) {
-      console.log("Web Serial API is supported!");
-      setIsInitialized(true);
+      if (!isInitialized) {
+        console.log("Web Serial API is supported!");
+        setIsInitialized(true);
+      }
     }
   }, [isSimulatorMode, isInitialized]);
 
