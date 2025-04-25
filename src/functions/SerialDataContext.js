@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef
 } from "react";
+import hardwareConfig from "../config/Hardware.json";
 
 const SerialDataContext = createContext();
 
@@ -20,10 +21,25 @@ export function SerialDataProvider({ children }) {
     const onDevice = urlParams.get("onDevice");
     setIsSimulatorMode(onDevice === "false");
 
-    // If in simulator mode, set initial connected states to true
+    // If in simulator mode, set initial connected states to true and initialize default values
     if (onDevice === "false") {
       setIsInputConnected(true);
       setIsOutputConnected(true);
+
+      // Initialize default values for all hardware items
+      const defaultData = {};
+
+      // Initialize buttons
+      Object.entries(hardwareConfig.buttons).forEach(([id, label]) => {
+        defaultData[label] = { value: false };
+      });
+
+      // Initialize potentiometers
+      Object.entries(hardwareConfig.potentiometers).forEach(([id, config]) => {
+        defaultData[config.label] = { value: 0 };
+      });
+
+      setSerialData(defaultData);
     }
   }, []);
 

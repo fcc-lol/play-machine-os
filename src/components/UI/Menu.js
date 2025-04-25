@@ -213,7 +213,7 @@ const Menu = ({
     () =>
       menuItemsWithCurrentTheme.map((item, index) => (
         <MenuItem key={item.id} selected={index === getCurrentSelectedIndex()}>
-          {item.label}
+          {item.id === "back" ? "← Back" : item.label}
           {item.isCurrentTheme && (
             <CurrentThemeIndicator>Current</CurrentThemeIndicator>
           )}

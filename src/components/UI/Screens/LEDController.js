@@ -82,7 +82,7 @@ const SendButton = styled.button`
   }
 `;
 
-export default function OutputControl({ onBack }) {
+export default function LEDController({ onBack }) {
   const { writeToOutputDeviceRef, isOutputConnected, serialData } = useSerial();
   const [red, setRed] = useState(10);
   const [green, setGreen] = useState(10);

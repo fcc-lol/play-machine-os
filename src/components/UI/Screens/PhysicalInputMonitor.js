@@ -45,8 +45,9 @@ const Value = styled.span`
   font-size: 1.5rem;
 `;
 
-export default function Debugger() {
-  const { serialData, isConnected, isSimulatorMode } = useSerial();
+export default function PhysicalInputMonitor() {
+  const { serialData, isInputConnected, isOutputConnected, isSimulatorMode } =
+    useSerial();
 
   // Split the data into two columns
   const allItems = [
@@ -54,7 +55,7 @@ export default function Debugger() {
       key: "Hardware",
       value: isSimulatorMode
         ? "Simulator"
-        : isConnected
+        : isInputConnected && isOutputConnected
         ? "Connected"
         : "Disconnected"
     },

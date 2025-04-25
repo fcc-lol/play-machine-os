@@ -21,13 +21,12 @@ const Text = styled.p`
   margin: 0.5rem 0;
 `;
 
-export default function Credits() {
+export default function About() {
   return (
     <Root>
-      <Title>Credits</Title>
-      <Text>Created by Leo</Text>
-      <Text>Built with React</Text>
-      <Text>Styled with styled-components</Text>
+      <Title>Play Machine</Title>
+      <Text>Model A2</Text>
+      <Text>Firmware Version 0.1</Text>
     </Root>
   );
 }

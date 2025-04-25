@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useCallback } from "react";
 import { useSerial } from "../../functions/SerialDataContext";
 import styled from "styled-components";
 
@@ -103,21 +103,23 @@ const knobs = [
 const Hardware = () => {
   const { serialData, setSerialData, isSimulatorMode } = useSerial();
 
-  if (!isSimulatorMode) {
-    return null;
-  }
+  const handleButtonDown = useCallback(
+    (buttonId) => {
+      const newData = { ...serialData };
+      newData[buttonId] = { value: true };
+      setSerialData(newData);
+    },
+    [serialData, setSerialData]
+  );
 
-  const handleButtonDown = (buttonId) => {
-    const newData = { ...serialData };
-    newData[buttonId] = { value: true };
-    setSerialData(newData);
-  };
-
-  const handleButtonUp = (buttonId) => {
-    const newData = { ...serialData };
-    newData[buttonId] = { value: false };
-    setSerialData(newData);
-  };
+  const handleButtonUp = useCallback(
+    (buttonId) => {
+      const newData = { ...serialData };
+      newData[buttonId] = { value: false };
+      setSerialData(newData);
+    },
+    [serialData, setSerialData]
+  );
 
   const handleSliderChange = (sliderId, value) => {
     const newData = { ...serialData };
@@ -125,10 +127,86 @@ const Hardware = () => {
     setSerialData(newData);
   };
 
+  useEffect(() => {
+    if (!isSimulatorMode) return;
+
+    const handleKeyDown = (e) => {
+      console.log("Key pressed:", e.key);
+      switch (e.key) {
+        case "ArrowUp":
+          handleButtonDown("button_up");
+          break;
+        case "ArrowRight":
+          handleButtonDown("button_right");
+          break;
+        case "ArrowDown":
+          handleButtonDown("button_down");
+          break;
+        case "ArrowLeft":
+          handleButtonDown("button_left");
+          break;
+        case "Enter":
+          handleButtonDown("button_a");
+          break;
+        case "Escape":
+          handleButtonDown("button_b");
+          break;
+        case "Delete":
+        case "Backspace":
+          e.preventDefault();
+          handleButtonDown("button_b");
+          break;
+        default:
+          break;
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      console.log("Key released:", e.key);
+      switch (e.key) {
+        case "ArrowUp":
+          handleButtonUp("button_up");
+          break;
+        case "ArrowRight":
+          handleButtonUp("button_right");
+          break;
+        case "ArrowDown":
+          handleButtonUp("button_down");
+          break;
+        case "ArrowLeft":
+          handleButtonUp("button_left");
+          break;
+        case "Enter":
+          handleButtonUp("button_a");
+          break;
+        case "Escape":
+          handleButtonUp("button_b");
+          break;
+        case "Delete":
+        case "Backspace":
+          e.preventDefault();
+          handleButtonUp("button_b");
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [serialData, isSimulatorMode, handleButtonDown, handleButtonUp]);
+
+  if (!isSimulatorMode) {
+    return null;
+  }
+
   return (
     <SimulatorContainer>
-      <h3>Hardware Simulator</h3>
-
       <ButtonGrid>
         {buttons.map((button) => (
           <SimButton

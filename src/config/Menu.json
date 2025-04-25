@@ -15,15 +15,10 @@
         }
       },
       {
-        "id": "output",
-        "label": "Output Control",
-        "screen": "OutputControl"
-      },
-      {
-        "id": "settings",
-        "label": "Settings",
+        "id": "system",
+        "label": "System",
         "submenu": {
-          "title": "Settings",
+          "title": "System",
           "items": [
             {
               "id": "theme",
@@ -38,41 +33,20 @@
               }
             },
             {
-              "id": "sound",
-              "label": "Sound",
-              "submenu": {
-                "title": "Sound Settings",
-                "items": [
-                  { "id": "volume", "label": "Volume" },
-                  { "id": "mute", "label": "Mute" },
-                  { "id": "equalizer", "label": "Equalizer" }
-                ]
-              }
+              "id": "led-controller",
+              "label": "LED Controller",
+              "screen": "LEDController"
             },
             {
-              "id": "system",
-              "label": "System",
-              "submenu": {
-                "title": "System Settings",
-                "items": [
-                  { "id": "language", "label": "Language" },
-                  { "id": "timezone", "label": "Timezone" },
-                  { "id": "updates", "label": "System Updates" }
-                ]
-              }
+              "id": "physical-input-monitor",
+              "label": "Physical Input Monitor",
+              "screen": "PhysicalInputMonitor"
+            },
+            {
+              "id": "about",
+              "label": "About",
+              "screen": "About"
             }
-          ]
-        }
-      },
-      {
-        "id": "about",
-        "label": "About",
-        "submenu": {
-          "title": "About",
-          "items": [
-            { "id": "version", "label": "Version", "screen": "Version" },
-            { "id": "credits", "label": "Credits", "screen": "Credits" },
-            { "id": "debugger", "label": "Debugger", "screen": "Debugger" }
           ]
         }
       }
