@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { useSerial } from "../../../SerialDataContext";
+import { useSerial } from "../../../functions/SerialDataContext";
 
 const Root = styled.div`
   display: flex;

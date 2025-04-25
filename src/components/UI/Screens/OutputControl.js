@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
-import { useSerial } from "../../../SerialDataContext";
+import { useSerial } from "../../../functions/SerialDataContext";
 
 const Container = styled.div`
   display: flex;

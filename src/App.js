@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, lazy } from "react";
-import { SerialDataProvider, useSerial } from "./SerialDataContext";
-import { ThemeProvider, useTheme } from "./ThemeContext";
-import ReadSerialData from "./ReadSerialData";
+import { SerialDataProvider, useSerial } from "./functions/SerialDataContext";
+import { ThemeProvider, useTheme } from "./functions/ThemeContext";
+import ReadSerialData from "./functions/ReadSerialData";
 import Menu from "./components/UI/Menu";
 import Hardware from "./components/Simulator/Hardware";
 import styled, {

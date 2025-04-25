@@ -1,45 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import themes from "../config/Themes.json";
 
 const ThemeContext = createContext();
-
-const themes = {
-  hacker: {
-    background: "#000000",
-    text: "rgba(0, 255, 0, 1)",
-    accent: "rgba(0, 255, 0, 1)",
-    menuBackground: "#000000",
-    menuText: "rgba(0, 255, 0, 1)",
-    menuSelectedBackground: "rgba(0, 255, 0, 1)",
-    menuSelectedText: "#000000",
-    border: "rgba(0, 255, 0, 0.3)",
-    fontFamily: "monospace",
-    textTransform: "uppercase"
-  },
-  monochrome: {
-    background: "#ffffff",
-    text: "#000000",
-    accent: "#000000",
-    menuBackground: "#ffffff",
-    menuText: "#000000",
-    menuSelectedBackground: "#000000",
-    menuSelectedText: "#ffffff",
-    border: "rgba(0, 0, 0, 0.3)",
-    fontFamily: "system-ui",
-    textTransform: "none"
-  },
-  sunset: {
-    background: "#FFF1E6",
-    text: "#7D4E57",
-    accent: "#FF7F50",
-    menuBackground: "#FFE4E1",
-    menuText: "#7D4E57",
-    menuSelectedBackground: "#FF7F50",
-    menuSelectedText: "#FFF1E6",
-    border: "rgba(125, 78, 87, 0.3)",
-    fontFamily: "Georgia, serif",
-    textTransform: "none"
-  }
-};
 
 export const ThemeProvider = ({ children, theme = Object.keys(themes)[0] }) => {
   const [currentTheme, setCurrentTheme] = useState(() => {

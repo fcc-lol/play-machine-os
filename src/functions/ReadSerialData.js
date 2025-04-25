@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useSerial } from "./SerialDataContext";
 import styled from "styled-components";
-import hardwareConfig from "./config/Hardware.json";
+import hardwareConfig from "../config/Hardware.json";
 
 const convertRange = (value, r1, r2) =>
   ((value - r1[0]) * (r2[1] - r2[0])) / (r1[1] - r1[0]) + r2[0];

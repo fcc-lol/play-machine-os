@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useTheme } from "../../../ThemeContext";
+import { useTheme } from "../../../functions/ThemeContext";
 
 export const ThemeSettings = ({
   currentMenu,

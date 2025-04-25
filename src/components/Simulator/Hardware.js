@@ -1,5 +1,5 @@
 import React from "react";
-import { useSerial } from "../../SerialDataContext";
+import { useSerial } from "../../functions/SerialDataContext";
 import styled from "styled-components";
 
 const SimulatorContainer = styled.div`
