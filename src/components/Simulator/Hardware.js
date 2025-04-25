@@ -13,6 +13,9 @@ const SimulatorContainer = styled.div`
   font-family: system-ui;
   z-index: 1000;
   cursor: default;
+  width: 24rem;
+  font-family: monospace;
+  text-transform: uppercase;
 `;
 
 const ButtonGrid = styled.div`
@@ -46,18 +49,39 @@ const SimButton = styled.button`
   }
 `;
 
-const SliderContainer = styled.div`
-  margin: 0.625rem 0;
+const VerticalSlidersContainer = styled.div`
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  margin-bottom: 1.25rem;
 `;
 
-const SliderLabel = styled.div`
-  margin-bottom: 0.3125rem;
-  font-size: 0.9rem;
+const SliderContainer = styled.div`
+  margin: 0.625rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  ${(props) =>
+    props.vertical &&
+    `
+    height: 12rem;
+    justify-content: center;
+  `}
 `;
 
 const Slider = styled.input`
   width: 100%;
-  margin: 0.3125rem 0;
+  margin: 0.5rem 0;
+  ${(props) =>
+    props.vertical &&
+    `
+    writing-mode: bt-lr;
+    -webkit-appearance: slider-vertical;
+    width: 1rem;
+    height: 8rem;
+    padding: 0 1rem;
+
+  `}
 `;
 
 const KnobContainer = styled.div`
@@ -71,9 +95,14 @@ const Knob = styled.div`
   text-align: center;
 `;
 
-const KnobValue = styled.div`
-  font-size: 0.8rem;
-  margin-top: 0.3125rem;
+const Label = styled.div`
+  font-size: 1rem;
+  text-align: center;
+`;
+
+const Value = styled.div`
+  font-size: 1rem;
+  font-weight: bold;
 `;
 
 const buttons = [
@@ -86,14 +115,14 @@ const buttons = [
 ];
 
 const sliders = [
-  { id: "vertical_slider_1", label: "Vertical Slider 1" },
-  { id: "vertical_slider_2", label: "Vertical Slider 2" },
-  { id: "vertical_slider_3", label: "Vertical Slider 3" },
-  { id: "horizontal_slider", label: "Horizontal Slider" }
+  { id: "vertical_slider_1", label: "Slider 1" },
+  { id: "vertical_slider_2", label: "Slider 2" },
+  { id: "vertical_slider_3", label: "Slider 3" }
 ];
 
 const knobs = [
   { id: "knob_1", label: "Knob 1" },
+  { id: "horizontal_slider", label: "Slider" },
   { id: "knob_2", label: "Knob 2" },
   { id: "knob_3", label: "Knob 3" },
   { id: "knob_4", label: "Knob 4" },
@@ -102,6 +131,19 @@ const knobs = [
 
 const Hardware = () => {
   const { serialData, setSerialData, isSimulatorMode } = useSerial();
+
+  // Initialize serialData with localStorage values
+  useEffect(() => {
+    const allControls = [...sliders, ...knobs];
+    const initialData = {};
+    allControls.forEach((control) => {
+      const savedValue = localStorage.getItem(`slider_${control.id}`);
+      initialData[control.id] = {
+        value: savedValue !== null ? parseInt(savedValue) : 0
+      };
+    });
+    setSerialData(initialData);
+  }, [setSerialData]);
 
   const handleButtonDown = useCallback(
     (buttonId) => {
@@ -125,6 +167,9 @@ const Hardware = () => {
     const newData = { ...serialData };
     newData[sliderId] = { value: parseInt(value) };
     setSerialData(newData);
+    if (isSimulatorMode) {
+      localStorage.setItem(`slider_${sliderId}`, value);
+    }
   };
 
   useEffect(() => {
@@ -223,18 +268,22 @@ const Hardware = () => {
         ))}
       </ButtonGrid>
 
-      {sliders.map((slider) => (
-        <SliderContainer key={slider.id}>
-          <SliderLabel>{slider.label}</SliderLabel>
-          <Slider
-            type="range"
-            min="0"
-            max="100"
-            value={serialData[slider.id]?.value || 0}
-            onChange={(e) => handleSliderChange(slider.id, e.target.value)}
-          />
-        </SliderContainer>
-      ))}
+      <VerticalSlidersContainer>
+        {sliders.map((slider) => (
+          <SliderContainer key={slider.id} vertical={true}>
+            <Label>{slider.label}</Label>
+            <Slider
+              type="range"
+              min="0"
+              max="100"
+              value={serialData[slider.id]?.value || 0}
+              onChange={(e) => handleSliderChange(slider.id, e.target.value)}
+              vertical={true}
+            />
+            <Value>{serialData[slider.id]?.value || 0}%</Value>
+          </SliderContainer>
+        ))}
+      </VerticalSlidersContainer>
 
       <KnobContainer>
         {knobs.map((knob) => (
@@ -246,9 +295,8 @@ const Hardware = () => {
               value={serialData[knob.id]?.value || 0}
               onChange={(e) => handleSliderChange(knob.id, e.target.value)}
             />
-            <KnobValue>
-              {knob.label}: {serialData[knob.id]?.value || 0}%
-            </KnobValue>
+            <Label>{knob.label}</Label>
+            <Value>{serialData[knob.id]?.value || 0}%</Value>
           </Knob>
         ))}
       </KnobContainer>

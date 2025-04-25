@@ -21,25 +21,44 @@ export function SerialDataProvider({ children }) {
     const onDevice = urlParams.get("onDevice");
     setIsSimulatorMode(onDevice === "false");
 
-    // If in simulator mode, set initial connected states to true and initialize default values
+    // Initialize default values for all hardware items
+    const defaultData = {};
+
+    // Initialize buttons
+    Object.entries(hardwareConfig.buttons).forEach(([id, label]) => {
+      defaultData[label] = { value: false };
+    });
+
+    // Initialize potentiometers
+    Object.entries(hardwareConfig.potentiometers).forEach(([id, config]) => {
+      let value = 0;
+      if (onDevice === "false") {
+        // In simulator mode, use localStorage
+        const savedValue = localStorage.getItem(`slider_${config.label}`);
+        if (savedValue !== null) {
+          value = parseInt(savedValue);
+        }
+      } else {
+        // In non-simulator mode, use the last known value from serial input
+        const lastValue = serialData[config.label]?.value;
+        if (lastValue !== undefined) {
+          value = lastValue;
+        }
+      }
+      defaultData[config.label] = { value };
+    });
+
+    // Only set initial connected states and data in simulator mode
     if (onDevice === "false") {
       setIsInputConnected(true);
       setIsOutputConnected(true);
-
-      // Initialize default values for all hardware items
-      const defaultData = {};
-
-      // Initialize buttons
-      Object.entries(hardwareConfig.buttons).forEach(([id, label]) => {
-        defaultData[label] = { value: false };
-      });
-
-      // Initialize potentiometers
-      Object.entries(hardwareConfig.potentiometers).forEach(([id, config]) => {
-        defaultData[config.label] = { value: 0 };
-      });
-
       setSerialData(defaultData);
+    } else {
+      // In non-simulator mode, preserve existing values
+      setSerialData((prevData) => ({
+        ...prevData,
+        ...defaultData
+      }));
     }
   }, []);
 
