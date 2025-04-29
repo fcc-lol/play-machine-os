@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import { useSerial } from "../../../functions/SerialDataContext";
+import hardwareConfig from "../../../config/Hardware.json";
 
 const Root = styled.div`
   display: flex;
@@ -49,6 +50,11 @@ export default function PhysicalInputMonitor() {
   const { serialData, isInputConnected, isOutputConnected, isSimulatorMode } =
     useSerial();
 
+  // Get all button labels from hardwareConfig
+  const allButtonLabels = Object.entries(hardwareConfig.buttons).map(
+    ([id, label]) => label
+  );
+
   // Split the data into two columns
   const allItems = [
     {
@@ -59,9 +65,17 @@ export default function PhysicalInputMonitor() {
         ? "Connected"
         : "Disconnected"
     },
-    ...Object.entries(serialData).map(([key, data]) => ({
-      key,
-      value: JSON.stringify(data.value)
+    // Add all other serial data items first
+    ...Object.entries(serialData)
+      .filter(([key]) => !allButtonLabels.includes(key))
+      .map(([key, data]) => ({
+        key,
+        value: JSON.stringify(data.value)
+      })),
+    // Add all buttons with their current values at the bottom
+    ...allButtonLabels.map((label) => ({
+      key: label,
+      value: serialData[label]?.value ?? false
     }))
   ];
 
@@ -80,7 +94,7 @@ export default function PhysicalInputMonitor() {
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
               :
             </Label>
-            <Value>{item.value.toUpperCase()}</Value>
+            <Value>{String(item.value).toUpperCase()}</Value>
           </DebugItem>
         ))}
       </Column>
@@ -93,7 +107,7 @@ export default function PhysicalInputMonitor() {
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
               :
             </Label>
-            <Value>{item.value.toUpperCase()}</Value>
+            <Value>{String(item.value).toUpperCase()}</Value>
           </DebugItem>
         ))}
       </Column>
