@@ -60,7 +60,7 @@ export function SerialDataProvider({ children }) {
         ...defaultData
       }));
     }
-  }, []);
+  }, [serialData]);
 
   return (
     <SerialDataContext.Provider

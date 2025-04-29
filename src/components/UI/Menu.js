@@ -50,6 +50,7 @@ const CurrentThemeIndicator = styled.span`
 
 const Menu = ({
   onScreenSelect,
+  onAppSelect,
   menuStack,
   setMenuStack,
   menuAction,
@@ -150,6 +151,8 @@ const Menu = ({
       setMenuStack(newStack);
     } else if (selectedItem.screen) {
       onScreenSelect(selectedItem.screen);
+    } else if (selectedItem.app) {
+      onAppSelect(selectedItem.app);
     } else if (selectedItem.submenu) {
       setSelectedIndices((prev) => ({
         ...prev,
@@ -163,6 +166,7 @@ const Menu = ({
     currentMenuItems,
     menuStack,
     onScreenSelect,
+    onAppSelect,
     setMenuStack,
     getCurrentSelectedIndex,
     setSelectedIndices,

@@ -11,22 +11,20 @@ import styled, {
 import isPropValid from "@emotion/is-prop-valid";
 import menuConfig from "./config/Menu.json";
 
-// Import all screens dynamically
-const screens = {};
-const screenFiles = require.context("./components/UI/Screens", false, /\.js$/);
+// Import screens and apps dynamically
+const screens = {
+  LEDController: lazy(() => import("./components/UI/Screens/LEDController")),
+  PhysicalInputMonitor: lazy(() =>
+    import("./components/UI/Screens/PhysicalInputMonitor")
+  ),
+  About: lazy(() => import("./components/UI/Screens/About"))
+};
 
-screenFiles.keys().forEach((fileName) => {
-  // Skip index.js if it exists
-  if (fileName === "./index.js") return;
-
-  // Get the component name from the file name (remove .js extension)
-  const componentName = fileName.replace(/^\.\/(.*)\.js$/, "$1");
-
-  // Add to screens object with lazy loading
-  screens[componentName] = lazy(() =>
-    import(`./components/UI/Screens/${componentName}`)
-  );
-});
+const apps = {
+  App1: lazy(() => import("./components/Apps/App1")),
+  App2: lazy(() => import("./components/Apps/App2")),
+  App3: lazy(() => import("./components/Apps/App3"))
+};
 
 const AppContainer = styled.div.attrs((props) => ({
   style: {
@@ -66,10 +64,10 @@ const ScreenContainer = styled.div.attrs((props) => ({
 
 const DEBOUNCE_TIME = 200; // milliseconds
 
-// Move all logic into an inner component
-function AppContent() {
+const AppContent = () => {
   const { serialData, isInputConnected, isOutputConnected } = useSerial();
   const [currentScreen, setCurrentScreen] = useState(null);
+  const [currentApp, setCurrentApp] = useState(null);
   const [menuStack, setMenuStack] = useState([menuConfig.root]);
   const [previousMenuStack, setPreviousMenuStack] = useState([menuConfig.root]);
   const [menuAction, setMenuAction] = useState(null);
@@ -89,6 +87,7 @@ function AppContent() {
   const handleBack = useCallback(
     (submenu) => {
       setCurrentScreen(null);
+      setCurrentApp(null);
       if (submenu) {
         setMenuStack([menuConfig.root, submenu]);
       } else {
@@ -102,6 +101,16 @@ function AppContent() {
     (screen) => {
       setPreviousMenuStack([...menuStack]);
       setCurrentScreen(screen);
+      setCurrentApp(null);
+    },
+    [menuStack]
+  );
+
+  const handleAppSelect = useCallback(
+    (appId) => {
+      setPreviousMenuStack([...menuStack]);
+      setCurrentApp(appId);
+      setCurrentScreen(null);
     },
     [menuStack]
   );
@@ -110,7 +119,7 @@ function AppContent() {
     const processButton = (buttonId, action) => {
       if (isButtonDebounced(buttonId)) return;
 
-      if (currentScreen !== null) {
+      if (currentScreen !== null || currentApp !== null) {
         if (action === "b") {
           handleBack();
         }
@@ -123,37 +132,52 @@ function AppContent() {
     if (serialData.button_up?.value === true) processButton("up", "up");
     if (serialData.button_a?.value === true) processButton("a", "a");
     if (serialData.button_b?.value === true) processButton("b", "b");
-  }, [serialData, currentScreen, handleBack]);
+  }, [serialData, currentScreen, currentApp, handleBack]);
 
   const handleMenuActionProcessed = useCallback(() => {
     setMenuAction(null);
   }, []);
 
-  const renderScreen = () => {
-    if (!currentScreen) {
+  const renderContent = () => {
+    if (currentApp) {
+      const AppComponent = apps[currentApp];
+      if (!AppComponent) {
+        console.error(`App component not found: ${currentApp}`);
+        return null;
+      }
+
       return (
-        <Menu
-          onScreenSelect={handleScreenSelect}
-          menuStack={menuStack}
-          setMenuStack={setMenuStack}
-          menuAction={menuAction}
-          onMenuActionProcessed={handleMenuActionProcessed}
-          selectedIndices={selectedIndices}
-          setSelectedIndices={setSelectedIndices}
-        />
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <AppComponent onBack={handleBack} />
+        </React.Suspense>
       );
     }
 
-    const ScreenComponent = screens[currentScreen];
-    if (!ScreenComponent) {
-      console.error(`Screen component not found: ${currentScreen}`);
-      return null;
+    if (currentScreen) {
+      const ScreenComponent = screens[currentScreen];
+      if (!ScreenComponent) {
+        console.error(`Screen component not found: ${currentScreen}`);
+        return null;
+      }
+
+      return (
+        <React.Suspense fallback={<div>Loading...</div>}>
+          <ScreenComponent onBack={handleBack} />
+        </React.Suspense>
+      );
     }
 
     return (
-      <React.Suspense fallback={<div>Loading...</div>}>
-        <ScreenComponent onBack={handleBack} />
-      </React.Suspense>
+      <Menu
+        onScreenSelect={handleScreenSelect}
+        onAppSelect={handleAppSelect}
+        menuStack={menuStack}
+        setMenuStack={setMenuStack}
+        menuAction={menuAction}
+        onMenuActionProcessed={handleMenuActionProcessed}
+        selectedIndices={selectedIndices}
+        setSelectedIndices={setSelectedIndices}
+      />
     );
   };
 
@@ -171,14 +195,14 @@ function AppContent() {
               {!isOutputConnected && <p>Output device not connected</p>}
             </div>
           ) : (
-            renderScreen()
+            renderContent()
           )}
         </ScreenContainer>
       </AppContainer>
       <Hardware />
     </>
   );
-}
+};
 
 // Theme wrapper component to handle theme provider setup
 function ThemeWrapper({ children }) {
