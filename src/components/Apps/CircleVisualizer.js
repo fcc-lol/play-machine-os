@@ -90,10 +90,7 @@ const CircleVisualizer = () => {
     setCanvasDimensions();
 
     // Reset blobs when button A is tapped
-    console.log("Button A value:", serialData.button_a?.value);
-    console.log("All serial data:", serialData);
     if (serialData.button_a?.value === true) {
-      console.log("Button A pressed, resetting blobs");
       blobsRef.current.forEach((blob) => {
         blob.time = 0;
       });

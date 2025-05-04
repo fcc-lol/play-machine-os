@@ -65,14 +65,6 @@ function ReadSerialData() {
         if (id.includes("button_")) {
           value = rawValue.trim().toLowerCase() === "true";
           const label = hardwareConfig.buttons[id] || id;
-          console.log(
-            "Processing button:",
-            id,
-            "value:",
-            value,
-            "label:",
-            label
-          );
           processedData[label] = { value };
         } else if (id.includes("potentiometer_")) {
           const config = hardwareConfig.potentiometers[id];
@@ -120,7 +112,6 @@ function ReadSerialData() {
         while (true) {
           const { value, done } = await newReader.read();
           if (done) {
-            console.log(`${isInput ? "Input" : "Output"} stream closed`);
             break;
           }
           if (value) {
@@ -162,9 +153,6 @@ function ReadSerialData() {
 
       try {
         if (portRef.current) {
-          console.log(
-            `Using existing ${isInput ? "input" : "output"} port connection`
-          );
           return portRef.current;
         }
 
@@ -204,14 +192,12 @@ function ReadSerialData() {
 
               // If we're looking for input device and it's not an output device, use it
               if (isInput && !response.includes("LED")) {
-                console.log("Found input device");
                 setIsInputConnected(true);
                 inputPortRef.current = port;
                 return port;
               }
               // If we're looking for output device and it responds as such, use it
               else if (!isInput && response.includes("LED")) {
-                console.log("Found output device");
                 setIsOutputConnected(true);
                 outputPortRef.current = port;
                 return port;
@@ -254,14 +240,12 @@ function ReadSerialData() {
 
             // If we're looking for input device and it's not an output device, use it
             if (isInput && !response.includes("LED")) {
-              console.log("Connected to input device successfully");
               setIsInputConnected(true);
               inputPortRef.current = port;
               return port;
             }
             // If we're looking for output device and it responds as such, use it
             else if (!isInput && response.includes("LED")) {
-              console.log("Connected to output device successfully");
               setIsOutputConnected(true);
               outputPortRef.current = port;
               return port;
@@ -297,7 +281,6 @@ function ReadSerialData() {
 
       if (inputPort) {
         inputPort.ondisconnect = () => {
-          console.log("Input device disconnected");
           setIsInputConnected(false);
         };
         await readSerialData(inputPort, true);
@@ -305,7 +288,6 @@ function ReadSerialData() {
 
       if (outputPort) {
         outputPort.ondisconnect = () => {
-          console.log("Output device disconnected");
           setIsOutputConnected(false);
         };
         await readSerialData(outputPort, false);
@@ -322,17 +304,14 @@ function ReadSerialData() {
 
   useEffect(() => {
     if (isSimulatorMode) {
-      console.log("Running in simulator mode - skipping serial connection");
       return;
     } else {
       if (!("serial" in navigator)) {
-        console.log("Web Serial API not supported!");
         alert("Web Serial API not supported!");
         return;
       }
 
       if (!isInitialized) {
-        console.log("Web Serial API is supported!");
         setIsInitialized(true);
       }
     }

@@ -214,7 +214,6 @@ const Hardware = () => {
     if (!isSimulatorMode) return;
 
     const handleKeyDown = (e) => {
-      console.log("Key pressed:", e.key);
       switch (e.key) {
         case "ArrowUp":
           handleButtonDown("button_up");
@@ -245,7 +244,6 @@ const Hardware = () => {
     };
 
     const handleKeyUp = (e) => {
-      console.log("Key released:", e.key);
       switch (e.key) {
         case "ArrowUp":
           handleButtonUp("button_up");
