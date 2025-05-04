@@ -219,12 +219,8 @@ const MapComponent = () => {
     minZoom,
     maxZoom
   );
-  const initialLongitude = ConvertRange(
-    serialData.knob_1?.value || 0,
-    -180,
-    180
-  );
-  const initialLatitude = ConvertRange(serialData.knob_2?.value || 0, -90, 90);
+  const initialLongitude = -74.006; // NYC longitude
+  const initialLatitude = 40.7128; // NYC latitude
   const initialFirstMapOpacity = ConvertRange(
     serialData.vertical_slider_1?.value || 0,
     0,
