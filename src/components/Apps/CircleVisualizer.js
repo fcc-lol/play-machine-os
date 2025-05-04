@@ -109,16 +109,16 @@ const CircleVisualizer = () => {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Get blur amount from knob_2
-      const blurAmount = serialData.knob_2?.value || 0;
-      const blurValue = Math.round((blurAmount / 100) * 1000); // Scale to 0-1000px range
-      ctx.filter = `blur(${blurValue}px)`;
-
       // Set blend mode
-      // ctx.globalCompositeOperation = "hard-light";
+      ctx.globalCompositeOperation = "hard-light";
 
       // Get size multiplier from knob_1
       const sizeMultiplier = (serialData.knob_1?.value || 3) / 5 + 0.4; // Minimum size at knob_1 = 0 will be 0.4x, maximum at 100 will be 20.4x
+
+      // Get blur amount from knob_2
+      const blurAmount = serialData.knob_2?.value || 0;
+      const blurValue = Math.round((blurAmount / 100) * 100 * sizeMultiplier);
+      ctx.filter = `blur(${blurValue}px)`;
 
       // Draw each blob
       blobsRef.current.forEach((blob) => {
