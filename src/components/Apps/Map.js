@@ -24,6 +24,10 @@ const normalizeLongitude = (longitude) => {
   return normalized;
 };
 
+const CIRCLE_DIAMETER_REM = 20;
+const REM_IN_PX = 16;
+const CIRCLE_RADIUS_PX = (CIRCLE_DIAMETER_REM * REM_IN_PX) / 2;
+
 // Custom debounce hook
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -179,9 +183,19 @@ const MiniMapContainer = styled.div`
   }
 `;
 
-const CIRCLE_DIAMETER_REM = 20;
-const REM_IN_PX = 16;
-const CIRCLE_RADIUS_PX = (CIRCLE_DIAMETER_REM * REM_IN_PX) / 2;
+const MiniMapTarget = styled.div`
+  width: ${(props) => props.$scale * CIRCLE_DIAMETER_REM * 0.2}rem;
+  height: ${(props) => props.$scale * CIRCLE_DIAMETER_REM * 0.2}rem;
+  border: 2px solid rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.5), 0 0 10rem rgba(0, 0, 0, 1);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+`;
 
 const MapComponent = () => {
   const { serialData } = useSerial();
@@ -228,7 +242,8 @@ const MapComponent = () => {
     zoom: initialZoom,
     projection: "mercator",
     minZoom: minZoom,
-    maxZoom: maxZoom
+    maxZoom: maxZoom,
+    bearing: 0 // Add initial bearing (rotation) of 0 degrees
   });
   const [firstMapOpacity, setFirstMapOpacity] = useState(
     initialFirstMapOpacity
@@ -297,10 +312,11 @@ const MapComponent = () => {
     const formattedRadius = Math.round(radiusKm);
     setIsLoading(true);
     try {
+      const normalizedLongitude = normalizeLongitude(debouncedLongitude);
       const response = await fetch(
         `https://ringpopulationsapi.azurewebsites.net/api/globalringpopulations?latitude=${debouncedLatitude.toFixed(
           6
-        )}&longitude=${debouncedLongitude.toFixed(
+        )}&longitude=${normalizedLongitude.toFixed(
           6
         )}&distance_km=${formattedRadius}`
       );
@@ -327,7 +343,8 @@ const MapComponent = () => {
     if (
       !serialData.horizontal_slider &&
       !serialData.knob_1 &&
-      !serialData.knob_2
+      !serialData.knob_2 &&
+      !serialData.knob_4
     ) {
       return;
     }
@@ -344,6 +361,16 @@ const MapComponent = () => {
       setViewState((prevState) => ({
         ...prevState,
         zoom: scaledZoomValue
+      }));
+    }
+
+    // Handle rotation with knob_4
+    if (serialData.knob_4) {
+      const rotationValue = serialData.knob_4.value || 0;
+      const newBearing = ConvertRange(rotationValue, 0, 360);
+      setViewState((prevState) => ({
+        ...prevState,
+        bearing: newBearing
       }));
     }
 
@@ -511,9 +538,9 @@ const MapComponent = () => {
       <MiniMapContainer>
         <Map
           mapboxAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
-          latitude={miniMapState.latitude}
-          longitude={miniMapState.longitude}
-          zoom={3}
+          latitude={viewState.latitude}
+          longitude={viewState.longitude}
+          zoom={4}
           minZoom={0}
           maxZoom={11}
           projection="mercator"
@@ -522,6 +549,7 @@ const MapComponent = () => {
           width="100%"
           height="100%"
         />
+        <MiniMapTarget $scale={(1 / Math.pow(2, viewState.zoom - 4)) * 4} />
       </MiniMapContainer>
     </AppContainer>
   );
