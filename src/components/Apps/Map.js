@@ -33,6 +33,38 @@ const useDebounce = (value, delay) => {
   return debouncedValue;
 };
 
+// Add a new custom hook for debouncing API calls
+const useDebouncedApiCall = (callback, delay) => {
+  const timeoutRef = useRef();
+  const callbackRef = useRef(callback);
+
+  // Update the callback ref when callback changes
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return useCallback(
+    (...args) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        callbackRef.current(...args);
+      }, delay);
+    },
+    [delay]
+  );
+};
+
 const AppContainer = styled.div`
   width: 100%;
   height: 100%;
@@ -68,7 +100,7 @@ const PopulationDisplay = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
-  opacity: ${(props) => (props.isUpdating ? 0.5 : 1)};
+  opacity: ${(props) => (props.isMoving || props.isLoading ? 0.5 : 1)};
 `;
 
 const MapContainer = styled.div`
@@ -195,6 +227,7 @@ const MapComponent = () => {
   );
   const [population, setPopulation] = useState(null);
   const [isMoving, setIsMoving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const mapRef = useRef();
   const [zoomConstraints, setZoomConstraints] = useState({
     min: minZoom,
@@ -248,6 +281,7 @@ const MapComponent = () => {
   const fetchPopulation = useCallback(async () => {
     const radiusKm = getRadiusKm();
     const formattedRadius = Math.round(radiusKm);
+    setIsLoading(true);
     try {
       const response = await fetch(
         `https://ringpopulationsapi.azurewebsites.net/api/globalringpopulations?latitude=${debouncedLatitude.toFixed(
@@ -264,9 +298,14 @@ const MapComponent = () => {
     } catch (error) {
       console.error("Error fetching population data:", error);
       setIsMoving(false);
+    } finally {
+      setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedLatitude, debouncedLongitude, debouncedZoom]);
+  }, [debouncedLatitude, debouncedLongitude, debouncedZoom, getRadiusKm]);
+
+  // Create a debounced version of fetchPopulation
+  const debouncedFetchPopulation = useDebouncedApiCall(fetchPopulation, 200);
 
   // Modify the serial data effect to handle view state updates with smooth transitions
   useEffect(() => {
@@ -286,19 +325,8 @@ const MapComponent = () => {
       zoomConstraints.max
     );
 
-    const longitudeResolutionValue = serialData.knob_3?.value || 0;
-    const scaledLongitudeResolutionValue = ConvertRange(
-      longitudeResolutionValue,
-      0,
-      1
-    );
-
     const longitudeValue = serialData.knob_1?.value || 0;
-    const scaledLongitudeValue = ConvertRange(
-      longitudeValue * scaledLongitudeResolutionValue,
-      -180,
-      180
-    );
+    const scaledLongitudeValue = ConvertRange(longitudeValue, -180, 180);
 
     const latitudeValue = serialData.knob_2?.value || 0;
     const scaledLatitudeValue = ConvertRange(latitudeValue, -90, 90);
@@ -354,8 +382,9 @@ const MapComponent = () => {
 
   // Effect to handle population fetching based on all debounced values
   useEffect(() => {
-    fetchPopulation();
-  }, [fetchPopulation]);
+    debouncedFetchPopulation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedLatitude, debouncedLongitude, debouncedZoom]);
 
   // Handle map movement
   const onMove = useCallback((evt) => {
@@ -366,7 +395,7 @@ const MapComponent = () => {
   return (
     <AppContainer>
       <Target />
-      <PopulationDisplay isUpdating={isMoving}>
+      <PopulationDisplay isMoving={isMoving} isLoading={isLoading}>
         {population === 0
           ? "No people"
           : population > 0
