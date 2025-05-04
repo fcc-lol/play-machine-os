@@ -15,21 +15,17 @@ const convertRange = (value, r1, r2) =>
 const roundToNearestTenth = (number) => Math.round(number);
 
 const ConnectButton = styled.button`
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  padding: 10px 20px;
-  background-color: #4caf50;
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
   color: white;
+  font-weight: bold;
+  font-size: 2rem;
   border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  z-index: 1000;
-
-  &:hover {
-    background-color: #45a049;
-  }
+  position: absolute;
 `;
 
 function ReadSerialData() {
@@ -372,7 +368,7 @@ function ReadSerialData() {
       (!isInputConnected || !isOutputConnected) &&
       !isSimulatorMode && (
         <ConnectButton onClick={startSerialCommunication}>
-          Connect to Hardware
+          Tap anywhere to start
         </ConnectButton>
       ),
     [

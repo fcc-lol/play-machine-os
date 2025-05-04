@@ -53,13 +53,13 @@ const ScreenContainer = styled.div.attrs((props) => ({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  // cursor: none;
-  // user-select: none;
+  cursor: none;
+  user-select: none;
 
-  // * {
-  //   cursor: none;
-  //   user-select: none;
-  // }
+  * {
+    cursor: none;
+    user-select: none;
+  }
 `;
 
 const DEBOUNCE_TIME = 200; // milliseconds
@@ -185,18 +185,9 @@ const AppContent = () => {
   return (
     <>
       <AppContainer>
-        <ReadSerialData />
         <ScreenContainer>
-          {!isInputConnected || !isOutputConnected ? (
-            <div style={{ textAlign: "center", color: "#ffffff" }}>
-              <h2>Connect to Hardware</h2>
-              <p>Click the Connect button in the top-left corner to start</p>
-              {!isInputConnected && <p>Input device not connected</p>}
-              {!isOutputConnected && <p>Output device not connected</p>}
-            </div>
-          ) : (
-            renderContent()
-          )}
+          <ReadSerialData />
+          {isInputConnected && isOutputConnected && renderContent()}
         </ScreenContainer>
       </AppContainer>
       <Hardware />
