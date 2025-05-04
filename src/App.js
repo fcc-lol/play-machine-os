@@ -53,12 +53,12 @@ const ScreenContainer = styled.div.attrs((props) => ({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: ${(props) => (props.onDevice ? "none" : "default")};
-  user-select: ${(props) => (props.onDevice ? "none" : "auto")};
+  cursor: ${(props) => (props.$onDevice ? "none" : "default")};
+  user-select: ${(props) => (props.$onDevice ? "none" : "auto")};
 
   * {
-    cursor: ${(props) => (props.onDevice ? "none" : "default")};
-    user-select: ${(props) => (props.onDevice ? "none" : "auto")};
+    cursor: ${(props) => (props.$onDevice ? "none" : "default")};
+    user-select: ${(props) => (props.$onDevice ? "none" : "auto")};
   }
 `;
 
@@ -185,7 +185,7 @@ const AppContent = ({ isSimulatorMode }) => {
   return (
     <>
       <AppContainer>
-        <ScreenContainer onDevice={!isSimulatorMode}>
+        <ScreenContainer $onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected && isOutputConnected && renderContent()}
         </ScreenContainer>
