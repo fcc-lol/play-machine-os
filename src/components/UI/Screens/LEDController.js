@@ -9,77 +9,43 @@ const Container = styled.div`
   justify-content: center;
   height: 100%;
   width: 100%;
-  padding: 2rem;
   gap: 2rem;
 `;
 
-const SliderContainer = styled.div`
+const Values = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   width: 100%;
-  max-width: 400px;
+  flex: 1;
   gap: 1rem;
 `;
 
-const SliderLabel = styled.div`
+const ValueContainer = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  background: ${(props) => props.theme.background};
+  gap: 2rem;
+  padding-top: 2rem;
 `;
 
 const Label = styled.span`
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   color: ${(props) => props.theme.text};
 `;
 
 const Value = styled.span`
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   color: ${(props) => props.theme.text};
-  min-width: 3rem;
-  text-align: right;
 `;
 
-const Slider = styled.input`
+const ColorDisplay = styled.div`
   width: 100%;
-  height: 2rem;
-  -webkit-appearance: none;
-  background: ${(props) => props.theme.background};
-  outline: none;
-  border-radius: 1rem;
-  overflow: hidden;
-
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    background: ${(props) => props.thumbColor || props.theme.primary};
-    cursor: pointer;
-    border: 2px solid ${(props) => props.theme.border};
-    box-shadow: -407px 0 0 400px
-      ${(props) => props.thumbColor || props.theme.primary};
-  }
-`;
-
-const SendButton = styled.button`
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  background-color: ${(props) => props.theme.primary};
-  color: ${(props) => props.theme.text};
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background-color: ${(props) => props.theme.primaryHover};
-  }
-
-  &:disabled {
-    background-color: ${(props) => props.theme.disabled};
-    cursor: not-allowed;
-  }
+  height: calc(100% - 2rem);
+  background: ${(props) => props.color};
+  opacity: ${(props) => props.opacity};
 `;
 
 export default function LEDController({ onBack }) {
@@ -103,7 +69,6 @@ export default function LEDController({ onBack }) {
     const horizontalSlider = serialData.horizontal_slider?.value;
 
     if (verticalSlider1 !== undefined) {
-      // Map from 0-100 to 0-255
       const newRed = Math.round((verticalSlider1 / 100) * 255);
       if (newRed !== red) {
         setRed(newRed);
@@ -125,7 +90,6 @@ export default function LEDController({ onBack }) {
     }
 
     if (horizontalSlider !== undefined) {
-      // Map from 0-100 to 1-10
       const newBrightness = Math.max(
         1,
         Math.round((horizontalSlider / 100) * 10)
@@ -135,7 +99,6 @@ export default function LEDController({ onBack }) {
       }
     }
 
-    // Send data whenever any slider changes
     if (
       verticalSlider1 !== undefined ||
       verticalSlider2 !== undefined ||
@@ -148,56 +111,28 @@ export default function LEDController({ onBack }) {
 
   return (
     <Container>
-      <SliderContainer>
-        <SliderLabel>
+      <Values>
+        <ValueContainer>
           <Label>Red</Label>
           <Value>{red}</Value>
-        </SliderLabel>
-        <Slider
-          type="range"
-          min="0"
-          max="255"
-          value={red}
-          disabled
-          thumbColor="#ff0000"
-        />
-
-        <SliderLabel>
+          <ColorDisplay color="#ff0000" opacity={red / 255} />
+        </ValueContainer>
+        <ValueContainer>
           <Label>Green</Label>
           <Value>{green}</Value>
-        </SliderLabel>
-        <Slider
-          type="range"
-          min="0"
-          max="255"
-          value={green}
-          disabled
-          thumbColor="#00ff00"
-        />
-
-        <SliderLabel>
+          <ColorDisplay color="#00ff00" opacity={green / 255} />
+        </ValueContainer>
+        <ValueContainer>
           <Label>Blue</Label>
           <Value>{blue}</Value>
-        </SliderLabel>
-        <Slider
-          type="range"
-          min="0"
-          max="255"
-          value={blue}
-          disabled
-          thumbColor="#0000ff"
-        />
-
-        <SliderLabel>
+          <ColorDisplay color="#0000ff" opacity={blue / 255} />
+        </ValueContainer>
+        <ValueContainer>
           <Label>Brightness</Label>
           <Value>{brightness}</Value>
-        </SliderLabel>
-        <Slider type="range" min="1" max="10" value={brightness} disabled />
-      </SliderContainer>
-
-      <SendButton disabled={!isOutputConnected}>
-        {isOutputConnected ? "Device Connected" : "Device Not Connected"}
-      </SendButton>
+          <ColorDisplay color="#ffffff" opacity={brightness / 10} />
+        </ValueContainer>
+      </Values>
     </Container>
   );
 }
