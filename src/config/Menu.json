@@ -13,7 +13,7 @@
               "label": "Circle Visualizer",
               "app": "CircleVisualizer"
             },
-            { "id": "app2", "label": "App 2", "app": "App2" },
+            { "id": "map", "label": "Map", "app": "Map" },
             { "id": "app3", "label": "App 3", "app": "App3" }
           ]
         }

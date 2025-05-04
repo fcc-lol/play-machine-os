@@ -22,7 +22,7 @@ const screens = {
 
 const apps = {
   CircleVisualizer: lazy(() => import("./components/Apps/CircleVisualizer")),
-  App2: lazy(() => import("./components/Apps/App2")),
+  Map: lazy(() => import("./components/Apps/Map")),
   App3: lazy(() => import("./components/Apps/App3"))
 };
 
@@ -54,11 +54,11 @@ const ScreenContainer = styled.div.attrs((props) => ({
   align-items: center;
   justify-content: center;
   cursor: ${(props) => (props.$onDevice ? "none" : "default")};
-  user-select: ${(props) => (props.$onDevice ? "none" : "auto")};
+  user-select: none;
 
   * {
     cursor: ${(props) => (props.$onDevice ? "none" : "default")};
-    user-select: ${(props) => (props.$onDevice ? "none" : "auto")};
+    user-select: none;
   }
 `;
 
