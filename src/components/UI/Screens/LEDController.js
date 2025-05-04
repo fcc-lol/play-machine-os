@@ -48,12 +48,12 @@ const ColorDisplay = styled.div`
   opacity: ${(props) => props.opacity};
 `;
 
-export default function LEDController({ onBack }) {
+export default function LEDController() {
   const { writeToOutputDeviceRef, isOutputConnected, serialData } = useSerial();
-  const [red, setRed] = useState(10);
-  const [green, setGreen] = useState(10);
-  const [blue, setBlue] = useState(10);
-  const [brightness, setBrightness] = useState(1);
+  const [red, setRed] = useState(0);
+  const [green, setGreen] = useState(0);
+  const [blue, setBlue] = useState(0);
+  const [brightness, setBrightness] = useState(0);
 
   const sendData = useCallback(() => {
     if (writeToOutputDeviceRef.current && isOutputConnected) {
