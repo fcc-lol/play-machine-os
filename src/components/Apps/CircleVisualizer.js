@@ -89,6 +89,16 @@ const CircleVisualizer = () => {
     // Set initial dimensions
     setCanvasDimensions();
 
+    // Reset blobs when button A is tapped
+    console.log("Button A value:", serialData.button_a?.value);
+    console.log("All serial data:", serialData);
+    if (serialData.button_a?.value === true) {
+      console.log("Button A pressed, resetting blobs");
+      blobsRef.current.forEach((blob) => {
+        blob.time = 0;
+      });
+    }
+
     const draw = () => {
       // Get background color from horizontal slider
       const bgValue = serialData.horizontal_slider?.value || 0;

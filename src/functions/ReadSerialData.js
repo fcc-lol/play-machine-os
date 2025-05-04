@@ -65,6 +65,14 @@ function ReadSerialData() {
         if (id.includes("button_")) {
           value = rawValue.trim().toLowerCase() === "true";
           const label = hardwareConfig.buttons[id] || id;
+          console.log(
+            "Processing button:",
+            id,
+            "value:",
+            value,
+            "label:",
+            label
+          );
           processedData[label] = { value };
         } else if (id.includes("potentiometer_")) {
           const config = hardwareConfig.potentiometers[id];
