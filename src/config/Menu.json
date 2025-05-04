@@ -8,7 +8,11 @@
         "submenu": {
           "title": "Applications",
           "items": [
-            { "id": "app1", "label": "App 1", "app": "App1" },
+            {
+              "id": "circle-visualizer",
+              "label": "Circle Visualizer",
+              "app": "CircleVisualizer"
+            },
             { "id": "app2", "label": "App 2", "app": "App2" },
             { "id": "app3", "label": "App 3", "app": "App3" }
           ]

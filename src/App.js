@@ -21,7 +21,7 @@ const screens = {
 };
 
 const apps = {
-  App1: lazy(() => import("./components/Apps/App1")),
+  CircleVisualizer: lazy(() => import("./components/Apps/CircleVisualizer")),
   App2: lazy(() => import("./components/Apps/App2")),
   App3: lazy(() => import("./components/Apps/App3"))
 };
