@@ -207,6 +207,11 @@ const MapComponent = () => {
   const [knob2Sensitivity, setKnob2Sensitivity] = useState(50); // Default sensitivity of 50
   const [lastKnob1Value, setLastKnob1Value] = useState(0);
   const [lastKnob2Value, setLastKnob2Value] = useState(0);
+  const [smoothedLongitude, setSmoothedLongitude] = useState(0);
+  const [smoothedLatitude, setSmoothedLatitude] = useState(0);
+
+  // Add smoothing factor (0.1 = more smoothing, 1 = no smoothing)
+  const SMOOTHING_FACTOR = 0.2;
 
   // Calculate initial values from serial data
   const initialZoom = ConvertRange(
@@ -379,21 +384,24 @@ const MapComponent = () => {
     if (longitudeValue !== lastKnob1Value) {
       const knobChange = longitudeValue - lastKnob1Value;
       // Apply the change scaled by sensitivity
-      const scaledLongitudeValue = normalizeLongitude(
-        viewState.longitude +
-          (knobChange / 100) * (360 * (knob1Sensitivity / 100))
+      const rawLongitudeChange =
+        (knobChange / 100) * (360 * (knob1Sensitivity / 100));
+      // Apply smoothing
+      const smoothedLongitudeChange = rawLongitudeChange * SMOOTHING_FACTOR;
+      const newLongitude = normalizeLongitude(
+        viewState.longitude + smoothedLongitudeChange
       );
 
       // Update the view state
       setViewState((prevState) => ({
         ...prevState,
-        longitude: scaledLongitudeValue,
+        longitude: newLongitude,
         latitude: viewState.latitude
       }));
 
       // Update mini map state
       setMiniMapState({
-        longitude: scaledLongitudeValue,
+        longitude: newLongitude,
         latitude: viewState.latitude
       });
 
@@ -405,26 +413,26 @@ const MapComponent = () => {
     if (latitudeValue !== lastKnob2Value) {
       const knobChange = latitudeValue - lastKnob2Value;
       // Apply the change scaled by sensitivity
-      const scaledLatitudeValue = Math.max(
+      const rawLatitudeChange =
+        (knobChange / 100) * (180 * (knob2Sensitivity / 100));
+      // Apply smoothing
+      const smoothedLatitudeChange = rawLatitudeChange * SMOOTHING_FACTOR;
+      const newLatitude = Math.max(
         -90,
-        Math.min(
-          90,
-          viewState.latitude +
-            (knobChange / 100) * (180 * (knob2Sensitivity / 100))
-        )
+        Math.min(90, viewState.latitude + smoothedLatitudeChange)
       );
 
       // Update the view state
       setViewState((prevState) => ({
         ...prevState,
         longitude: viewState.longitude,
-        latitude: scaledLatitudeValue
+        latitude: newLatitude
       }));
 
       // Update mini map state
       setMiniMapState({
         longitude: viewState.longitude,
-        latitude: scaledLatitudeValue
+        latitude: newLatitude
       });
 
       setLastKnob2Value(latitudeValue);
