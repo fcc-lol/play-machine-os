@@ -16,6 +16,14 @@ const getZoomForRadius = (radiusKm) => {
   return Math.log2(EARTH_CIRCUMFERENCE / (radiusKm * 2 * Math.PI));
 };
 
+// Function to normalize longitude to be between -180 and 180
+const normalizeLongitude = (longitude) => {
+  let normalized = longitude;
+  while (normalized > 180) normalized -= 360;
+  while (normalized < -180) normalized += 360;
+  return normalized;
+};
+
 // Custom debounce hook
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -180,6 +188,12 @@ const MapComponent = () => {
   const minZoom = Math.max(0, getZoomForRadius(MAX_RADIUS_KM));
   const maxZoom = Math.min(11, getZoomForRadius(MIN_RADIUS_KM));
 
+  // Add sensitivity state for knob_1
+  const [knob1Sensitivity, setKnob1Sensitivity] = useState(50); // Default sensitivity of 50
+  const [knob2Sensitivity, setKnob2Sensitivity] = useState(50); // Default sensitivity of 50
+  const [lastKnob1Value, setLastKnob1Value] = useState(0);
+  const [lastKnob2Value, setLastKnob2Value] = useState(0);
+
   // Calculate initial values from serial data
   const initialZoom = ConvertRange(
     serialData.horizontal_slider?.value || 0,
@@ -325,34 +339,78 @@ const MapComponent = () => {
       zoomConstraints.max
     );
 
+    // Update zoom regardless of other changes
+    if (scaledZoomValue !== viewState.zoom) {
+      setViewState((prevState) => ({
+        ...prevState,
+        zoom: scaledZoomValue
+      }));
+    }
+
     const longitudeValue = serialData.knob_1?.value || 0;
-    const scaledLongitudeValue = ConvertRange(longitudeValue, -180, 180);
+    // Only update if the knob value has actually changed
+    if (longitudeValue !== lastKnob1Value) {
+      const knobChange = longitudeValue - lastKnob1Value;
+      // Apply the change scaled by sensitivity
+      const scaledLongitudeValue = normalizeLongitude(
+        viewState.longitude +
+          (knobChange / 100) * (360 * (knob1Sensitivity / 100))
+      );
+
+      // Update the view state
+      setViewState((prevState) => ({
+        ...prevState,
+        longitude: scaledLongitudeValue,
+        latitude: viewState.latitude
+      }));
+
+      // Update mini map state
+      setMiniMapState({
+        longitude: scaledLongitudeValue,
+        latitude: viewState.latitude
+      });
+
+      setLastKnob1Value(longitudeValue);
+    }
 
     const latitudeValue = serialData.knob_2?.value || 0;
-    const scaledLatitudeValue = ConvertRange(latitudeValue, -90, 90);
+    // Only update if the knob value has actually changed
+    if (latitudeValue !== lastKnob2Value) {
+      const knobChange = latitudeValue - lastKnob2Value;
+      // Apply the change scaled by sensitivity
+      const scaledLatitudeValue = Math.max(
+        -90,
+        Math.min(
+          90,
+          viewState.latitude +
+            (knobChange / 100) * (180 * (knob2Sensitivity / 100))
+        )
+      );
+
+      // Update the view state
+      setViewState((prevState) => ({
+        ...prevState,
+        longitude: viewState.longitude,
+        latitude: scaledLatitudeValue
+      }));
+
+      // Update mini map state
+      setMiniMapState({
+        longitude: viewState.longitude,
+        latitude: scaledLatitudeValue
+      });
+
+      setLastKnob2Value(latitudeValue);
+    }
 
     // Only set isMoving if any of the values have actually changed
     if (
       scaledZoomValue !== viewState.zoom ||
-      scaledLongitudeValue !== viewState.longitude ||
-      scaledLatitudeValue !== viewState.latitude
+      longitudeValue !== lastKnob1Value ||
+      latitudeValue !== lastKnob2Value
     ) {
       setIsMoving(true);
     }
-
-    // Update main map
-    setViewState((prevState) => ({
-      ...prevState,
-      longitude: scaledLongitudeValue,
-      latitude: scaledLatitudeValue,
-      zoom: scaledZoomValue
-    }));
-
-    // Update mini map state (only lat/lng)
-    setMiniMapState({
-      longitude: scaledLongitudeValue,
-      latitude: scaledLatitudeValue
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serialData, zoomConstraints]);
 
@@ -379,6 +437,22 @@ const MapComponent = () => {
       setThirdMapOpacity(newOpacity);
     }
   }, [serialData.vertical_slider_3]);
+
+  // Add effect to handle knob_3 sensitivity changes
+  useEffect(() => {
+    if (serialData.knob_3) {
+      const newSensitivity = ConvertRange(serialData.knob_3.value, 1, 100);
+      setKnob1Sensitivity(newSensitivity);
+    }
+  }, [serialData.knob_3]);
+
+  // Add effect to handle knob_5 sensitivity changes
+  useEffect(() => {
+    if (serialData.knob_5) {
+      const newSensitivity = ConvertRange(serialData.knob_5.value, 1, 100);
+      setKnob2Sensitivity(newSensitivity);
+    }
+  }, [serialData.knob_5]);
 
   // Effect to handle population fetching based on all debounced values
   useEffect(() => {
