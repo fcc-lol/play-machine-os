@@ -544,6 +544,7 @@ const MapComponent = () => {
           minZoom={0}
           maxZoom={11}
           projection="mercator"
+          bearing={viewState.bearing}
           interactive={false}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           width="100%"
