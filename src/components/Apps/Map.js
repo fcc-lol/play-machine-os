@@ -511,6 +511,7 @@ const MapComponent = () => {
             ref={mapRef}
             mapboxAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
             {...viewState}
+            bearing={-viewState.bearing}
             onMove={onMove}
             mapStyle="mapbox://styles/mapbox/satellite-v9"
             interactive={false}
@@ -520,6 +521,7 @@ const MapComponent = () => {
           <Map
             mapboxAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
             {...viewState}
+            bearing={-viewState.bearing}
             onMove={onMove}
             mapStyle="mapbox://styles/mapbox/dark-v11"
             interactive={false}
@@ -529,6 +531,7 @@ const MapComponent = () => {
           <Map
             mapboxAccessToken={process.env.REACT_APP_MAPBOX_ACCESS_TOKEN}
             {...viewState}
+            bearing={-viewState.bearing}
             onMove={onMove}
             mapStyle="mapbox://styles/mapbox/light-v11"
             interactive={false}
@@ -544,7 +547,7 @@ const MapComponent = () => {
           minZoom={0}
           maxZoom={11}
           projection="mercator"
-          bearing={viewState.bearing}
+          bearing={-viewState.bearing}
           interactive={false}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           width="100%"
