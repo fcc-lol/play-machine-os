@@ -368,7 +368,8 @@ const MapComponent = () => {
     // Handle rotation with knob_4
     if (serialData.knob_4) {
       const rotationValue = serialData.knob_4.value || 0;
-      const newBearing = ConvertRange(rotationValue, 0, 360);
+      // Allow for 3 full rotations (1080 degrees) to make it easier to rotate the globe
+      const newBearing = ConvertRange(rotationValue, 0, 1080);
       setViewState((prevState) => ({
         ...prevState,
         bearing: newBearing
@@ -378,15 +379,14 @@ const MapComponent = () => {
     const longitudeValue = serialData.knob_1?.value || 0;
     // Only update if the knob value has actually changed
     if (longitudeValue !== lastKnob1Value) {
-      const knobChange = longitudeValue - lastKnob1Value;
-      // Apply the change scaled by sensitivity
-      const rawLongitudeChange =
-        (knobChange / 100) * (360 * (knob1Sensitivity / 100));
-      // Apply smoothing
-      const smoothedLongitudeChange = rawLongitudeChange * SMOOTHING_FACTOR;
-      const newLongitude = normalizeLongitude(
-        viewState.longitude + smoothedLongitudeChange
-      );
+      // When sensitivity is 100, map knob value (0-100) directly to longitude (-180 to 180)
+      const newLongitude =
+        knob1Sensitivity === 100
+          ? ConvertRange(longitudeValue, -180, 180)
+          : viewState.longitude +
+            ((longitudeValue - lastKnob1Value) / 100) *
+              (1440 * (knob1Sensitivity / 100)) *
+              SMOOTHING_FACTOR;
 
       // Update the view state
       setViewState((prevState) => ({
@@ -407,16 +407,20 @@ const MapComponent = () => {
     const latitudeValue = serialData.knob_2?.value || 0;
     // Only update if the knob value has actually changed
     if (latitudeValue !== lastKnob2Value) {
-      const knobChange = latitudeValue - lastKnob2Value;
-      // Apply the change scaled by sensitivity
-      const rawLatitudeChange =
-        (knobChange / 100) * (180 * (knob2Sensitivity / 100));
-      // Apply smoothing
-      const smoothedLatitudeChange = rawLatitudeChange * SMOOTHING_FACTOR;
-      const newLatitude = Math.max(
-        -90,
-        Math.min(90, viewState.latitude + smoothedLatitudeChange)
-      );
+      // When sensitivity is 100, map knob value (0-100) directly to latitude (-90 to 90)
+      const newLatitude =
+        knob2Sensitivity === 100
+          ? ConvertRange(latitudeValue, -90, 90)
+          : Math.max(
+              -90,
+              Math.min(
+                90,
+                viewState.latitude +
+                  ((latitudeValue - lastKnob2Value) / 100) *
+                    (360 * (knob2Sensitivity / 100)) *
+                    SMOOTHING_FACTOR
+              )
+            );
 
       // Update the view state
       setViewState((prevState) => ({
