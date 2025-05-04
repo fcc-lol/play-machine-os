@@ -9,18 +9,13 @@ import hardwareConfig from "../config/Hardware.json";
 
 const SerialDataContext = createContext();
 
-export function SerialDataProvider({ children }) {
+export function SerialDataProvider({ children, isSimulatorMode }) {
   const [serialData, setSerialData] = useState({});
   const [isInputConnected, setIsInputConnected] = useState(false);
   const [isOutputConnected, setIsOutputConnected] = useState(false);
-  const [isSimulatorMode, setIsSimulatorMode] = useState(false);
   const writeToOutputDeviceRef = useRef(null);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const onDevice = urlParams.get("onDevice");
-    setIsSimulatorMode(onDevice === "false");
-
     // Initialize default values for all hardware items
     const defaultData = {};
 
@@ -32,7 +27,7 @@ export function SerialDataProvider({ children }) {
     // Initialize potentiometers
     Object.entries(hardwareConfig.potentiometers).forEach(([id, config]) => {
       let value = 0;
-      if (onDevice === "false") {
+      if (isSimulatorMode) {
         // In simulator mode, use localStorage
         const savedValue = localStorage.getItem(`slider_${config.label}`);
         if (savedValue !== null) {
@@ -49,7 +44,7 @@ export function SerialDataProvider({ children }) {
     });
 
     // Only set initial connected states and data in simulator mode
-    if (onDevice === "false") {
+    if (isSimulatorMode) {
       setIsInputConnected(true);
       setIsOutputConnected(true);
       setSerialData(defaultData);
@@ -61,7 +56,7 @@ export function SerialDataProvider({ children }) {
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isSimulatorMode]);
 
   return (
     <SerialDataContext.Provider

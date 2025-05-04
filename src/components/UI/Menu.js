@@ -31,7 +31,6 @@ const MenuItem = styled.div`
       : props.theme.menuBackground};
   color: ${(props) =>
     props.selected ? props.theme.menuSelectedText : props.theme.menuText};
-  cursor: pointer;
   font-size: 1.5rem;
   font-family: ${(props) => props.theme.fontFamily};
   font-weight: bold;

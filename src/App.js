@@ -53,18 +53,18 @@ const ScreenContainer = styled.div.attrs((props) => ({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: none;
-  user-select: none;
+  cursor: ${(props) => (props.onDevice ? "none" : "default")};
+  user-select: ${(props) => (props.onDevice ? "none" : "auto")};
 
   * {
-    cursor: none;
-    user-select: none;
+    cursor: ${(props) => (props.onDevice ? "none" : "default")};
+    user-select: ${(props) => (props.onDevice ? "none" : "auto")};
   }
 `;
 
 const DEBOUNCE_TIME = 200; // milliseconds
 
-const AppContent = () => {
+const AppContent = ({ isSimulatorMode }) => {
   const { serialData, isInputConnected, isOutputConnected } = useSerial();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
@@ -185,7 +185,7 @@ const AppContent = () => {
   return (
     <>
       <AppContainer>
-        <ScreenContainer>
+        <ScreenContainer onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected && isOutputConnected && renderContent()}
         </ScreenContainer>
@@ -205,12 +205,20 @@ function ThemeWrapper({ children }) {
 
 // App component now sets up both providers
 function App() {
+  const [isSimulatorMode, setIsSimulatorMode] = useState(false);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const onDevice = urlParams.get("onDevice");
+    setIsSimulatorMode(onDevice === "false");
+  }, []);
+
   return (
     <StyleSheetManager shouldForwardProp={isPropValid}>
       <ThemeProvider>
-        <SerialDataProvider>
+        <SerialDataProvider isSimulatorMode={isSimulatorMode}>
           <ThemeWrapper>
-            <AppContent />
+            <AppContent isSimulatorMode={isSimulatorMode} />
           </ThemeWrapper>
         </SerialDataProvider>
       </ThemeProvider>
