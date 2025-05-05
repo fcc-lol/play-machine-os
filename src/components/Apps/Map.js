@@ -369,16 +369,17 @@ const MapComponent = () => {
     const longitudeValue = serialData.knob_1?.value || 0;
     // Only update if the knob value has actually changed
     if (longitudeValue !== lastKnob1Value) {
-      // Calculate both movement types
-      const directLongitude = ConvertRange(longitudeValue, -180, 180);
       // Calculate zoom-based sensitivity factor (higher zoom = lower sensitivity)
       const zoomSensitivityFactor = Math.max(
         0.1,
         1 - (viewState.zoom - minZoom) / (maxZoom - minZoom)
       );
+      // If knob_3 sensitivity is at 100%, ignore zoom sensitivity
+      const sensitivityFactor =
+        knob1Sensitivity === 100 ? 1 : zoomSensitivityFactor;
       const incrementalChange =
         ((longitudeValue - lastKnob1Value) / 100) *
-        (360 * (knob1Sensitivity / 100) * zoomSensitivityFactor);
+        (360 * (knob1Sensitivity / 100) * sensitivityFactor);
 
       // Always use incremental movement, but scale it based on sensitivity
       const newLongitude = normalizeLongitude(
@@ -398,16 +399,17 @@ const MapComponent = () => {
     const latitudeValue = serialData.knob_2?.value || 0;
     // Only update if the knob value has actually changed
     if (latitudeValue !== lastKnob2Value) {
-      // Calculate both movement types
-      const directLatitude = ConvertRange(latitudeValue, -90, 90);
       // Calculate zoom-based sensitivity factor (higher zoom = lower sensitivity)
       const zoomSensitivityFactor = Math.max(
         0.1,
         1 - (viewState.zoom - minZoom) / (maxZoom - minZoom)
       );
+      // If knob_5 sensitivity is at 100%, ignore zoom sensitivity
+      const sensitivityFactor =
+        knob2Sensitivity === 100 ? 1 : zoomSensitivityFactor;
       const incrementalChange =
         ((latitudeValue - lastKnob2Value) / 100) *
-        (180 * (knob2Sensitivity / 100) * zoomSensitivityFactor);
+        (180 * (knob2Sensitivity / 100) * sensitivityFactor);
 
       // Always use incremental movement, but scale it based on sensitivity
       const newLatitude = Math.min(
