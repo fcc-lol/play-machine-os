@@ -22,7 +22,7 @@ const screens = {
 
 const apps = {
   CircleVisualizer: lazy(() => import("./components/Apps/CircleVisualizer")),
-  Map: lazy(() => import("./components/Apps/Map")),
+  PopulationMap: lazy(() => import("./components/Apps/PopulationMap")),
   App3: lazy(() => import("./components/Apps/App3"))
 };
 

@@ -13,7 +13,11 @@
               "label": "Circle Visualizer",
               "app": "CircleVisualizer"
             },
-            { "id": "map", "label": "Map", "app": "Map" },
+            {
+              "id": "population-map",
+              "label": "Population Map",
+              "app": "PopulationMap"
+            },
             { "id": "app3", "label": "App 3", "app": "App3" }
           ]
         }

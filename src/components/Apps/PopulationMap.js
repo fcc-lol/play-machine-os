@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
 import { Map, NavigationControl } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
 
@@ -219,7 +220,7 @@ const MiniMapTarget = styled.div`
   pointer-events: none;
 `;
 
-const MapComponent = () => {
+const PopulationMap = () => {
   const { serialData } = useSerial();
   const minZoom = Math.max(0, getZoomForRadius(MAX_RADIUS_KM));
   const maxZoom = Math.min(11, getZoomForRadius(MIN_RADIUS_KM));
@@ -478,6 +479,17 @@ const MapComponent = () => {
     }
   }, [serialData.knob_5]);
 
+  // Add effect to handle button_a press for resetting to NYC
+  useEffect(() => {
+    if (serialData.button_a && serialData.button_a.value) {
+      setViewState((prevState) => ({
+        ...prevState,
+        longitude: -74.006,
+        latitude: 40.7128
+      }));
+    }
+  }, [serialData.button_a]);
+
   // Effect to handle population fetching based on all debounced values
   useEffect(() => {
     debouncedFetchPopulation();
@@ -581,4 +593,4 @@ const MapComponent = () => {
   );
 };
 
-export default MapComponent;
+export default PopulationMap;
