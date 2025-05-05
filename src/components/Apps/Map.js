@@ -1,19 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
-import { Map } from "react-map-gl/mapbox";
+import { Map, NavigationControl } from "react-map-gl/mapbox";
+import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
+import * as turf from "@turf/turf";
+import { circle } from "@turf/turf";
 
 // Constants for calculations
-const MAX_RADIUS_KM = 50;
+const MAX_RADIUS_KM = 100; // 200km diameter
 const MIN_RADIUS_KM = 1;
 const EARTH_CIRCUMFERENCE = 40075; // Earth's circumference in km
+const KM_TO_MILES = 0.621371; // Conversion factor from kilometers to miles
 
 // Function to calculate zoom level for a given radius in km
 const getZoomForRadius = (radiusKm) => {
   // Using the Mapbox zoom level formula: zoom = log2(earthCircumference / (radius * 2π))
-  return Math.log2(EARTH_CIRCUMFERENCE / (radiusKm * 2 * Math.PI));
+  // For globe projection, we need to adjust the zoom level to account for the 3D projection
+  const baseZoom = Math.log2(EARTH_CIRCUMFERENCE / (radiusKm * 2 * Math.PI));
+  // Adjust zoom level for globe projection and desired circle size
+  return baseZoom + 0.8; // Adjusted to make max diameter exactly 124 miles
 };
 
 // Function to normalize longitude to be between -180 and 180
@@ -84,8 +91,8 @@ const AppContainer = styled.div`
 `;
 
 const Target = styled.div`
-  width: 20rem;
-  height: 20rem;
+  width: ${(props) => props.$diameter}rem;
+  height: ${(props) => props.$diameter}rem;
   border: 4px solid rgba(255, 255, 255, 1);
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.5), 0 0 20rem rgba(0, 0, 0, 1);
   border-radius: 50%;
@@ -99,20 +106,29 @@ const Target = styled.div`
   justify-content: center;
 `;
 
-const PopulationDisplay = styled.div`
+const TextDisplay = styled.div`
   font-size: 1.5rem;
   color: rgba(255, 255, 255, 1);
   text-shadow: 0 0 1rem rgba(0, 0, 0, 1), 0 0 2rem rgba(0, 0, 0, 1),
     0 0 3rem rgba(0, 0, 0, 1);
   text-transform: uppercase;
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
   position: absolute;
-  bottom: 1rem;
+  transform: translate(-50%, 0);
   left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 3;
   opacity: ${(props) => (props.isMoving || props.isLoading ? 0.5 : 1)};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const RadiusDisplay = styled(TextDisplay)`
+  top: 3rem;
+`;
+
+const PopulationDisplay = styled(TextDisplay)`
+  bottom: 3rem;
 `;
 
 const MapContainer = styled.div`
@@ -120,6 +136,16 @@ const MapContainer = styled.div`
   height: 100%;
   z-index: 1;
   position: relative;
+
+  .mapboxgl-ctrl-scale {
+    border: 2px solid #fff;
+    border-top: none;
+    color: #fff;
+    font-size: 12px;
+    padding: 2px 5px;
+    background: rgba(0, 0, 0, 0.5);
+    margin: 10px;
+  }
 `;
 
 const FirstMap = styled.div`
@@ -207,8 +233,8 @@ const MapComponent = () => {
   const [knob2Sensitivity, setKnob2Sensitivity] = useState(50); // Default sensitivity of 50
   const [lastKnob1Value, setLastKnob1Value] = useState(0);
   const [lastKnob2Value, setLastKnob2Value] = useState(0);
-  const [smoothedLongitude, setSmoothedLongitude] = useState(0);
-  const [smoothedLatitude, setSmoothedLatitude] = useState(0);
+  const [smoothedLongitude, setSmoothedLongitude] = useState(-74.006); // NYC longitude
+  const [smoothedLatitude, setSmoothedLatitude] = useState(40.7128); // NYC latitude
 
   // Add smoothing factor (0.1 = more smoothing, 1 = no smoothing)
   const SMOOTHING_FACTOR = 0.2;
@@ -241,10 +267,10 @@ const MapComponent = () => {
     longitude: initialLongitude,
     latitude: initialLatitude,
     zoom: initialZoom,
-    projection: "mercator",
+    projection: "globe",
     minZoom: minZoom,
     maxZoom: maxZoom,
-    bearing: 0 // Add initial bearing (rotation) of 0 degrees
+    bearing: 0
   });
   const [firstMapOpacity, setFirstMapOpacity] = useState(
     initialFirstMapOpacity
@@ -269,6 +295,8 @@ const MapComponent = () => {
     longitude: initialLongitude,
     latitude: initialLatitude
   });
+
+  const [currentScale, setCurrentScale] = useState(1);
 
   // Set zoom constraints on mount
   useEffect(() => {
@@ -300,8 +328,13 @@ const MapComponent = () => {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const radius = R * c;
+
+    // Scale the radius to match the visual size of the circle
+    const scaleFactor = 1.35; // Adjusted to allow for maximum 100km radius
+    const scaledRadius = radius * scaleFactor;
+
     const clampedRadius = Math.min(
-      Math.max(radius, MIN_RADIUS_KM),
+      Math.max(scaledRadius, MIN_RADIUS_KM),
       MAX_RADIUS_KM
     );
 
@@ -351,11 +384,10 @@ const MapComponent = () => {
     }
 
     const zoomValue = serialData.horizontal_slider?.value || 0;
-    const scaledZoomValue = ConvertRange(
-      zoomValue,
-      zoomConstraints.min,
-      zoomConstraints.max
-    );
+
+    // Invert the value so 0% gives max diameter (200km) and 100% gives min diameter
+    const invertedValue = 100 - Math.min(zoomValue, 96);
+    const scaledZoomValue = ConvertRange(invertedValue, minZoom, maxZoom);
 
     // Update zoom regardless of other changes
     if (scaledZoomValue !== viewState.zoom) {
@@ -379,14 +411,21 @@ const MapComponent = () => {
     const longitudeValue = serialData.knob_1?.value || 0;
     // Only update if the knob value has actually changed
     if (longitudeValue !== lastKnob1Value) {
-      // When sensitivity is 100, map knob value (0-100) directly to longitude (-180 to 180)
+      // Calculate both movement types
+      const directLongitude = ConvertRange(longitudeValue, -180, 180);
+      const incrementalChange =
+        ((longitudeValue - lastKnob1Value) / 100) *
+        (1440 * (knob1Sensitivity / 100)) *
+        SMOOTHING_FACTOR;
+
+      // At sensitivity 0: pure incremental, at 100: pure direct
       const newLongitude =
-        knob1Sensitivity === 100
-          ? ConvertRange(longitudeValue, -180, 180)
+        knob1Sensitivity === 0
+          ? viewState.longitude + incrementalChange
+          : knob1Sensitivity === 100
+          ? directLongitude
           : viewState.longitude +
-            ((longitudeValue - lastKnob1Value) / 100) *
-              (1440 * (knob1Sensitivity / 100)) *
-              SMOOTHING_FACTOR;
+            incrementalChange * (1 - knob1Sensitivity / 100);
 
       // Update the view state
       setViewState((prevState) => ({
@@ -407,32 +446,36 @@ const MapComponent = () => {
     const latitudeValue = serialData.knob_2?.value || 0;
     // Only update if the knob value has actually changed
     if (latitudeValue !== lastKnob2Value) {
-      // When sensitivity is 100, map knob value (0-100) directly to latitude (-90 to 90)
+      // Calculate both movement types
+      const directLatitude = ConvertRange(latitudeValue, -90, 90);
+      const incrementalChange =
+        ((latitudeValue - lastKnob2Value) / 100) *
+        (360 * (knob2Sensitivity / 100)) *
+        SMOOTHING_FACTOR;
+
+      // At sensitivity 0: pure incremental, at 100: pure direct
       const newLatitude =
-        knob2Sensitivity === 100
-          ? ConvertRange(latitudeValue, -90, 90)
-          : Math.max(
-              -90,
-              Math.min(
-                90,
-                viewState.latitude +
-                  ((latitudeValue - lastKnob2Value) / 100) *
-                    (360 * (knob2Sensitivity / 100)) *
-                    SMOOTHING_FACTOR
-              )
-            );
+        knob2Sensitivity === 0
+          ? viewState.latitude + incrementalChange
+          : knob2Sensitivity === 100
+          ? directLatitude
+          : viewState.latitude +
+            incrementalChange * (1 - knob2Sensitivity / 100);
+
+      // Clamp the latitude to valid range
+      const clampedLatitude = Math.max(-90, Math.min(90, newLatitude));
 
       // Update the view state
       setViewState((prevState) => ({
         ...prevState,
         longitude: viewState.longitude,
-        latitude: newLatitude
+        latitude: clampedLatitude
       }));
 
       // Update mini map state
       setMiniMapState({
         longitude: viewState.longitude,
-        latitude: newLatitude
+        latitude: clampedLatitude
       });
 
       setLastKnob2Value(latitudeValue);
@@ -501,9 +544,40 @@ const MapComponent = () => {
     setIsMoving(true);
   }, []);
 
+  useEffect(() => {
+    if (mapRef.current) {
+      const map = mapRef.current.getMap();
+
+      const updateScale = () => {
+        // Get the current scale from the map's transform
+        const transform = map.transform;
+        const scale = transform.scale;
+        setCurrentScale(scale);
+      };
+
+      map.on("move", updateScale);
+      map.on("zoom", updateScale);
+
+      return () => {
+        map.off("move", updateScale);
+        map.off("zoom", updateScale);
+      };
+    }
+  }, []);
+
+  // Calculate circle diameter in rem units based on zoom level, radius, and scale
+  const getCircleDiameter = () => {
+    const baseSize = 20; // Base size in rem
+    return baseSize;
+  };
+
   return (
     <AppContainer>
-      <Target />
+      <RadiusDisplay>
+        {Math.round(getRadiusKm() * 2)} km /{" "}
+        {Math.round(getRadiusKm() * 2 * KM_TO_MILES)} mi
+      </RadiusDisplay>
+      <Target $diameter={getCircleDiameter()} />
       <PopulationDisplay isMoving={isMoving} isLoading={isLoading}>
         {population === 0
           ? "No people"
@@ -523,7 +597,16 @@ const MapComponent = () => {
             onMove={onMove}
             mapStyle="mapbox://styles/mapbox/satellite-v9"
             interactive={false}
-          />
+            projection="globe"
+            minZoom={minZoom}
+            maxZoom={maxZoom}
+          >
+            <NavigationControl
+              showCompass={false}
+              showZoom={false}
+              position="bottom-left"
+            />
+          </Map>
         </FirstMap>
         <SecondMap $opacity={secondMapOpacity}>
           <Map
@@ -533,6 +616,9 @@ const MapComponent = () => {
             onMove={onMove}
             mapStyle="mapbox://styles/mapbox/dark-v11"
             interactive={false}
+            projection="globe"
+            minZoom={minZoom}
+            maxZoom={maxZoom}
           />
         </SecondMap>
         <ThirdMap $opacity={thirdMapOpacity}>
@@ -543,6 +629,9 @@ const MapComponent = () => {
             onMove={onMove}
             mapStyle="mapbox://styles/mapbox/light-v11"
             interactive={false}
+            projection="globe"
+            minZoom={minZoom}
+            maxZoom={maxZoom}
           />
         </ThirdMap>
       </MapContainer>
@@ -554,14 +643,14 @@ const MapComponent = () => {
           zoom={4}
           minZoom={0}
           maxZoom={11}
-          projection="mercator"
+          projection="globe"
           bearing={-viewState.bearing}
           interactive={false}
           mapStyle="mapbox://styles/mapbox/streets-v12"
           width="100%"
           height="100%"
         />
-        <MiniMapTarget $scale={(1 / Math.pow(2, viewState.zoom - 4)) * 4} />
+        <MiniMapTarget $scale={getRadiusKm() / 180} />
       </MiniMapContainer>
     </AppContainer>
   );
