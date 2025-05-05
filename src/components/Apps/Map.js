@@ -358,8 +358,8 @@ const MapComponent = () => {
     // Handle rotation with knob_4
     if (serialData.knob_4) {
       const rotationValue = serialData.knob_4.value || 0;
-      // Allow for 3 full rotations (1080 degrees) to make it easier to rotate the globe
-      const newBearing = ConvertRange(rotationValue, 0, 1080);
+      // Convert rotation to 0 to 360 degrees
+      const newBearing = ConvertRange(rotationValue, 0, 360);
       setViewState((prevState) => ({
         ...prevState,
         bearing: newBearing
@@ -371,22 +371,19 @@ const MapComponent = () => {
     if (longitudeValue !== lastKnob1Value) {
       // Calculate both movement types
       const directLongitude = ConvertRange(longitudeValue, -180, 180);
+      // Calculate zoom-based sensitivity factor (higher zoom = lower sensitivity)
+      const zoomSensitivityFactor = Math.max(
+        0.1,
+        1 - (viewState.zoom - minZoom) / (maxZoom - minZoom)
+      );
       const incrementalChange =
         ((longitudeValue - lastKnob1Value) / 100) *
-        (360 * (knob1Sensitivity / 100)) *
-        0.2;
+        (360 * (knob1Sensitivity / 100) * zoomSensitivityFactor);
 
-      // Blend between incremental and direct mapping based on sensitivity
-      const sensitivityFactor = knob1Sensitivity / 100;
-
-      // For values under 60%, use pure incremental with reduced movement
-      // For values 60% and above, gradually introduce direct mapping
-      const newLongitude =
-        sensitivityFactor < 0.6
-          ? normalizeLongitude(viewState.longitude + incrementalChange * 0.1)
-          : normalizeLongitude(
-              directLongitude * Math.pow((sensitivityFactor - 0.6) / 0.4, 2)
-            );
+      // Always use incremental movement, but scale it based on sensitivity
+      const newLongitude = normalizeLongitude(
+        viewState.longitude + incrementalChange
+      );
 
       // Update the view state
       setViewState((prevState) => ({
@@ -403,29 +400,20 @@ const MapComponent = () => {
     if (latitudeValue !== lastKnob2Value) {
       // Calculate both movement types
       const directLatitude = ConvertRange(latitudeValue, -90, 90);
+      // Calculate zoom-based sensitivity factor (higher zoom = lower sensitivity)
+      const zoomSensitivityFactor = Math.max(
+        0.1,
+        1 - (viewState.zoom - minZoom) / (maxZoom - minZoom)
+      );
       const incrementalChange =
         ((latitudeValue - lastKnob2Value) / 100) *
-        (180 * (knob2Sensitivity / 100)) *
-        0.2; // Match the same scale as longitude
+        (180 * (knob2Sensitivity / 100) * zoomSensitivityFactor);
 
-      // Blend between incremental and direct mapping based on sensitivity
-      const sensitivityFactor = knob2Sensitivity / 100;
-
-      // For values under 60%, use pure incremental with reduced movement
-      // For values 60% and above, gradually introduce direct mapping
-      const newLatitude =
-        sensitivityFactor < 0.6
-          ? Math.min(
-              Math.max(viewState.latitude + incrementalChange * 0.1, -80),
-              80
-            )
-          : Math.min(
-              Math.max(
-                directLatitude * Math.pow((sensitivityFactor - 0.6) / 0.4, 2),
-                -80
-              ),
-              80
-            );
+      // Always use incremental movement, but scale it based on sensitivity
+      const newLatitude = Math.min(
+        Math.max(viewState.latitude + incrementalChange, -80),
+        80
+      );
 
       // Update the view state
       setViewState((prevState) => ({
