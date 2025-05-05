@@ -275,34 +275,40 @@ const MapComponent = () => {
 
   // Modify the getRadiusKm function to enforce both min and max
   const getRadiusKm = () => {
-    if (!mapRef.current) return MAX_RADIUS_KM;
+    if (!mapRef.current) return 0;
     const map = mapRef.current.getMap();
-    const center = map.project([viewState.longitude, viewState.latitude]);
-    const edge = { x: center.x + CIRCLE_RADIUS_PX, y: center.y };
-    const edgeLngLat = map.unproject([edge.x, edge.y]);
-    // Haversine formula
-    const R = 6371; // Earth radius in km
-    const dLat = ((edgeLngLat.lat - viewState.latitude) * Math.PI) / 180;
-    const dLon = ((edgeLngLat.lng - viewState.longitude) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((viewState.latitude * Math.PI) / 180) *
-        Math.cos((edgeLngLat.lat * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const radius = R * c;
+    try {
+      const center = map.project([viewState.longitude, viewState.latitude]);
+      const edge = { x: center.x + CIRCLE_RADIUS_PX, y: center.y };
+      const edgeLngLat = map.unproject([edge.x, edge.y]);
+      // Haversine formula
+      const R = 6371; // Earth radius in km
+      const dLat = ((edgeLngLat.lat - viewState.latitude) * Math.PI) / 180;
+      const dLon = ((edgeLngLat.lng - viewState.longitude) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((viewState.latitude * Math.PI) / 180) *
+          Math.cos((edgeLngLat.lat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const radius = R * c;
 
-    // Scale the radius to match the visual size of the circle
-    const scaleFactor = 1.35; // Adjusted to allow for maximum 100km radius
-    const scaledRadius = radius * scaleFactor;
+      // Scale the radius to match the visual size of the circle
+      const scaleFactor = 1.35; // Adjusted to allow for maximum 100km radius
+      const scaledRadius = radius * scaleFactor;
 
-    const clampedRadius = Math.min(
-      Math.max(scaledRadius, MIN_RADIUS_KM),
-      MAX_RADIUS_KM
-    );
+      const clampedRadius = Math.min(
+        Math.max(scaledRadius, MIN_RADIUS_KM),
+        MAX_RADIUS_KM
+      );
 
-    return clampedRadius;
+      // Ensure we never return NaN
+      return isNaN(clampedRadius) ? 0 : clampedRadius;
+    } catch (error) {
+      console.error("Error calculating radius:", error);
+      return 0;
+    }
   };
 
   const fetchPopulation = useCallback(async () => {
@@ -385,11 +391,13 @@ const MapComponent = () => {
       // At sensitivity 0: pure incremental, at 100: pure direct
       const newLongitude =
         knob1Sensitivity === 0
-          ? viewState.longitude + incrementalChange
+          ? normalizeLongitude(viewState.longitude + incrementalChange)
           : knob1Sensitivity === 100
           ? directLongitude
-          : viewState.longitude +
-            incrementalChange * (1 - knob1Sensitivity / 100);
+          : normalizeLongitude(
+              viewState.longitude +
+                incrementalChange * (1 - knob1Sensitivity / 100)
+            );
 
       // Update the view state
       setViewState((prevState) => ({
@@ -414,8 +422,8 @@ const MapComponent = () => {
       const directLatitude = ConvertRange(latitudeValue, -90, 90);
       const incrementalChange =
         ((latitudeValue - lastKnob2Value) / 100) *
-        (90 * (knob2Sensitivity === 0 ? 0.1 : knob2Sensitivity / 100)) *
-        0.05;
+        (180 * (knob2Sensitivity / 100)) *
+        0.5;
 
       // At sensitivity 0: pure incremental, at 100: pure direct
       const newLatitude =
@@ -488,7 +496,7 @@ const MapComponent = () => {
   // Add effect to handle knob_5 sensitivity changes
   useEffect(() => {
     if (serialData.knob_5) {
-      const newSensitivity = ConvertRange(serialData.knob_5.value, 0, 100);
+      const newSensitivity = ConvertRange(serialData.knob_5.value, 1, 100);
       setKnob2Sensitivity(newSensitivity);
     }
   }, [serialData.knob_5]);
