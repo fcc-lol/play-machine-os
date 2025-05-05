@@ -233,54 +233,18 @@ const MapComponent = () => {
   const [knob2Sensitivity, setKnob2Sensitivity] = useState(50); // Default sensitivity of 50
   const [lastKnob1Value, setLastKnob1Value] = useState(0);
   const [lastKnob2Value, setLastKnob2Value] = useState(0);
-  const [smoothedLongitude, setSmoothedLongitude] = useState(-74.006); // NYC longitude
-  const [smoothedLatitude, setSmoothedLatitude] = useState(40.7128); // NYC latitude
-
-  // Add smoothing factor (0.1 = more smoothing, 1 = no smoothing)
-  const SMOOTHING_FACTOR = 0.2;
-
-  // Calculate initial values from serial data
-  const initialZoom = ConvertRange(
-    serialData.horizontal_slider?.value || 0,
-    minZoom,
-    maxZoom
-  );
-  const initialLongitude = -74.006; // NYC longitude
-  const initialLatitude = 40.7128; // NYC latitude
-  const initialFirstMapOpacity = ConvertRange(
-    serialData.vertical_slider_1?.value || 0,
-    0,
-    1
-  );
-  const initialSecondMapOpacity = ConvertRange(
-    serialData.vertical_slider_2?.value || 0,
-    0,
-    1
-  );
-  const initialThirdMapOpacity = ConvertRange(
-    serialData.vertical_slider_3?.value || 0,
-    0,
-    1
-  );
-
   const [viewState, setViewState] = useState({
-    longitude: initialLongitude,
-    latitude: initialLatitude,
-    zoom: initialZoom,
+    longitude: -74.006,
+    latitude: 40.7128,
+    zoom: 4,
     projection: "globe",
     minZoom: minZoom,
     maxZoom: maxZoom,
     bearing: 0
   });
-  const [firstMapOpacity, setFirstMapOpacity] = useState(
-    initialFirstMapOpacity
-  );
-  const [secondMapOpacity, setSecondMapOpacity] = useState(
-    initialSecondMapOpacity
-  );
-  const [thirdMapOpacity, setThirdMapOpacity] = useState(
-    initialThirdMapOpacity
-  );
+  const [firstMapOpacity, setFirstMapOpacity] = useState(0.5);
+  const [secondMapOpacity, setSecondMapOpacity] = useState(0.5);
+  const [thirdMapOpacity, setThirdMapOpacity] = useState(0.5);
   const [population, setPopulation] = useState(null);
   const [isMoving, setIsMoving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -292,8 +256,8 @@ const MapComponent = () => {
 
   // Add separate state for mini map
   const [miniMapState, setMiniMapState] = useState({
-    longitude: initialLongitude,
-    latitude: initialLatitude
+    longitude: -74.006,
+    latitude: 40.7128
   });
 
   const [currentScale, setCurrentScale] = useState(1);
@@ -415,8 +379,8 @@ const MapComponent = () => {
       const directLongitude = ConvertRange(longitudeValue, -180, 180);
       const incrementalChange =
         ((longitudeValue - lastKnob1Value) / 100) *
-        (1440 * (knob1Sensitivity / 100)) *
-        SMOOTHING_FACTOR;
+        (360 * (knob1Sensitivity / 100)) *
+        0.2;
 
       // At sensitivity 0: pure incremental, at 100: pure direct
       const newLongitude =
@@ -450,8 +414,8 @@ const MapComponent = () => {
       const directLatitude = ConvertRange(latitudeValue, -90, 90);
       const incrementalChange =
         ((latitudeValue - lastKnob2Value) / 100) *
-        (360 * (knob2Sensitivity / 100)) *
-        SMOOTHING_FACTOR;
+        (90 * (knob2Sensitivity === 0 ? 0.1 : knob2Sensitivity / 100)) *
+        0.05;
 
       // At sensitivity 0: pure incremental, at 100: pure direct
       const newLatitude =
@@ -462,20 +426,17 @@ const MapComponent = () => {
           : viewState.latitude +
             incrementalChange * (1 - knob2Sensitivity / 100);
 
-      // Clamp the latitude to valid range
-      const clampedLatitude = Math.max(-90, Math.min(90, newLatitude));
-
       // Update the view state
       setViewState((prevState) => ({
         ...prevState,
         longitude: viewState.longitude,
-        latitude: clampedLatitude
+        latitude: newLatitude
       }));
 
       // Update mini map state
       setMiniMapState({
         longitude: viewState.longitude,
-        latitude: clampedLatitude
+        latitude: newLatitude
       });
 
       setLastKnob2Value(latitudeValue);
@@ -527,7 +488,7 @@ const MapComponent = () => {
   // Add effect to handle knob_5 sensitivity changes
   useEffect(() => {
     if (serialData.knob_5) {
-      const newSensitivity = ConvertRange(serialData.knob_5.value, 1, 100);
+      const newSensitivity = ConvertRange(serialData.knob_5.value, 0, 100);
       setKnob2Sensitivity(newSensitivity);
     }
   }, [serialData.knob_5]);
