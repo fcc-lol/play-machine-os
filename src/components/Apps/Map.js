@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
 import { Map, NavigationControl } from "react-map-gl/mapbox";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
-import * as turf from "@turf/turf";
-import { circle } from "@turf/turf";
 
 // Constants for calculations
 const MAX_RADIUS_KM = 100; // 200km diameter
@@ -254,14 +250,6 @@ const MapComponent = () => {
     max: maxZoom
   });
 
-  // Add separate state for mini map
-  const [miniMapState, setMiniMapState] = useState({
-    longitude: -74.006,
-    latitude: 40.7128
-  });
-
-  const [currentScale, setCurrentScale] = useState(1);
-
   // Set zoom constraints on mount
   useEffect(() => {
     setZoomConstraints({ min: minZoom, max: maxZoom });
@@ -388,15 +376,16 @@ const MapComponent = () => {
         (360 * (knob1Sensitivity / 100)) *
         0.2;
 
-      // At sensitivity 0: pure incremental, at 100: pure direct
+      // Blend between incremental and direct mapping based on sensitivity
+      const sensitivityFactor = knob1Sensitivity / 100;
+
+      // For values under 60%, use pure incremental with reduced movement
+      // For values 60% and above, gradually introduce direct mapping
       const newLongitude =
-        knob1Sensitivity === 0
-          ? normalizeLongitude(viewState.longitude + incrementalChange)
-          : knob1Sensitivity === 100
-          ? directLongitude
+        sensitivityFactor < 0.6
+          ? normalizeLongitude(viewState.longitude + incrementalChange * 0.1)
           : normalizeLongitude(
-              viewState.longitude +
-                incrementalChange * (1 - knob1Sensitivity / 100)
+              directLongitude * Math.pow((sensitivityFactor - 0.6) / 0.4, 2)
             );
 
       // Update the view state
@@ -405,12 +394,6 @@ const MapComponent = () => {
         longitude: newLongitude,
         latitude: viewState.latitude
       }));
-
-      // Update mini map state
-      setMiniMapState({
-        longitude: newLongitude,
-        latitude: viewState.latitude
-      });
 
       setLastKnob1Value(longitudeValue);
     }
@@ -423,16 +406,26 @@ const MapComponent = () => {
       const incrementalChange =
         ((latitudeValue - lastKnob2Value) / 100) *
         (180 * (knob2Sensitivity / 100)) *
-        0.5;
+        0.2; // Match the same scale as longitude
 
-      // At sensitivity 0: pure incremental, at 100: pure direct
+      // Blend between incremental and direct mapping based on sensitivity
+      const sensitivityFactor = knob2Sensitivity / 100;
+
+      // For values under 60%, use pure incremental with reduced movement
+      // For values 60% and above, gradually introduce direct mapping
       const newLatitude =
-        knob2Sensitivity === 0
-          ? viewState.latitude + incrementalChange
-          : knob2Sensitivity === 100
-          ? directLatitude
-          : viewState.latitude +
-            incrementalChange * (1 - knob2Sensitivity / 100);
+        sensitivityFactor < 0.6
+          ? Math.min(
+              Math.max(viewState.latitude + incrementalChange * 0.1, -80),
+              80
+            )
+          : Math.min(
+              Math.max(
+                directLatitude * Math.pow((sensitivityFactor - 0.6) / 0.4, 2),
+                -80
+              ),
+              80
+            );
 
       // Update the view state
       setViewState((prevState) => ({
@@ -440,12 +433,6 @@ const MapComponent = () => {
         longitude: viewState.longitude,
         latitude: newLatitude
       }));
-
-      // Update mini map state
-      setMiniMapState({
-        longitude: viewState.longitude,
-        latitude: newLatitude
-      });
 
       setLastKnob2Value(latitudeValue);
     }
@@ -511,27 +498,6 @@ const MapComponent = () => {
   const onMove = useCallback((evt) => {
     setViewState(evt.viewState);
     setIsMoving(true);
-  }, []);
-
-  useEffect(() => {
-    if (mapRef.current) {
-      const map = mapRef.current.getMap();
-
-      const updateScale = () => {
-        // Get the current scale from the map's transform
-        const transform = map.transform;
-        const scale = transform.scale;
-        setCurrentScale(scale);
-      };
-
-      map.on("move", updateScale);
-      map.on("zoom", updateScale);
-
-      return () => {
-        map.off("move", updateScale);
-        map.off("zoom", updateScale);
-      };
-    }
   }, []);
 
   // Calculate circle diameter in rem units based on zoom level, radius, and scale
