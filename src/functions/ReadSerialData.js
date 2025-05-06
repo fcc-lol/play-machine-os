@@ -8,9 +8,7 @@ import React, {
 import { useSerial } from "./SerialDataContext";
 import styled from "styled-components";
 import hardwareConfig from "../config/Hardware.json";
-
-const convertRange = (value, r1, r2) =>
-  ((value - r1[0]) * (r2[1] - r2[0])) / (r1[1] - r1[0]) + r2[0];
+import ConvertRange from "../functions/ConvertRange";
 
 const roundToNearestTenth = (number) => Math.round(number);
 
@@ -70,7 +68,7 @@ function ReadSerialData() {
           const config = hardwareConfig.potentiometers[id];
           if (config) {
             const rawNumValue = parseFloat(rawValue);
-            const value0to100 = convertRange(
+            const value0to100 = ConvertRange(
               rawNumValue,
               config.range,
               config.inverted
