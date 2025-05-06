@@ -23,7 +23,8 @@ const screens = {
 const apps = {
   CircleVisualizer: lazy(() => import("./components/Apps/CircleVisualizer")),
   PopulationMap: lazy(() => import("./components/Apps/PopulationMap")),
-  WaveVisualizer: lazy(() => import("./components/Apps/WaveVisualizer"))
+  WaveVisualizer: lazy(() => import("./components/Apps/WaveVisualizer")),
+  Template: lazy(() => import("./components/Apps/Template"))
 };
 
 const AppContainer = styled.div.attrs((props) => ({

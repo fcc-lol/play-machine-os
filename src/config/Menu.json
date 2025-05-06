@@ -18,7 +18,12 @@
               "label": "Population Map",
               "app": "PopulationMap"
             },
-            { "id": "app3", "label": "App 3", "app": "App3" }
+            {
+              "id": "wave-visualizer",
+              "label": "Wave Visualizer",
+              "app": "WaveVisualizer"
+            },
+            { "id": "template", "label": "Template", "app": "Template" }
           ]
         }
       },
