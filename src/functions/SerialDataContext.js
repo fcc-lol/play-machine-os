@@ -32,6 +32,10 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
         const savedValue = localStorage.getItem(`slider_${config.label}`);
         if (savedValue !== null) {
           value = parseInt(savedValue);
+          // Invert the value if the potentiometer is configured as inverted
+          if (config.inverted) {
+            value = 100 - value;
+          }
         }
       } else {
         // In non-simulator mode, use the last known value from serial input

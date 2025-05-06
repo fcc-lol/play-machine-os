@@ -343,10 +343,11 @@ const PopulationMap = () => {
     }
 
     const zoomValue = serialData.horizontal_slider?.value || 0;
-
-    // Invert the value so 0% gives max diameter (200km) and 100% gives min diameter
-    const invertedValue = 100 - Math.min(zoomValue, 96);
-    const scaledZoomValue = ConvertRange(invertedValue, minZoom, maxZoom);
+    const scaledZoomValue = ConvertRange(
+      Math.min(zoomValue, 96),
+      minZoom,
+      maxZoom
+    );
 
     // Update zoom regardless of other changes
     if (scaledZoomValue !== viewState.zoom) {
