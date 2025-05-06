@@ -1,6 +1,10 @@
 import React, { useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
-import { ThemeSettings } from "./Menus/ThemeSettings";
+import { lazy } from "react";
+
+const menus = {
+  ThemeSettings: lazy(() => import("./Menus/ThemeSettings"))
+};
 
 const Root = styled.div`
   color: ${(props) => props.theme.menuText};
@@ -67,7 +71,7 @@ const Menu = ({
   }, [currentMenu.items, menuStack.length]);
 
   const { handleThemeSelection, previewTheme, menuItemsWithCurrentTheme } =
-    ThemeSettings({
+    menus.ThemeSettings({
       currentMenu,
       currentMenuItems,
       setSelectedIndices,
