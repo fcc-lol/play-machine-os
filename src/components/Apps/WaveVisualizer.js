@@ -96,8 +96,8 @@ const WaveVisualizer = () => {
     if (serialData.horizontal_slider) {
       paramsRef.current.wavelength = ConvertRange(
         serialData.horizontal_slider.value,
-        0.001,
-        0.1
+        0.1,
+        0.001
       );
     }
     if (serialData.knob_1) {
