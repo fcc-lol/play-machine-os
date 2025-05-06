@@ -75,7 +75,11 @@ function ReadSerialData() {
               config.outputRange[0],
               config.outputRange[1]
             );
-            value = roundToNearestTenth(value0to100);
+            let value = roundToNearestTenth(value0to100);
+            // Invert the value if the potentiometer is configured as inverted
+            if (config.inverted) {
+              value = 100 - value;
+            }
             processedData[config.label] = { value };
           }
         }
