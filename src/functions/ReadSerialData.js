@@ -403,7 +403,7 @@ function ReadSerialData() {
 
   useEffect(() => {
     if (isOutputConnected && !isSimulatorMode) {
-      writeToOutputDevice("10,10,10,1");
+      writeToOutputDevice("0,0,0,0");
     }
   }, [isOutputConnected, writeToOutputDevice, isSimulatorMode]);
 
