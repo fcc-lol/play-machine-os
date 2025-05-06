@@ -69,11 +69,11 @@ function ReadSerialData() {
           if (config) {
             const rawNumValue = parseFloat(rawValue);
             const value0to100 = ConvertRange(
-              rawNumValue,
-              config.range,
-              config.inverted
-                ? [config.outputRange[1], config.outputRange[0]]
-                : config.outputRange
+              ((rawNumValue - config.range[0]) /
+                (config.range[1] - config.range[0])) *
+                100,
+              config.outputRange[0],
+              config.outputRange[1]
             );
             value = roundToNearestTenth(value0to100);
             processedData[config.label] = { value };
