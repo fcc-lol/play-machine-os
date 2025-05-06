@@ -443,7 +443,7 @@ const PopulationMap = () => {
   // Add effect to handle first map opacity changes
   useEffect(() => {
     if (serialData.vertical_slider_1) {
-      const newOpacity = ConvertRange(serialData.vertical_slider_1.value, 1, 0);
+      const newOpacity = ConvertRange(serialData.vertical_slider_1.value, 0, 1);
       setFirstMapOpacity(newOpacity);
     }
   }, [serialData.vertical_slider_1]);
@@ -451,7 +451,7 @@ const PopulationMap = () => {
   // Add effect to handle second map opacity changes
   useEffect(() => {
     if (serialData.vertical_slider_2) {
-      const newOpacity = ConvertRange(serialData.vertical_slider_2.value, 1, 0);
+      const newOpacity = ConvertRange(serialData.vertical_slider_2.value, 0, 1);
       setSecondMapOpacity(newOpacity);
     }
   }, [serialData.vertical_slider_2]);
@@ -459,7 +459,7 @@ const PopulationMap = () => {
   // Add effect to handle third map opacity changes
   useEffect(() => {
     if (serialData.vertical_slider_3) {
-      const newOpacity = ConvertRange(serialData.vertical_slider_3.value, 1, 0);
+      const newOpacity = ConvertRange(serialData.vertical_slider_3.value, 0, 1);
       setThirdMapOpacity(newOpacity);
     }
   }, [serialData.vertical_slider_3]);
