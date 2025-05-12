@@ -29,23 +29,33 @@ const RainMachine = () => {
   const { serialData } = useSerial();
 
   const canvasRef = useRef(null);
-  const sliders = useMemo(
-    () => ({
+  const baseCellSize = 32;
+  const basePixelSize = 2; // Base pixel size for better performance
+  const offsetRef = useRef(0);
+
+  const sliders = useMemo(() => {
+    // Calculate sizes based on fixed increments
+    const scaleFactor = ConvertRange(serialData.vertical_slider_3.value, 0, 1);
+
+    const cellSizeIndex = Math.floor(scaleFactor * 8);
+    const cellSize = baseCellSize * Math.pow(2, cellSizeIndex);
+
+    const pixelSizeIndex = Math.floor(scaleFactor * 8);
+    const pixelSize = basePixelSize * Math.pow(2, pixelSizeIndex);
+
+    return {
       iMult: ConvertRange(serialData.knob_1.value, 0, 2),
       jMult: ConvertRange(serialData.knob_2.value, 0, 2),
       exprMult: ConvertRange(serialData.knob_3.value, 0, 128),
       modVal: ConvertRange(serialData.knob_4.value, 0, 128),
       threshold: ConvertRange(serialData.knob_5.value, 0, 1),
-      speed: ConvertRange(serialData.horizontal_slider.value, 0, 0.3),
+      speed: ConvertRange(serialData.horizontal_slider.value, 0, 0.1),
       hue: ConvertRange(serialData.vertical_slider_1.value, 180, -180),
       backgroundHue: ConvertRange(serialData.vertical_slider_2.value, 0, 360),
-      transitionFactor: ConvertRange(serialData.vertical_slider_3.value, 0, 1),
-    }),
-    [serialData]
-  );
-  const offsetRef = useRef(0);
-  const cellSize = 128;
-  const pixelSize = 8; // Increased pixel size for better performance
+      cellSize,
+      pixelSize,
+    };
+  }, [serialData]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,19 +76,11 @@ const RainMachine = () => {
         threshold,
         hue,
         backgroundHue,
-        transitionFactor,
+        cellSize,
+        pixelSize,
       } = sliders;
 
-      // Calculate the shortest path between hues
-      const hueDiff = ((backgroundHue - hue + 180) % 360) - 180;
-
-      // Calculate the current positions of both colors
-      const currentForegroundHue =
-        (hue + hueDiff * transitionFactor + 360) % 360;
-      const currentBackgroundHue =
-        (backgroundHue - hueDiff * transitionFactor + 360) % 360;
-
-      offscreenCtx.fillStyle = `hsl(${currentBackgroundHue}, 100%, 50%)`;
+      offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, 50%)`;
       offscreenCtx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Pre-calculate some values
@@ -101,7 +103,7 @@ const RainMachine = () => {
               const expression = (baseExpression + sinWave) % modVal;
 
               if (expression / modVal < threshold) {
-                offscreenCtx.fillStyle = `hsl(${currentForegroundHue}, 100%, 50%)`;
+                offscreenCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
                 offscreenCtx.fillRect(x + i, y + j, pixelSize, pixelSize);
               }
             }
@@ -116,7 +118,8 @@ const RainMachine = () => {
     let animationFrameId;
     function animate() {
       if (sliders.speed > 0) {
-        offsetRef.current = (offsetRef.current + sliders.speed) % cellSize;
+        offsetRef.current =
+          (offsetRef.current + sliders.speed) % sliders.cellSize;
       }
       drawPattern();
       animationFrameId = requestAnimationFrame(animate);
