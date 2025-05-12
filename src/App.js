@@ -6,7 +6,7 @@ import Menu from "./components/UI/Menu";
 import Hardware from "./components/Simulator/Hardware";
 import styled, {
   StyleSheetManager,
-  ThemeProvider as StyledThemeProvider
+  ThemeProvider as StyledThemeProvider,
 } from "styled-components";
 import isPropValid from "@emotion/is-prop-valid";
 import menuConfig from "./config/Menu.json";
@@ -17,20 +17,21 @@ const screens = {
   PhysicalInputMonitor: lazy(() =>
     import("./components/UI/Screens/PhysicalInputMonitor")
   ),
-  About: lazy(() => import("./components/UI/Screens/About"))
+  About: lazy(() => import("./components/UI/Screens/About")),
 };
 
 const apps = {
   CircleVisualizer: lazy(() => import("./components/Apps/CircleVisualizer")),
   PopulationMap: lazy(() => import("./components/Apps/PopulationMap")),
   WaveVisualizer: lazy(() => import("./components/Apps/WaveVisualizer")),
-  Template: lazy(() => import("./components/Apps/Template"))
+  RainMachine: lazy(() => import("./components/Apps/RainMachine")),
+  Template: lazy(() => import("./components/Apps/Template")),
 };
 
 const AppContainer = styled.div.attrs((props) => ({
   style: {
-    background: props.theme.background
-  }
+    background: props.theme.background,
+  },
 }))`
   width: 1024px;
   height: 600px;
@@ -42,8 +43,8 @@ const AppContainer = styled.div.attrs((props) => ({
 const ScreenContainer = styled.div.attrs((props) => ({
   style: {
     color: props.theme.text,
-    fontFamily: props.theme.fontFamily
-  }
+    fontFamily: props.theme.fontFamily,
+  },
 }))`
   position: absolute;
   top: 0;

@@ -23,6 +23,11 @@
               "label": "Wave Visualizer",
               "app": "WaveVisualizer"
             },
+            {
+              "id": "rain-machine",
+              "label": "Rain Machine",
+              "app": "RainMachine"
+            },
             { "id": "template", "label": "Template", "app": "Template" }
           ]
         }
