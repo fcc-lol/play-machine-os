@@ -37,7 +37,7 @@ const RainMachine = () => {
       modVal: ConvertRange(serialData.knob_4.value, 0, 128),
       threshold: ConvertRange(serialData.knob_5.value, 0, 1),
       speed: ConvertRange(serialData.horizontal_slider.value, 0, 0.3),
-      hue: ConvertRange(serialData.vertical_slider_1.value, 0, 360),
+      hue: ConvertRange(serialData.vertical_slider_1.value, 180, -180),
       backgroundHue: ConvertRange(serialData.vertical_slider_2.value, 0, 360),
       transitionFactor: ConvertRange(serialData.vertical_slider_3.value, 0, 1),
     }),
