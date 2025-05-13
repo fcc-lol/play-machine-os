@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useSerial } from "../../functions/SerialDataContext";
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import ConvertRange from "../../functions/ConvertRange";
 
 const Root = styled.div`
@@ -27,11 +27,22 @@ const Root = styled.div`
 
 const RainMachine = () => {
   const { serialData } = useSerial();
+  const [lightnessDelta, setLightnessDelta] = useState(0);
 
   const canvasRef = useRef(null);
   const baseCellSize = 32;
   const basePixelSize = 2; // Base pixel size for better performance
   const offsetRef = useRef(0);
+
+  // Handle button presses for lightness control
+  useEffect(() => {
+    if (serialData.button_left?.value) {
+      setLightnessDelta((prev) => Math.max(-50, prev - 1));
+    }
+    if (serialData.button_right?.value) {
+      setLightnessDelta((prev) => Math.min(50, prev + 1));
+    }
+  }, [serialData.button_left?.value, serialData.button_right?.value]);
 
   const sliders = useMemo(() => {
     // Calculate sizes based on fixed increments
@@ -53,7 +64,7 @@ const RainMachine = () => {
       hue: ConvertRange(serialData.vertical_slider_1.value, 180, -180),
       backgroundHue: ConvertRange(serialData.vertical_slider_2.value, 0, 360),
       cellSize,
-      pixelSize,
+      pixelSize
     };
   }, [serialData]);
 
@@ -77,10 +88,15 @@ const RainMachine = () => {
         hue,
         backgroundHue,
         cellSize,
-        pixelSize,
+        pixelSize
       } = sliders;
 
-      offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, 50%)`;
+      // Calculate background and foreground lightness
+      const baseLightness = 50;
+      const backgroundLightness = baseLightness + lightnessDelta;
+      const foregroundLightness = baseLightness - lightnessDelta;
+
+      offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, ${backgroundLightness}%)`;
       offscreenCtx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Pre-calculate some values
@@ -103,7 +119,7 @@ const RainMachine = () => {
               const expression = (baseExpression + sinWave) % modVal;
 
               if (expression / modVal < threshold) {
-                offscreenCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                offscreenCtx.fillStyle = `hsl(${hue}, 100%, ${foregroundLightness}%)`;
                 offscreenCtx.fillRect(x + i, y + j, pixelSize, pixelSize);
               }
             }
@@ -133,11 +149,11 @@ const RainMachine = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [sliders]);
+  }, [sliders, lightnessDelta]);
 
   return (
     <Root>
-      <canvas ref={canvasRef} width={1024} height={600} id='patternCanvas' />
+      <canvas ref={canvasRef} width={1024} height={600} id="patternCanvas" />
     </Root>
   );
 };
