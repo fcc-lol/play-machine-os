@@ -35,7 +35,11 @@ const RainMachine = () => {
 
   const sliders = useMemo(() => {
     // Calculate sizes based on fixed increments
-    const scaleFactor = ConvertRange(serialData.vertical_slider_3.value, 0, 1);
+    const scaleFactor = ConvertRange(
+      serialData.vertical_slider_3.value,
+      0.125,
+      1
+    );
 
     const cellSizeIndex = Math.floor(scaleFactor * 8);
     const cellSize = baseCellSize * Math.pow(2, cellSizeIndex);
