@@ -84,7 +84,12 @@ const RainMachine = () => {
         pixelSize,
       } = sliders;
 
-      offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, 50%)`;
+      // Set background color based on button state
+      if (serialData.button_down.value === true) {
+        offscreenCtx.fillStyle = "black";
+      } else {
+        offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, 50%)`;
+      }
       offscreenCtx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Pre-calculate some values
@@ -107,7 +112,12 @@ const RainMachine = () => {
               const expression = (baseExpression + sinWave) % modVal;
 
               if (expression / modVal < threshold) {
-                offscreenCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                // Set foreground color based on button state
+                if (serialData.button_up.value === true) {
+                  offscreenCtx.fillStyle = "white";
+                } else {
+                  offscreenCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                }
                 offscreenCtx.fillRect(x + i, y + j, pixelSize, pixelSize);
               }
             }
