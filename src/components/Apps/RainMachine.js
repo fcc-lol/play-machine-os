@@ -44,9 +44,13 @@ const RainMachine = () => {
     }
   }, [serialData.button_left?.value, serialData.button_right?.value]);
 
-  const sliders = useMemo(() => {
+  const inputs = useMemo(() => {
     // Calculate sizes based on fixed increments
-    const scaleFactor = ConvertRange(serialData.vertical_slider_3.value, 0, 1);
+    const scaleFactor = ConvertRange(
+      serialData.vertical_slider_3.value,
+      0.125,
+      1
+    );
 
     const cellSizeIndex = Math.floor(scaleFactor * 8);
     const cellSize = baseCellSize * Math.pow(2, cellSizeIndex);
@@ -63,6 +67,10 @@ const RainMachine = () => {
       speed: ConvertRange(serialData.horizontal_slider.value, 0, 0.1),
       hue: ConvertRange(serialData.vertical_slider_1.value, 180, -180),
       backgroundHue: ConvertRange(serialData.vertical_slider_2.value, 0, 360),
+      monochromeControls: {
+        background: serialData.button_down?.value,
+        foreground: serialData.button_up?.value
+      },
       cellSize,
       pixelSize
     };
@@ -88,15 +96,21 @@ const RainMachine = () => {
         hue,
         backgroundHue,
         cellSize,
-        pixelSize
-      } = sliders;
+        pixelSize,
+        monochromeControls
+      } = inputs;
 
-      // Calculate background and foreground lightness
       const baseLightness = 50;
       const backgroundLightness = baseLightness + lightnessDelta;
       const foregroundLightness = baseLightness - lightnessDelta;
 
-      offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, ${backgroundLightness}%)`;
+      // Set background color based on button state
+      if (monochromeControls.background === true) {
+        offscreenCtx.fillStyle = "black";
+      } else {
+        offscreenCtx.fillStyle = `hsl(${backgroundHue}, 100%, ${backgroundLightness}%)`;
+      }
+
       offscreenCtx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Pre-calculate some values
@@ -119,7 +133,12 @@ const RainMachine = () => {
               const expression = (baseExpression + sinWave) % modVal;
 
               if (expression / modVal < threshold) {
-                offscreenCtx.fillStyle = `hsl(${hue}, 100%, ${foregroundLightness}%)`;
+                if (monochromeControls.foreground === true) {
+                  offscreenCtx.fillStyle = "white";
+                } else {
+                  offscreenCtx.fillStyle = `hsl(${hue}, 100%, ${foregroundLightness}%)`;
+                }
+
                 offscreenCtx.fillRect(x + i, y + j, pixelSize, pixelSize);
               }
             }
@@ -133,9 +152,9 @@ const RainMachine = () => {
 
     let animationFrameId;
     function animate() {
-      if (sliders.speed > 0) {
+      if (inputs.speed > 0) {
         offsetRef.current =
-          (offsetRef.current + sliders.speed) % sliders.cellSize;
+          (offsetRef.current + inputs.speed) % inputs.cellSize;
       }
       drawPattern();
       animationFrameId = requestAnimationFrame(animate);
@@ -149,7 +168,7 @@ const RainMachine = () => {
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [sliders, lightnessDelta]);
+  }, [inputs, lightnessDelta]);
 
   return (
     <Root>
