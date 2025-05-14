@@ -28,6 +28,11 @@
               "label": "Rain Machine",
               "app": "RainMachine"
             },
+            {
+              "id": "blob-machine",
+              "label": "Blob Machine",
+              "app": "BlobMachine"
+            },
             { "id": "template", "label": "Template", "app": "Template" }
           ]
         }
