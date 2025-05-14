@@ -59,7 +59,7 @@ const BlobMachine = () => {
   const updatePointsCount = () => {
     const currentKnobValue = serialDataRef.current.knob_2.value;
     if (currentKnobValue !== prevKnobValueRef.current) {
-      const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 50));
+      const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 100));
       targetPointsRef.current = targetPoints;
       const currentPoints = pointsRef.current.length;
 
@@ -91,23 +91,25 @@ const BlobMachine = () => {
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
       if (!cell) continue;
-      // RGB values from sliders (0-255 range)
-      const r = Math.floor(
-        ConvertRange(serialDataRef.current.vertical_slider_1.value, 0, 255)
+
+      // Get three different hue values from vertical sliders
+      const hue1 = Math.floor(
+        ConvertRange(serialDataRef.current.vertical_slider_1.value, 350, 0)
       );
-      const g = Math.floor(
-        ConvertRange(serialDataRef.current.vertical_slider_2.value, 0, 255)
+      const hue2 = Math.floor(
+        ConvertRange(serialDataRef.current.vertical_slider_2.value, 350, 0)
       );
-      const b = Math.floor(
-        ConvertRange(serialDataRef.current.vertical_slider_3.value, 0, 255)
+      const hue3 = Math.floor(
+        ConvertRange(serialDataRef.current.vertical_slider_3.value, 350, 0)
       );
 
-      // Vary lightness for adjacent cells (0.3 to 1.0 multiplier)
-      const lightness = 0.3 + (i % 6) * 0.14;
+      // Cycle through the three hues based on cell index
+      const hue = [hue1, hue2, hue3][i % 3];
 
-      ctx.fillStyle = `rgb(${Math.floor(r * lightness)}, ${Math.floor(
-        g * lightness
-      )}, ${Math.floor(b * lightness)})`;
+      // Vary saturation for adjacent cells (30% to 100%)
+      const saturation = 0.2 + (i % 12) * 0.07;
+
+      ctx.fillStyle = `hsl(${hue}, ${saturation * 100}%, 50%)`;
       ctx.beginPath();
       ctx.moveTo(cell[0][0], cell[0][1]);
       for (let j = 1; j < cell.length; j++) {
