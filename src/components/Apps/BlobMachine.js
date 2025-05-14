@@ -128,13 +128,7 @@ const BlobMachine = () => {
         y: centerY + (point[1] - centerY) * insetScale,
       }));
 
-      const borderWidth = ConvertRange(
-        serialDataRef.current.knob_1.value,
-        0,
-        60
-      ); // border width
       const maxRadius = ConvertRange(serialDataRef.current.knob_3.value, 0, 48); // fillet radius 0-100px
-      const n = scaledPoints.length;
 
       // If roundness is zero, draw sharp-cornered polygon
       if (maxRadius < 0.1) {
@@ -220,26 +214,6 @@ const BlobMachine = () => {
       }
       ctx.closePath();
       ctx.fill();
-      if (borderWidth > 0) {
-        ctx.save();
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = borderWidth;
-        ctx.stroke();
-        ctx.restore();
-      }
-      // Draw a border inside the whole canvas to match the cell border
-      if (borderWidth > 0) {
-        ctx.save();
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = borderWidth;
-        ctx.strokeRect(
-          borderWidth / 2,
-          borderWidth / 2,
-          1024 - borderWidth,
-          600 - borderWidth
-        );
-        ctx.restore();
-      }
     }
   };
 
