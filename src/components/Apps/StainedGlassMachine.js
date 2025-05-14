@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 import { Delaunay } from "d3-delaunay";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
-import ClipperLib from "clipper-lib";
 
 const Root = styled.div`
   display: flex;
@@ -30,7 +29,7 @@ const Canvas = styled.canvas`
   image-rendering: smooth;
 `;
 
-const BlobMachine = () => {
+const StainedGlassMachine = () => {
   const { serialData } = useSerial();
   const serialDataRef = useRef(serialData);
   const canvasRef = useRef(null);
@@ -80,18 +79,12 @@ const BlobMachine = () => {
     }
   };
 
-  const drawVoronoi = (ctx, points) => {
+  const drawStainedGlass = (ctx, points) => {
     ctx.clearRect(0, 0, 1024, 600);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, 1024, 600);
 
-    // Use knob1 to control inset scale (0.99 at 0% to 0.75 at 100%)
-    const insetScale = ConvertRange(
-      serialDataRef.current.knob_1.value,
-      1,
-      0.75
-    );
-
+    const borderWidth = ConvertRange(serialDataRef.current.knob_1.value, 0, 30);
     const delaunay = Delaunay.from(points);
     const voronoi = delaunay.voronoi([0, 0, 1024, 600]);
 
@@ -113,133 +106,39 @@ const BlobMachine = () => {
       // Cycle through the three hues based on cell index
       const hue = [hue1, hue2, hue3][i % 3];
 
-      // Vary saturation for adjacent cells (30% to 100%)
-      const saturation = 0.2 + (i % 12) * 0.07;
+      // Higher saturation for stained glass effect (60% to 100%)
+      const saturation = 0.6 + (i % 8) * 0.05;
 
-      ctx.fillStyle = `hsl(${hue}, ${saturation * 100}%, 50%)`;
+      // Higher lightness for stained glass effect (40% to 60%)
+      const lightness = 0.4 + (i % 4) * 0.05;
 
-      // Calculate center point of the cell
-      const centerX = cell.reduce((sum, p) => sum + p[0], 0) / cell.length;
-      const centerY = cell.reduce((sum, p) => sum + p[1], 0) / cell.length;
-
-      // Pre-calculate all scaled points
-      const scaledPoints = cell.map((point) => ({
-        x: centerX + (point[0] - centerX) * insetScale,
-        y: centerY + (point[1] - centerY) * insetScale,
-      }));
-
-      const borderWidth = ConvertRange(
-        serialDataRef.current.knob_1.value,
-        0,
-        60
-      ); // border width
-      const maxRadius = ConvertRange(serialDataRef.current.knob_3.value, 0, 48); // fillet radius 0-100px
-      const n = scaledPoints.length;
-
-      // If roundness is zero, draw sharp-cornered polygon
-      if (maxRadius < 0.1) {
-        ctx.beginPath();
-        for (let j = 0; j < scaledPoints.length; j++) {
-          const pt = scaledPoints[j];
-          if (j === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        }
-        ctx.closePath();
-        ctx.fill();
-        continue;
-      }
-
-      // --- Clipper.js robust rounding with adaptive fallback ---
-      const scale = 100;
-      const minRadius = 1; // px
-      let tryRadius = maxRadius;
-      let roundedPath = null;
-      while (tryRadius >= minRadius && !roundedPath) {
-        const clipperPath = scaledPoints.map((pt) => ({
-          X: Math.round(pt.x * scale),
-          Y: Math.round(pt.y * scale),
-        }));
-        const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
-        co.AddPath(
-          clipperPath,
-          ClipperLib.JoinType.jtRound,
-          ClipperLib.EndType.etClosedPolygon
-        );
-        let offsetIn = [];
-        co.Execute(offsetIn, -tryRadius * scale);
-        if (offsetIn.length > 0) {
-          const co2 = new ClipperLib.ClipperOffset(2, 0.25 * scale);
-          co2.AddPath(
-            offsetIn[0],
-            ClipperLib.JoinType.jtRound,
-            ClipperLib.EndType.etClosedPolygon
-          );
-          let offsetOut = [];
-          co2.Execute(offsetOut, tryRadius * scale);
-          if (offsetOut.length > 0) {
-            roundedPath = offsetOut[0];
-            break;
-          }
-        }
-        tryRadius /= 2;
-      }
-      // If offset failed, draw a fallback circle at the centroid
-      if (!roundedPath) {
-        // Compute centroid
-        const centroid = scaledPoints.reduce(
-          (acc, pt) => ({ x: acc.x + pt.x, y: acc.y + pt.y }),
-          { x: 0, y: 0 }
-        );
-        centroid.x /= scaledPoints.length;
-        centroid.y /= scaledPoints.length;
-        // Find min distance from centroid to any vertex
-        let minDist = Infinity;
-        for (let pt of scaledPoints) {
-          const d = Math.hypot(pt.x - centroid.x, pt.y - centroid.y);
-          if (d < minDist) minDist = d;
-        }
-        if (minDist > 0.1) {
-          ctx.beginPath();
-          ctx.arc(centroid.x, centroid.y, minDist, 0, 2 * Math.PI);
-          ctx.closePath();
-          ctx.fill();
-        }
-        continue;
-      }
-      // Draw the rounded polygon
+      ctx.fillStyle = `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
       ctx.beginPath();
-      for (let j = 0; j < roundedPath.length; j++) {
-        const pt = roundedPath[j];
-        const x = pt.X / scale;
-        const y = pt.Y / scale;
-        if (j === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+      ctx.moveTo(cell[0][0], cell[0][1]);
+      for (let j = 1; j < cell.length; j++) {
+        ctx.lineTo(cell[j][0], cell[j][1]);
       }
       ctx.closePath();
       ctx.fill();
-      if (borderWidth > 0) {
-        ctx.save();
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = borderWidth;
-        ctx.stroke();
-        ctx.restore();
-      }
-      // Draw a border inside the whole canvas to match the cell border
-      if (borderWidth > 0) {
-        ctx.save();
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = borderWidth;
-        ctx.strokeRect(
-          borderWidth / 2,
-          borderWidth / 2,
-          1024 - borderWidth,
-          600 - borderWidth
-        );
-        ctx.restore();
-      }
+
+      // Draw lead lines (thicker black borders)
+      ctx.save();
+      ctx.strokeStyle = borderWidth > 0 ? "black" : "transparent";
+      ctx.lineWidth = borderWidth;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw outer border
+    if (borderWidth > 0) {
+      ctx.save();
+      ctx.strokeStyle = borderWidth;
+      ctx.lineWidth = borderWidth;
+      ctx.lineJoin = "round";
+      const half = borderWidth / 2;
+      ctx.strokeRect(half, half, 1024 - borderWidth, 600 - borderWidth);
+      ctx.restore();
     }
   };
 
@@ -270,11 +169,11 @@ const BlobMachine = () => {
       updatePointsCount();
       const speed = ConvertRange(
         serialDataRef.current.horizontal_slider.value,
-        0,
+        0.1,
         6
       );
       updatePoints(pointsRef.current, velocitiesRef.current, speed);
-      drawVoronoi(ctx, pointsRef.current);
+      drawStainedGlass(ctx, pointsRef.current);
       requestAnimationFrame(animate);
     };
     animate();
@@ -287,4 +186,4 @@ const BlobMachine = () => {
   );
 };
 
-export default BlobMachine;
+export default StainedGlassMachine;

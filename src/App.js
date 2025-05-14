@@ -26,6 +26,9 @@ const apps = {
   WaveVisualizer: lazy(() => import("./components/Apps/WaveVisualizer")),
   RainMachine: lazy(() => import("./components/Apps/RainMachine")),
   BlobMachine: lazy(() => import("./components/Apps/BlobMachine.js")),
+  StainedGlassMachine: lazy(() =>
+    import("./components/Apps/StainedGlassMachine")
+  ),
   Template: lazy(() => import("./components/Apps/Template")),
 };
 

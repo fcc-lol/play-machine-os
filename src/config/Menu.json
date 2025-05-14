@@ -33,6 +33,11 @@
               "label": "Blob Machine",
               "app": "BlobMachine"
             },
+            {
+              "id": "stained-glass-machine",
+              "label": "Stained Glass Machine",
+              "app": "StainedGlassMachine"
+            },
             { "id": "template", "label": "Template", "app": "Template" }
           ]
         }
