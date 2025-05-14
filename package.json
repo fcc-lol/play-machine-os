@@ -5,12 +5,15 @@
   "private": false,
   "dependencies": {
     "@emotion/is-prop-valid": "^1.3.1",
+    "@react-three/drei": "^9.102.6",
+    "@react-three/fiber": "^8.15.19",
     "mapbox-gl": "^3.11.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-map-gl": "^8.0.4",
     "react-scripts": "5.0.1",
-    "styled-components": "^6.1.11"
+    "styled-components": "^6.1.11",
+    "three": "^0.162.0"
   },
   "scripts": {
     "start": "react-scripts start",

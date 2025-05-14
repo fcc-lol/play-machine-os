@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { useSerial } from "../../functions/SerialDataContext";
 import { useMemo, useEffect, useRef, useState } from "react";
 import ConvertRange from "../../functions/ConvertRange";
+import * as THREE from "three";
 
 const Root = styled.div`
   display: flex;
@@ -14,25 +15,19 @@ const Root = styled.div`
   color: ${(props) => props.theme.text};
   font-family: ${(props) => props.theme.fontFamily};
   font-size: 1.25rem;
-
-  pre {
-    margin: 0;
-    padding: 0;
-  }
-  canvas {
-    width: 100%;
-    height: 100%;
-  }
 `;
 
 const RainMachine = () => {
   const { serialData } = useSerial();
   const [lightnessDelta, setLightnessDelta] = useState(0);
-
-  const canvasRef = useRef(null);
-  const baseCellSize = 32;
-  const basePixelSize = 2; // Base pixel size for better performance
+  const containerRef = useRef(null);
+  const rendererRef = useRef(null);
+  const sceneRef = useRef(null);
+  const cameraRef = useRef(null);
+  const cubeRef = useRef(null);
   const offsetRef = useRef(0);
+  const baseCellSize = 32;
+  const basePixelSize = 2;
 
   // Handle button presses for lightness control
   useEffect(() => {
@@ -45,7 +40,6 @@ const RainMachine = () => {
   }, [serialData.button_left?.value, serialData.button_right?.value]);
 
   const inputs = useMemo(() => {
-    // Calculate sizes based on fixed increments
     const scaleFactor = ConvertRange(
       serialData.vertical_slider_3.value,
       0.125,
@@ -65,6 +59,7 @@ const RainMachine = () => {
       modVal: ConvertRange(serialData.knob_4.value, 0, 128),
       threshold: ConvertRange(serialData.knob_5.value, 0, 1),
       speed: ConvertRange(serialData.horizontal_slider.value, 0, 0.2),
+      rotationSpeed: ConvertRange(serialData.horizontal_slider.value, 0, 0.05),
       hue: ConvertRange(serialData.vertical_slider_1.value, 180, -180),
       backgroundHue: ConvertRange(serialData.vertical_slider_2.value, 0, 360),
       monochromeControls: {
@@ -76,11 +71,115 @@ const RainMachine = () => {
     };
   }, [serialData]);
 
+  // Initialize Three.js scene
   useEffect(() => {
-    const canvas = canvasRef.current;
+    if (!containerRef.current) return;
+
+    // Create scene
+    const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Create camera
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      containerRef.current.clientWidth / containerRef.current.clientHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 12;
+    cameraRef.current = camera;
+
+    // Create renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(
+      containerRef.current.clientWidth,
+      containerRef.current.clientHeight
+    );
+    containerRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    // Create cube
+    const geometry = new THREE.BoxGeometry(8, 8, 8);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+    cubeRef.current = cube;
+
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(10, 10, 10);
+    scene.add(pointLight);
+
+    // Handle window resize
+    const handleResize = () => {
+      if (!containerRef.current) return;
+      const width = containerRef.current.clientWidth;
+      const height = containerRef.current.clientHeight;
+
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    let animationFrameId;
+    // Animation loop
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+
+      if (cubeRef.current && inputs.rotationSpeed > 0) {
+        cubeRef.current.rotation.x += inputs.rotationSpeed;
+        cubeRef.current.rotation.y += inputs.rotationSpeed;
+      }
+
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      window.removeEventListener("resize", handleResize);
+
+      // Properly dispose of Three.js resources
+      if (cubeRef.current) {
+        cubeRef.current.geometry.dispose();
+        if (Array.isArray(cubeRef.current.material)) {
+          cubeRef.current.material.forEach((material) => material.dispose());
+        } else {
+          cubeRef.current.material.dispose();
+        }
+      }
+
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+        if (containerRef.current && rendererRef.current.domElement) {
+          containerRef.current.removeChild(rendererRef.current.domElement);
+        }
+      }
+
+      // Clear refs
+      sceneRef.current = null;
+      cameraRef.current = null;
+      cubeRef.current = null;
+      rendererRef.current = null;
+    };
+  }, []); // Removed inputs dependency
+
+  // Update pattern texture
+  useEffect(() => {
+    if (!cubeRef.current) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    // Create an offscreen canvas for better performance
     const offscreenCanvas = document.createElement("canvas");
     offscreenCanvas.width = canvas.width;
     offscreenCanvas.height = canvas.height;
@@ -97,14 +196,14 @@ const RainMachine = () => {
         backgroundHue,
         cellSize,
         pixelSize,
-        monochromeControls
+        monochromeControls,
+        speed
       } = inputs;
 
       const baseLightness = 50;
       const backgroundLightness = baseLightness + lightnessDelta;
       const foregroundLightness = baseLightness - lightnessDelta;
 
-      // Set background color based on button state
       if (monochromeControls.background === true) {
         offscreenCtx.fillStyle = "black";
       } else {
@@ -113,18 +212,15 @@ const RainMachine = () => {
 
       offscreenCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Pre-calculate some values
       const sinWaveMultiplier = 0.1;
       const halfModVal = modVal / 2;
 
-      // Draw in larger blocks for better performance
       for (let y = 0; y < canvas.height; y += cellSize) {
         for (let x = 0; x < canvas.width; x += cellSize) {
           for (let j = 0; j < cellSize; j += pixelSize) {
             for (let i = 0; i < cellSize; i += pixelSize) {
               const animatedJ = (j - offsetRef.current + cellSize) % cellSize;
 
-              // Simplified calculations
               const baseExpression = (iMult * i + jMult * animatedJ) * exprMult;
               const sinWave =
                 Math.sin((i * jMult + animatedJ * iMult) * sinWaveMultiplier) *
@@ -146,23 +242,32 @@ const RainMachine = () => {
         }
       }
 
-      // Copy the offscreen canvas to the main canvas
       ctx.drawImage(offscreenCanvas, 0, 0);
+
+      // Update texture
+      if (cubeRef.current) {
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        const materials = Array(6)
+          .fill()
+          .map(() => new THREE.MeshBasicMaterial({ map: texture }));
+        cubeRef.current.material = materials;
+      }
+
+      // Update offset for animation
+      if (speed > 0) {
+        offsetRef.current = (offsetRef.current + speed) % cellSize;
+      }
     }
 
     let animationFrameId;
     function animate() {
-      if (inputs.speed > 0) {
-        offsetRef.current =
-          (offsetRef.current + inputs.speed) % inputs.cellSize;
-      }
       drawPattern();
       animationFrameId = requestAnimationFrame(animate);
     }
-
     animate();
 
-    // Cleanup
     return () => {
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -170,11 +275,7 @@ const RainMachine = () => {
     };
   }, [inputs, lightnessDelta]);
 
-  return (
-    <Root>
-      <canvas ref={canvasRef} width={1024} height={600} id="patternCanvas" />
-    </Root>
-  );
+  return <Root ref={containerRef} />;
 };
 
 export default RainMachine;
