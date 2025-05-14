@@ -29,29 +29,14 @@ const Canvas = styled.canvas`
   image-rendering: smooth;
 `;
 
-// Chaikin's corner-cutting algorithm for polygon smoothing
-function chaikinSmooth(points, iterations = 1) {
-  let pts = points;
-  for (let iter = 0; iter < iterations; iter++) {
-    const newPts = [];
-    for (let i = 0; i < pts.length; i++) {
-      const p0 = pts[i];
-      const p1 = pts[(i + 1) % pts.length];
-      const Q = [0.75 * p0[0] + 0.25 * p1[0], 0.75 * p0[1] + 0.25 * p1[1]];
-      const R = [0.25 * p0[0] + 0.75 * p1[0], 0.25 * p0[1] + 0.75 * p1[1]];
-      newPts.push(Q, R);
-    }
-    pts = newPts;
-  }
-  return pts;
-}
-
 const BlobMachine = () => {
   const { serialData } = useSerial();
   const serialDataRef = useRef(serialData);
   const canvasRef = useRef(null);
   const pointsRef = useRef([]);
   const velocitiesRef = useRef([]);
+  const prevKnobValueRef = useRef(null);
+  const targetPointsRef = useRef(20);
 
   // Keep the ref up to date
   useEffect(() => {
@@ -71,26 +56,58 @@ const BlobMachine = () => {
     return { points, velocities };
   };
 
+  const updatePointsCount = () => {
+    const currentKnobValue = serialDataRef.current.knob_2.value;
+    if (currentKnobValue !== prevKnobValueRef.current) {
+      const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 50));
+      targetPointsRef.current = targetPoints;
+      const currentPoints = pointsRef.current.length;
+
+      if (targetPoints > currentPoints) {
+        // Add new points
+        const { points: newPoints, velocities: newVelocities } =
+          generateRandomPoints(targetPoints - currentPoints);
+        pointsRef.current.push(...newPoints);
+        velocitiesRef.current.push(...newVelocities);
+      } else if (targetPoints < currentPoints) {
+        // Remove excess points
+        pointsRef.current = pointsRef.current.slice(0, targetPoints);
+        velocitiesRef.current = velocitiesRef.current.slice(0, targetPoints);
+      }
+
+      prevKnobValueRef.current = currentKnobValue;
+    }
+  };
+
   const drawVoronoi = (ctx, points) => {
     ctx.clearRect(0, 0, 1024, 600);
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, 1024, 600);
 
-    // Use the latest knob value from the ref
     const borderWidth = ConvertRange(serialDataRef.current.knob_1.value, 0, 30);
-
-    // Create Delaunay and Voronoi
     const delaunay = Delaunay.from(points);
     const voronoi = delaunay.voronoi([0, 0, 1024, 600]);
 
-    // Draw each cell
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
       if (!cell) continue;
-      // Smooth the cell polygon for rounded corners
-      cell = chaikinSmooth(cell, 5); // 1 pass for subtle rounding
-      const hue = (i * 360) / points.length;
-      ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+      // RGB values from sliders (0-255 range)
+      const r = Math.floor(
+        ConvertRange(serialDataRef.current.vertical_slider_1.value, 0, 255)
+      );
+      const g = Math.floor(
+        ConvertRange(serialDataRef.current.vertical_slider_2.value, 0, 255)
+      );
+      const b = Math.floor(
+        ConvertRange(serialDataRef.current.vertical_slider_3.value, 0, 255)
+      );
+
+      // Vary lightness for adjacent cells (0.3 to 1.0 multiplier)
+      const lightness = 0.3 + (i % 6) * 0.14;
+
+      ctx.fillStyle = `rgb(${Math.floor(r * lightness)}, ${Math.floor(
+        g * lightness
+      )}, ${Math.floor(b * lightness)})`;
       ctx.beginPath();
       ctx.moveTo(cell[0][0], cell[0][1]);
       for (let j = 1; j < cell.length; j++) {
@@ -106,7 +123,6 @@ const BlobMachine = () => {
       ctx.stroke();
       ctx.restore();
     }
-
     // Draw inset border around the whole canvas
     if (borderWidth > 0) {
       ctx.save();
@@ -133,32 +149,26 @@ const BlobMachine = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d", { alpha: false });
-
-    // Enable anti-aliasing
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Initialize points
+    // Initial points generation
     const { points, velocities } = generateRandomPoints(20);
     pointsRef.current = points;
     velocitiesRef.current = velocities;
+    targetPointsRef.current = 20;
 
     const animate = () => {
-      // Use the latest slider value for speed
+      updatePointsCount();
       const speed = ConvertRange(
         serialDataRef.current.horizontal_slider.value,
         0.1,
-        4
+        6
       );
-      // Update points
       updatePoints(pointsRef.current, velocitiesRef.current, speed);
-
-      // Draw Voronoi
       drawVoronoi(ctx, pointsRef.current);
-
       requestAnimationFrame(animate);
     };
-
     animate();
   }, []);
 
