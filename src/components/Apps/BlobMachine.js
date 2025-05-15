@@ -85,19 +85,37 @@ const BlobMachine = () => {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, 1024, 600);
 
-    // Use knob1 to control inset scale (0.99 at 0% to 0.75 at 100%)
-    const insetScale = ConvertRange(
-      serialDataRef.current.knob_1.value,
-      1,
-      0.75
-    );
-
     const delaunay = Delaunay.from(points);
     const voronoi = delaunay.voronoi([0, 0, 1024, 600]);
 
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
       if (!cell) continue;
+
+      // Calculate center point of the cell
+      const centerX = cell.reduce((sum, p) => sum + p[0], 0) / cell.length;
+      const centerY = cell.reduce((sum, p) => sum + p[1], 0) / cell.length;
+
+      // Use knob1 to control stroke width (0 at 0% to 20 at 100%)
+      const strokeWidth = ConvertRange(
+        serialDataRef.current.knob_1.value,
+        0,
+        20
+      );
+
+      // Use knob4 to control center fill amount (0 at 0% to 0.8 at 100%)
+      const centerFillAmount = ConvertRange(
+        serialDataRef.current.knob_4.value,
+        0,
+        0.8
+      );
+
+      // Use knob5 to control inset shape roundness (0 at 0% to 48 at 100%)
+      const insetRadius = ConvertRange(
+        serialDataRef.current.knob_5.value,
+        0,
+        48
+      );
 
       // Get three different hue values from vertical sliders
       const hue1 = Math.floor(
@@ -118,28 +136,116 @@ const BlobMachine = () => {
 
       ctx.fillStyle = `hsl(${hue}, ${saturation * 100}%, 50%)`;
 
-      // Calculate center point of the cell
-      const centerX = cell.reduce((sum, p) => sum + p[0], 0) / cell.length;
-      const centerY = cell.reduce((sum, p) => sum + p[1], 0) / cell.length;
-
-      // Pre-calculate all scaled points
-      const scaledPoints = cell.map((point) => ({
-        x: centerX + (point[0] - centerX) * insetScale,
-        y: centerY + (point[1] - centerY) * insetScale,
-      }));
-
       const maxRadius = ConvertRange(serialDataRef.current.knob_3.value, 0, 48); // fillet radius 0-100px
 
       // If roundness is zero, draw sharp-cornered polygon
       if (maxRadius < 0.1) {
+        // Draw the main cell with stroke
         ctx.beginPath();
-        for (let j = 0; j < scaledPoints.length; j++) {
-          const pt = scaledPoints[j];
-          if (j === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
+        for (let j = 0; j < cell.length; j++) {
+          const pt = cell[j];
+          if (j === 0) ctx.moveTo(pt[0], pt[1]);
+          else ctx.lineTo(pt[0], pt[1]);
         }
         ctx.closePath();
         ctx.fill();
+        if (strokeWidth > 0) {
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = strokeWidth;
+          ctx.stroke();
+        }
+
+        // Draw the center fill
+        if (centerFillAmount > 0) {
+          const scale = 100;
+          const clipperPath = cell.map((pt) => ({
+            X: Math.round(pt[0] * scale),
+            Y: Math.round(pt[1] * scale),
+          }));
+
+          // If inset roundness is zero, draw sharp-cornered inset
+          if (insetRadius < 0.1) {
+            const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+            co.AddPath(
+              clipperPath,
+              ClipperLib.JoinType.jtRound,
+              ClipperLib.EndType.etClosedPolygon
+            );
+
+            let insetPath = [];
+            co.Execute(insetPath, -centerFillAmount * 100 * scale);
+
+            if (insetPath.length > 0) {
+              ctx.fillStyle = "black";
+              ctx.beginPath();
+              for (let j = 0; j < insetPath[0].length; j++) {
+                const pt = insetPath[0][j];
+                const x = pt.X / scale;
+                const y = pt.Y / scale;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+              }
+              ctx.closePath();
+              ctx.fill();
+            }
+          } else {
+            // --- Clipper.js robust rounding with adaptive fallback for inset ---
+            const minRadius = 1; // px
+            let tryRadius = insetRadius;
+            let roundedInsetPath = null;
+            while (tryRadius >= minRadius && !roundedInsetPath) {
+              const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+              co.AddPath(
+                clipperPath,
+                ClipperLib.JoinType.jtRound,
+                ClipperLib.EndType.etClosedPolygon
+              );
+              let offsetIn = [];
+              co.Execute(offsetIn, -tryRadius * scale);
+              if (offsetIn.length > 0) {
+                const co2 = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+                co2.AddPath(
+                  offsetIn[0],
+                  ClipperLib.JoinType.jtRound,
+                  ClipperLib.EndType.etClosedPolygon
+                );
+                let offsetOut = [];
+                co2.Execute(offsetOut, tryRadius * scale);
+                if (offsetOut.length > 0) {
+                  roundedInsetPath = offsetOut[0];
+                  break;
+                }
+              }
+              tryRadius /= 2;
+            }
+
+            if (roundedInsetPath) {
+              const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+              co.AddPath(
+                roundedInsetPath,
+                ClipperLib.JoinType.jtRound,
+                ClipperLib.EndType.etClosedPolygon
+              );
+
+              let insetPath = [];
+              co.Execute(insetPath, -centerFillAmount * 100 * scale);
+
+              if (insetPath.length > 0) {
+                ctx.fillStyle = "black";
+                ctx.beginPath();
+                for (let j = 0; j < insetPath[0].length; j++) {
+                  const pt = insetPath[0][j];
+                  const x = pt.X / scale;
+                  const y = pt.Y / scale;
+                  if (j === 0) ctx.moveTo(x, y);
+                  else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+              }
+            }
+          }
+        }
         continue;
       }
 
@@ -149,9 +255,9 @@ const BlobMachine = () => {
       let tryRadius = maxRadius;
       let roundedPath = null;
       while (tryRadius >= minRadius && !roundedPath) {
-        const clipperPath = scaledPoints.map((pt) => ({
-          X: Math.round(pt.x * scale),
-          Y: Math.round(pt.y * scale),
+        const clipperPath = cell.map((pt) => ({
+          X: Math.round(pt[0] * scale),
+          Y: Math.round(pt[1] * scale),
         }));
         const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
         co.AddPath(
@@ -177,19 +283,20 @@ const BlobMachine = () => {
         }
         tryRadius /= 2;
       }
+
       // If offset failed, draw a fallback circle at the centroid
       if (!roundedPath) {
         // Compute centroid
-        const centroid = scaledPoints.reduce(
-          (acc, pt) => ({ x: acc.x + pt.x, y: acc.y + pt.y }),
+        const centroid = cell.reduce(
+          (acc, pt) => ({ x: acc.x + pt[0], y: acc.y + pt[1] }),
           { x: 0, y: 0 }
         );
-        centroid.x /= scaledPoints.length;
-        centroid.y /= scaledPoints.length;
+        centroid.x /= cell.length;
+        centroid.y /= cell.length;
         // Find min distance from centroid to any vertex
         let minDist = Infinity;
-        for (let pt of scaledPoints) {
-          const d = Math.hypot(pt.x - centroid.x, pt.y - centroid.y);
+        for (let pt of cell) {
+          const d = Math.hypot(pt[0] - centroid.x, pt[1] - centroid.y);
           if (d < minDist) minDist = d;
         }
         if (minDist > 0.1) {
@@ -197,10 +304,16 @@ const BlobMachine = () => {
           ctx.arc(centroid.x, centroid.y, minDist, 0, 2 * Math.PI);
           ctx.closePath();
           ctx.fill();
+          if (strokeWidth > 0) {
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = strokeWidth;
+            ctx.stroke();
+          }
         }
         continue;
       }
-      // Draw the rounded polygon
+
+      // Draw the rounded polygon with stroke
       ctx.beginPath();
       for (let j = 0; j < roundedPath.length; j++) {
         const pt = roundedPath[j];
@@ -214,6 +327,97 @@ const BlobMachine = () => {
       }
       ctx.closePath();
       ctx.fill();
+      if (strokeWidth > 0) {
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+      }
+
+      // Draw the center fill for rounded polygons
+      if (centerFillAmount > 0) {
+        // If inset roundness is zero, draw sharp-cornered inset
+        if (insetRadius < 0.1) {
+          const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+          co.AddPath(
+            roundedPath,
+            ClipperLib.JoinType.jtRound,
+            ClipperLib.EndType.etClosedPolygon
+          );
+
+          let insetPath = [];
+          co.Execute(insetPath, -centerFillAmount * 100 * scale);
+
+          if (insetPath.length > 0) {
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            for (let j = 0; j < insetPath[0].length; j++) {
+              const pt = insetPath[0][j];
+              const x = pt.X / scale;
+              const y = pt.Y / scale;
+              if (j === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+          }
+        } else {
+          // --- Clipper.js robust rounding with adaptive fallback for inset ---
+          const minRadius = 1; // px
+          let tryRadius = insetRadius;
+          let roundedInsetPath = null;
+          while (tryRadius >= minRadius && !roundedInsetPath) {
+            const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+            co.AddPath(
+              roundedPath,
+              ClipperLib.JoinType.jtRound,
+              ClipperLib.EndType.etClosedPolygon
+            );
+            let offsetIn = [];
+            co.Execute(offsetIn, -tryRadius * scale);
+            if (offsetIn.length > 0) {
+              const co2 = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+              co2.AddPath(
+                offsetIn[0],
+                ClipperLib.JoinType.jtRound,
+                ClipperLib.EndType.etClosedPolygon
+              );
+              let offsetOut = [];
+              co2.Execute(offsetOut, tryRadius * scale);
+              if (offsetOut.length > 0) {
+                roundedInsetPath = offsetOut[0];
+                break;
+              }
+            }
+            tryRadius /= 2;
+          }
+
+          if (roundedInsetPath) {
+            const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
+            co.AddPath(
+              roundedInsetPath,
+              ClipperLib.JoinType.jtRound,
+              ClipperLib.EndType.etClosedPolygon
+            );
+
+            let insetPath = [];
+            co.Execute(insetPath, -centerFillAmount * 100 * scale);
+
+            if (insetPath.length > 0) {
+              ctx.fillStyle = "black";
+              ctx.beginPath();
+              for (let j = 0; j < insetPath[0].length; j++) {
+                const pt = insetPath[0][j];
+                const x = pt.X / scale;
+                const y = pt.Y / scale;
+                if (j === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+              }
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
+        }
+      }
     }
   };
 
