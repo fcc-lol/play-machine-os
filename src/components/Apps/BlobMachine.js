@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Delaunay } from "d3-delaunay";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
@@ -28,12 +28,38 @@ const Canvas = styled.canvas`
   height: 600px;
   background-color: black;
   image-rendering: smooth;
+  position: relative;
+  z-index: 1;
+`;
+
+const BlurCanvas = styled.canvas`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1024px;
+  height: 600px;
+  background-color: transparent;
+  image-rendering: smooth;
+  opacity: ${(props) => (props.isVisible ? 1 : 0)};
+  transition: opacity 0.3s ease;
+  z-index: 2;
+  pointer-events: none;
+`;
+
+const CanvasContainer = styled.div`
+  position: relative;
+  width: 1024px;
+  height: 600px;
 `;
 
 const BlobMachine = () => {
   const { serialData } = useSerial();
   const serialDataRef = useRef(serialData);
   const canvasRef = useRef(null);
+  const blurCanvasRef = useRef(null);
+  const isBlurredRef = useRef(false);
+  const prevButtonStateRef = useRef(false);
+  const blurAmountRef = useRef(16); // Start at max blur
   const pointsRef = useRef([]);
   const velocitiesRef = useRef([]);
   const prevKnobValueRef = useRef(null);
@@ -43,6 +69,31 @@ const BlobMachine = () => {
   useEffect(() => {
     serialDataRef.current = serialData;
   }, [serialData]);
+
+  // Handle button presses
+  useEffect(() => {
+    const currentButtonState = serialData.button_a.value;
+
+    // Toggle blur on/off with button_a
+    if (currentButtonState && !prevButtonStateRef.current) {
+      isBlurredRef.current = !isBlurredRef.current;
+    }
+
+    // Adjust blur amount with up/down buttons
+    if (serialData.button_up.value && !prevButtonStateRef.current) {
+      blurAmountRef.current = Math.min(16, blurAmountRef.current + 2);
+    }
+    if (serialData.button_down.value && !prevButtonStateRef.current) {
+      blurAmountRef.current = Math.max(2, blurAmountRef.current - 2);
+    }
+
+    // Update previous button state
+    prevButtonStateRef.current = currentButtonState;
+  }, [
+    serialData.button_a.value,
+    serialData.button_up.value,
+    serialData.button_down.value,
+  ]);
 
   const generateRandomPoints = (count) => {
     const points = [];
@@ -434,9 +485,13 @@ const BlobMachine = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const blurCanvas = blurCanvasRef.current;
     const ctx = canvas.getContext("2d", { alpha: false });
+    const blurCtx = blurCanvas.getContext("2d", { alpha: false });
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
+    blurCtx.imageSmoothingEnabled = true;
+    blurCtx.imageSmoothingQuality = "high";
 
     // Initial points generation
     const { points, velocities } = generateRandomPoints(20);
@@ -453,6 +508,30 @@ const BlobMachine = () => {
       );
       updatePoints(pointsRef.current, velocitiesRef.current, speed);
       drawVoronoi(ctx, pointsRef.current);
+
+      // Update blur canvas if enabled
+      if (isBlurredRef.current) {
+        // Update blur canvas
+        blurCtx.clearRect(0, 0, 1024, 600);
+        blurCtx.filter = `blur(${blurAmountRef.current}px)`;
+        blurCtx.drawImage(canvas, 0, 0);
+        blurCtx.filter = "none";
+
+        // Apply color dodge
+        blurCtx.save();
+        blurCtx.globalCompositeOperation = "color-dodge";
+        blurCtx.fillStyle = "#cccbcb";
+        blurCtx.fillRect(0, 0, 1024, 600);
+        blurCtx.restore();
+
+        // Apply color burn
+        blurCtx.save();
+        blurCtx.globalCompositeOperation = "color-burn";
+        blurCtx.fillStyle = "#000";
+        blurCtx.fillRect(0, 0, 1024, 600);
+        blurCtx.restore();
+      }
+
       requestAnimationFrame(animate);
     };
     animate();
@@ -460,7 +539,15 @@ const BlobMachine = () => {
 
   return (
     <Root>
-      <Canvas ref={canvasRef} width={1024} height={600} />
+      <CanvasContainer>
+        <Canvas ref={canvasRef} width={1024} height={600} />
+        <BlurCanvas
+          ref={blurCanvasRef}
+          width={1024}
+          height={600}
+          isVisible={isBlurredRef.current}
+        />
+      </CanvasContainer>
     </Root>
   );
 };
