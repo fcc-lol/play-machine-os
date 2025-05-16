@@ -18,7 +18,7 @@ const StatusIndicator = styled.div`
   color: ${(props) => props.theme.text};
   font-family: ${(props) => props.theme.fontFamily};
   text-transform: ${(props) => props.theme.textTransform};
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   font-weight: bold;
 `;
 
@@ -26,6 +26,19 @@ const Message = styled.div`
   color: ${(props) => props.theme.text};
   font-family: ${(props) => props.theme.fontFamily};
   text-transform: ${(props) => props.theme.textTransform};
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+`;
+
+const Data = styled.div`
+  font-weight: bold;
+`;
+
+const Timestamp = styled.div`
+  opacity: 0.5;
 `;
 
 function SocketEventsViewer() {
@@ -58,15 +71,19 @@ function SocketEventsViewer() {
 
   return (
     <Page>
-      {error && <pre>{error}</pre>}
       <StatusIndicator connected={isConnected}>
-        {isConnected
+        {error
+          ? error
+          : isConnected
           ? "Connected to socket server"
           : "Disconnected from socket server"}
       </StatusIndicator>
       {messageLog.map((message, index) => (
         <Message key={index} type={message.type}>
-          [{message.timestamp}] {message.type} {message.action}
+          <Data>
+            {message.type} {message.action}
+          </Data>
+          <Timestamp>{message.timestamp}</Timestamp>
         </Message>
       ))}
     </Page>
