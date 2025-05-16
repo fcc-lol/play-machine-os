@@ -75,8 +75,11 @@ const BlobMachine = () => {
         vec2 uv = gl_FragCoord.xy / u_resolution;
         float fieldBlue = 0.0;
         float fieldPink = 0.0;
+        vec2 distortion = vec2(0.0);
+        float totalPinkInfluence = 0.0;
 
-        for (int i = 0; i < MAX_METABALLS; ++i) {
+        // First pass: calculate pink field and distortion
+        for (int i = 15; i < MAX_METABALLS; ++i) {
           if (i >= u_count) break;
           vec2 pos = u_metaballs[i].xy;
           float r = u_metaballs[i].z;
@@ -84,12 +87,39 @@ const BlobMachine = () => {
           float dy = uv.y - pos.y;
           float d = max(dx * dx + dy * dy, 0.0001);
           float influence = (r * r) / d;
+          fieldPink += influence;
 
-          if (i < 15) {
-            fieldBlue += influence;
-          } else {
-            fieldPink += influence;
-          }
+          // Calculate repulsion (inverted distortion)
+          vec2 dir = normalize(vec2(dx, dy));
+          // Push outward from pink blob center
+          distortion -= dir * influence * 0.12; // Reduced from 0.2
+          totalPinkInfluence += influence;
+        }
+
+        // Normalize distortion
+        if (totalPinkInfluence > 0.0) {
+          distortion /= totalPinkInfluence;
+        }
+
+        // Apply distortion to UV coordinates
+        vec2 distortedUV = uv;
+        if (fieldPink > 0.3) {
+          // Add some turbulence to the distortion
+          float turbulence = sin(uv.x * 10.0 + u_time) * 0.08 + 
+                           sin(uv.y * 8.0 + u_time * 0.8) * 0.08; // Reduced from 0.1
+          distortedUV += distortion * min(fieldPink * 0.6, 1.0) + // Reduced from 0.8
+                        vec2(turbulence, turbulence);
+        }
+
+        // Second pass: calculate blue field with distorted coordinates
+        for (int i = 0; i < 15; ++i) {
+          if (i >= u_count) break;
+          vec2 pos = u_metaballs[i].xy;
+          float r = u_metaballs[i].z;
+          float dx = distortedUV.x - pos.x;
+          float dy = distortedUV.y - pos.y;
+          float d = max(dx * dx + dy * dy, 0.0001);
+          fieldBlue += (r * r) / d;
         }
 
         float threshold = 1.0;
