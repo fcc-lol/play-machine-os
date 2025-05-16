@@ -9,7 +9,7 @@ const SOCKET_URLS = {
 const MAX_RETRIES = 5;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
-export const useSocketConnection = (environment = "local", onSerialData) => {
+export const useSocketConnection = (environment = "local", onMessage) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -42,18 +42,18 @@ export const useSocketConnection = (environment = "local", onSerialData) => {
 
   const handleIncomingMessage = useCallback(
     (data) => {
+      // Always call the onMessage handler if provided
+      onMessage?.(data);
+
+      // Handle getSerialData requests automatically
       if (data.action === "getSerialData") {
-        // Use the ref to get the latest serial data
         sendMessage({
           action: "serialData",
           data: latestSerialDataRef.current
         });
-      } else if (data.action === "serialData") {
-        // Handle incoming serial data
-        onSerialData?.(data.data);
       }
     },
-    [sendMessage, onSerialData] // Remove serialData from dependencies since we're using ref
+    [sendMessage, onMessage]
   );
 
   const connect = useCallback(() => {

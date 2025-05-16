@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
 import { useSocket } from "../../../functions/SocketContext";
+import { useSerial } from "../../../functions/SerialDataContext";
 
 const Page = styled.div`
   display: flex;
@@ -43,30 +44,50 @@ const Timestamp = styled.div`
 
 function SocketEventsViewer() {
   const [messageLog, setMessageLog] = useState([]);
-  const { isConnected, error } = useSocket();
+  const { isConnected, error, sendMessage, registerHandler } = useSocket();
+  const { serialData } = useSerial();
 
+  // Keep track of latest serial data for responding to requests
+  const latestSerialDataRef = React.useRef(serialData);
+  useEffect(() => {
+    latestSerialDataRef.current = serialData;
+  }, [serialData]);
+
+  // Handle incoming socket messages
   const handleMessage = useCallback((data) => {
-    // Log the received getSerialData request
-    setMessageLog((prev) => [
-      {
-        type: "received",
-        action: "getSerialData",
-        timestamp: new Date().toISOString()
-      },
-      ...prev
-    ]);
+    // Only log getSerialData requests
+    if (data.action === "getSerialData") {
+      // Log the request
+      setMessageLog((prev) => [
+        {
+          type: "received",
+          action: "getSerialData",
+          timestamp: new Date().toISOString()
+        },
+        ...prev
+      ]);
 
-    // Log our serialData response
-    setMessageLog((prev) => [
-      {
-        type: "sent",
-        action: "serialData",
-        data,
-        timestamp: new Date().toISOString()
-      },
-      ...prev
-    ]);
+      // Log our response
+      setMessageLog((prev) => [
+        {
+          type: "sent",
+          action: "serialData",
+          data: latestSerialDataRef.current,
+          timestamp: new Date().toISOString()
+        },
+        ...prev
+      ]);
+    }
   }, []);
+
+  // Register our message handler
+  useEffect(() => {
+    if (isConnected) {
+      // Register handler and get cleanup function
+      const cleanup = registerHandler(handleMessage);
+      return cleanup;
+    }
+  }, [isConnected, registerHandler, handleMessage]);
 
   return (
     <Page>
