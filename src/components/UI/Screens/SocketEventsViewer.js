@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import styled from "styled-components";
-import { useSocketConnection } from "../../../functions/SocketConnection";
+import { useSocket } from "../../../functions/SocketContext";
 
 const Page = styled.div`
   display: flex;
@@ -43,6 +43,7 @@ const Timestamp = styled.div`
 
 function SocketEventsViewer() {
   const [messageLog, setMessageLog] = useState([]);
+  const { isConnected, error } = useSocket();
 
   const handleMessage = useCallback((data) => {
     // Log the received getSerialData request
@@ -66,16 +67,6 @@ function SocketEventsViewer() {
       ...prev
     ]);
   }, []);
-
-  // Determine environment based on hostname
-  const environment = useMemo(() => {
-    return window.location.hostname === "localhost" ? "local" : "production";
-  }, []);
-
-  const { isConnected, error } = useSocketConnection(
-    environment,
-    handleMessage
-  );
 
   return (
     <Page>

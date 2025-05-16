@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, lazy } from "react";
 import { SerialDataProvider, useSerial } from "./functions/SerialDataContext";
 import { ThemeProvider, useTheme } from "./functions/ThemeContext";
+import { SocketProvider } from "./functions/SocketContext";
 import ReadSerialData from "./functions/ReadSerialData";
 import Menu from "./components/UI/Menu";
 import Hardware from "./components/Simulator/Hardware";
@@ -226,9 +227,11 @@ function App() {
     <StyleSheetManager shouldForwardProp={isPropValid}>
       <ThemeProvider>
         <SerialDataProvider isSimulatorMode={isSimulatorMode}>
-          <ThemeWrapper>
-            <AppContent isSimulatorMode={isSimulatorMode} />
-          </ThemeWrapper>
+          <SocketProvider>
+            <ThemeWrapper>
+              <AppContent isSimulatorMode={isSimulatorMode} />
+            </ThemeWrapper>
+          </SocketProvider>
         </SerialDataProvider>
       </ThemeProvider>
     </StyleSheetManager>
