@@ -71,6 +71,11 @@
               "screen": "PhysicalInputMonitor"
             },
             {
+              "id": "socket-events-viewer",
+              "label": "Socket Events Viewer",
+              "screen": "SocketEventsViewer"
+            },
+            {
               "id": "about",
               "label": "About",
               "screen": "About"
