@@ -30,6 +30,7 @@ const apps = {
   WaveVisualizer: lazy(() => import("./components/Apps/WaveVisualizer")),
   RainMachine: lazy(() => import("./components/Apps/RainMachine")),
   CellMachine: lazy(() => import("./components/Apps/CellMachine")),
+  BlobMachine: lazy(() => import("./components/Apps/BlobMachine")),
   Template: lazy(() => import("./components/Apps/Template")),
 };
 
