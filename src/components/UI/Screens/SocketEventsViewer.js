@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { useSocketConnection } from "../../../functions/SocketConnection";
 
@@ -67,7 +67,15 @@ function SocketEventsViewer() {
     ]);
   }, []);
 
-  const { isConnected, error } = useSocketConnection("local", handleMessage);
+  // Determine environment based on hostname
+  const environment = useMemo(() => {
+    return window.location.hostname === "localhost" ? "local" : "production";
+  }, []);
+
+  const { isConnected, error } = useSocketConnection(
+    environment,
+    handleMessage
+  );
 
   return (
     <Page>
