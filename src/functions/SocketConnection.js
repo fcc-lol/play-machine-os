@@ -61,11 +61,17 @@ export const useSocketConnection = (
   );
 
   const connect = useCallback(() => {
-    if (socketRef.current || !shouldConnect) return;
+    if (socketRef.current || !shouldConnect) {
+      console.log("Socket connection skipped:", {
+        hasSocket: !!socketRef.current,
+        shouldConnect
+      });
+      return;
+    }
 
     try {
       console.log(
-        `Connecting to ${SOCKET_URLS[environment]} (Attempt ${
+        `Attempting to connect to ${SOCKET_URLS[environment]} (Attempt ${
           retryCount + 1
         }/${MAX_RETRIES})`
       );
@@ -73,7 +79,10 @@ export const useSocketConnection = (
       socketRef.current = ws;
 
       ws.onopen = () => {
-        console.log("WebSocket connected");
+        console.log(
+          "WebSocket connected successfully to",
+          SOCKET_URLS[environment]
+        );
         isConnectedRef.current = true;
         setIsConnected(true);
         setError(null);
@@ -91,12 +100,24 @@ export const useSocketConnection = (
       };
 
       ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        console.error(
+          "WebSocket error for",
+          SOCKET_URLS[environment],
+          ":",
+          error
+        );
         setError("Connection error");
       };
 
-      ws.onclose = () => {
-        console.log("WebSocket closed");
+      ws.onclose = (event) => {
+        console.log(
+          "WebSocket closed for",
+          SOCKET_URLS[environment],
+          "with code:",
+          event.code,
+          "reason:",
+          event.reason
+        );
         isConnectedRef.current = false;
         setIsConnected(false);
         socketRef.current = null;
@@ -121,7 +142,12 @@ export const useSocketConnection = (
         }
       };
     } catch (err) {
-      console.error("Failed to create WebSocket:", err);
+      console.error(
+        "Failed to create WebSocket for",
+        SOCKET_URLS[environment],
+        ":",
+        err
+      );
       setError("Connection failed");
       setShouldConnect(false);
     }
