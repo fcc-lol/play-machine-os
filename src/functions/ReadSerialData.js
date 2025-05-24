@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useSerial } from "./SerialDataContext";
 import styled from "styled-components";
-import hardwareConfig from "../config/Hardware.json";
+import hardware from "../config/Hardware.json";
 import ConvertRange from "../functions/ConvertRange";
 
 const roundToNearestTenth = (number) => Math.round(number);
@@ -62,10 +62,10 @@ function ReadSerialData() {
 
         if (id.includes("button_")) {
           value = rawValue.trim().toLowerCase() === "true";
-          const label = hardwareConfig.buttons[id] || id;
+          const label = hardware.buttons[id] || id;
           processedData[label] = { value };
         } else if (id.includes("potentiometer_")) {
-          const config = hardwareConfig.potentiometers[id];
+          const config = hardware.potentiometers[id];
           if (config) {
             const rawNumValue = parseFloat(rawValue);
             const value0to100 = ConvertRange(
@@ -179,7 +179,7 @@ function ReadSerialData() {
             }
 
             try {
-              await port.open({ baudRate: 9600 });
+              await port.open({ baudRate: hardware.serial.baudRate });
               const writer = port.writable.getWriter();
 
               // Send identification request
@@ -227,7 +227,7 @@ function ReadSerialData() {
 
         if (port) {
           try {
-            await port.open({ baudRate: 9600 });
+            await port.open({ baudRate: hardware.serial.baudRate });
             const writer = port.writable.getWriter();
 
             // Send identification request

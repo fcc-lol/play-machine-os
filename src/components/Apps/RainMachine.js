@@ -1,6 +1,7 @@
-import styled from "styled-components";
-import { useSerial } from "../../functions/SerialDataContext";
 import { useMemo, useEffect, useRef, useState } from "react";
+import styled from "styled-components";
+import hardware from "../../config/Hardware.json";
+import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
 
 const Root = styled.div`
@@ -172,7 +173,12 @@ const RainMachine = () => {
 
   return (
     <Root>
-      <canvas ref={canvasRef} width={1024} height={600} id="patternCanvas" />
+      <canvas
+        ref={canvasRef}
+        width={hardware.screen.width}
+        height={hardware.screen.height}
+        id="patternCanvas"
+      />
     </Root>
   );
 };

@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { useEffect, useRef } from "react";
 import { Delaunay } from "d3-delaunay";
+import hardware from "../../config/Hardware.json";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
 
@@ -23,8 +24,8 @@ const Root = styled.div`
 `;
 
 const Canvas = styled.canvas`
-  width: 1024px;
-  height: 600px;
+  width: ${hardware.screen.width}px;
+  height: ${hardware.screen.height}px;
   background-color: black;
   image-rendering: smooth;
 `;
@@ -47,10 +48,13 @@ const StainedGlassMachine = () => {
     const points = [];
     const velocities = [];
     for (let i = 0; i < count; i++) {
-      points.push([Math.random() * 1024, Math.random() * 600]);
+      points.push([
+        Math.random() * hardware.screen.width,
+        Math.random() * hardware.screen.height
+      ]);
       velocities.push({
         x: (Math.random() - 0.5) * 2,
-        y: (Math.random() - 0.5) * 2,
+        y: (Math.random() - 0.5) * 2
       });
     }
     return { points, velocities };
@@ -80,13 +84,18 @@ const StainedGlassMachine = () => {
   };
 
   const drawStainedGlass = (ctx, points) => {
-    ctx.clearRect(0, 0, 1024, 600);
+    ctx.clearRect(0, 0, hardware.screen.width, hardware.screen.height);
     ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, 1024, 600);
+    ctx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
 
     const borderWidth = ConvertRange(serialDataRef.current.knob_1.value, 0, 30);
     const delaunay = Delaunay.from(points);
-    const voronoi = delaunay.voronoi([0, 0, 1024, 600]);
+    const voronoi = delaunay.voronoi([
+      0,
+      0,
+      hardware.screen.width,
+      hardware.screen.height
+    ]);
 
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
@@ -137,7 +146,12 @@ const StainedGlassMachine = () => {
       ctx.lineWidth = borderWidth;
       ctx.lineJoin = "round";
       const half = borderWidth / 2;
-      ctx.strokeRect(half, half, 1024 - borderWidth, 600 - borderWidth);
+      ctx.strokeRect(
+        half,
+        half,
+        hardware.screen.width - borderWidth,
+        hardware.screen.height - borderWidth
+      );
       ctx.restore();
     }
   };
@@ -148,8 +162,10 @@ const StainedGlassMachine = () => {
       point[1] += velocities[i].y * speed;
 
       // Bounce off walls
-      if (point[0] < 0 || point[0] > 1024) velocities[i].x *= -1;
-      if (point[1] < 0 || point[1] > 600) velocities[i].y *= -1;
+      if (point[0] < 0 || point[0] > hardware.screen.width)
+        velocities[i].x *= -1;
+      if (point[1] < 0 || point[1] > hardware.screen.height)
+        velocities[i].y *= -1;
     });
   };
 
@@ -177,11 +193,16 @@ const StainedGlassMachine = () => {
       requestAnimationFrame(animate);
     };
     animate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <Root>
-      <Canvas ref={canvasRef} width={1024} height={600} />
+      <Canvas
+        ref={canvasRef}
+        width={hardware.screen.width}
+        height={hardware.screen.height}
+      />
     </Root>
   );
 };

@@ -11,7 +11,8 @@ import styled, {
   ThemeProvider as StyledThemeProvider
 } from "styled-components";
 import isPropValid from "@emotion/is-prop-valid";
-import menuConfig from "./config/Menu.json";
+import menu from "./config/Menu.json";
+import hardware from "./config/Hardware.json";
 
 // Import screens and apps dynamically
 const screens = {
@@ -35,6 +36,7 @@ const apps = {
   RainMachine: lazy(() => import("./components/Apps/RainMachine")),
   CellMachine: lazy(() => import("./components/Apps/CellMachine")),
   BlobMachine: lazy(() => import("./components/Apps/BlobMachine")),
+  HandDetection: lazy(() => import("./components/Apps/HandDetection")),
   Template: lazy(() => import("./components/Apps/Template"))
 };
 
@@ -43,8 +45,8 @@ const AppContainer = styled.div.attrs((props) => ({
     background: props.theme.background
   }
 }))`
-  width: 1024px;
-  height: 600px;
+  width: ${hardware.screen.width}px;
+  height: ${hardware.screen.height}px;
   margin: 0;
   position: absolute;
   overflow: hidden;
@@ -80,8 +82,8 @@ const AppContent = ({ isSimulatorMode }) => {
   const { serialData, isInputConnected, isOutputConnected } = useSerial();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
-  const [menuStack, setMenuStack] = useState([menuConfig.root]);
-  const [previousMenuStack, setPreviousMenuStack] = useState([menuConfig.root]);
+  const [menuStack, setMenuStack] = useState([menu.root]);
+  const [previousMenuStack, setPreviousMenuStack] = useState([menu.root]);
   const [menuAction, setMenuAction] = useState(null);
   const [selectedIndices, setSelectedIndices] = useState({});
   const lastButtonPressTime = useRef({});
@@ -101,7 +103,7 @@ const AppContent = ({ isSimulatorMode }) => {
       setCurrentScreen(null);
       setCurrentApp(null);
       if (submenu) {
-        setMenuStack([menuConfig.root, submenu]);
+        setMenuStack([menu.root, submenu]);
       } else {
         setMenuStack(previousMenuStack);
       }
@@ -159,7 +161,7 @@ const AppContent = ({ isSimulatorMode }) => {
       }
 
       // Wrap app components that need hand detection
-      const needsHandDetection = ["HandDrawingApp"].includes(currentApp);
+      const needsHandDetection = ["HandDetection"].includes(currentApp);
 
       const content = (
         <React.Suspense fallback={<div>Loading...</div>}>

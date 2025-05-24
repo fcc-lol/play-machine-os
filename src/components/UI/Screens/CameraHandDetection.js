@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { useHandDetection } from "../../../functions/HandDetectionContext";
 import { useSerial } from "../../../functions/SerialDataContext";
+import { useEffect } from "react";
 
 const Container = styled.div`
   display: flex;
@@ -14,13 +15,6 @@ const Container = styled.div`
   background-color: #000000;
 `;
 
-const Video = styled.video`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: ${(props) => props.opacity};
-`;
-
 const Canvas = styled.canvas`
   position: absolute;
   top: 0;
@@ -29,6 +23,17 @@ const Canvas = styled.canvas`
   height: 100%;
   pointer-events: none;
   z-index: 2;
+`;
+
+const Video = styled.video`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  opacity: ${(props) => props.opacity};
 `;
 
 const DebugPanel = styled.div`
@@ -58,34 +63,24 @@ const MeasurementInfo = styled(PointInfo)`
   padding-top: 10px;
 `;
 
-// Hand landmark names
-const HAND_LANDMARK_NAMES = {
-  0: "WRIST",
-  1: "THUMB_CMC",
-  2: "THUMB_MCP",
-  3: "THUMB_IP",
-  4: "THUMB_TIP",
-  5: "INDEX_FINGER_MCP",
-  6: "INDEX_FINGER_PIP",
-  7: "INDEX_FINGER_DIP",
-  8: "INDEX_FINGER_TIP",
-  9: "MIDDLE_FINGER_MCP",
-  10: "MIDDLE_FINGER_PIP",
-  11: "MIDDLE_FINGER_DIP",
-  12: "MIDDLE_FINGER_TIP",
-  13: "RING_FINGER_MCP",
-  14: "RING_FINGER_PIP",
-  15: "RING_FINGER_DIP",
-  16: "RING_FINGER_TIP",
-  17: "PINKY_MCP",
-  18: "PINKY_PIP",
-  19: "PINKY_DIP",
-  20: "PINKY_TIP"
-};
-
 export default function CameraHandDetection() {
-  const { videoRef, canvasRef, landmarks, measurements } = useHandDetection();
+  const {
+    videoRef,
+    canvasRef,
+    handPoints,
+    interpretedParams,
+    HAND_LANDMARK_NAMES,
+    setVideoProps
+  } = useHandDetection();
   const { serialData } = useSerial();
+
+  useEffect(() => {
+    setVideoProps({
+      opacity: (serialData["vertical_slider_1"]?.value || 0) / 100,
+      fullWidth: true,
+      fullHeight: true
+    });
+  }, [serialData, setVideoProps]);
 
   return (
     <Container>
@@ -97,15 +92,15 @@ export default function CameraHandDetection() {
       />
       <Canvas ref={canvasRef} />
       <DebugPanel>
-        {landmarks.map((point, index) => (
+        {handPoints.map((point, index) => (
           <PointInfo key={index}>
             Hand {point.hand} - {HAND_LANDMARK_NAMES[point.point]}: ({point.x},{" "}
             {point.y})
           </PointInfo>
         ))}
-        {Object.entries(measurements).map(([key, value]) => (
-          <MeasurementInfo key={key}>
-            {key.includes("pinch") ? "Pinch Distance" : key}: {value}px
+        {Object.entries(interpretedParams).map(([handId, params]) => (
+          <MeasurementInfo key={handId}>
+            {handId} - Pinch Distance: {params.indexThumbPinchDistance}px
           </MeasurementInfo>
         ))}
       </DebugPanel>

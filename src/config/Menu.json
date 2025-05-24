@@ -38,6 +38,11 @@
               "label": "Blob Machine",
               "app": "BlobMachine"
             },
+            {
+              "id": "hand-detection",
+              "label": "Hand Detection",
+              "app": "HandDetection"
+            },
             { "id": "template", "label": "Template", "app": "Template" }
           ]
         }

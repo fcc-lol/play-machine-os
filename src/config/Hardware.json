@@ -1,4 +1,12 @@
 {
+  "screen": {
+    "width": 1024,
+    "height": 600
+  },
+  "serial": {
+    "port": "COM3",
+    "baudRate": 9600
+  },
   "potentiometers": {
     "potentiometer_1": {
       "label": "horizontal_slider",

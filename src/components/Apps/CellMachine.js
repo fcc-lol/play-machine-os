@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { useEffect, useRef } from "react";
 import { Delaunay } from "d3-delaunay";
+import hardware from "../../config/Hardware.json";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
 import ClipperLib from "clipper-lib";
@@ -24,8 +25,8 @@ const Root = styled.div`
 `;
 
 const Canvas = styled.canvas`
-  width: 1024px;
-  height: 600px;
+  width: ${hardware.screen.width}px;
+  height: ${hardware.screen.height}px;
   background-color: black;
   image-rendering: smooth;
   position: relative;
@@ -36,8 +37,8 @@ const BlurCanvas = styled.canvas`
   position: absolute;
   top: 0;
   left: 0;
-  width: 1024px;
-  height: 600px;
+  width: ${hardware.screen.width}px;
+  height: ${hardware.screen.height}px;
   background-color: transparent;
   image-rendering: smooth;
   opacity: ${(props) => (props.isVisible ? 1 : 0)};
@@ -48,8 +49,8 @@ const BlurCanvas = styled.canvas`
 
 const CanvasContainer = styled.div`
   position: relative;
-  width: 1024px;
-  height: 600px;
+  width: ${hardware.screen.width}px;
+  height: ${hardware.screen.height}px;
 `;
 
 const CellMachine = () => {
@@ -99,7 +100,10 @@ const CellMachine = () => {
     const points = [];
     const velocities = [];
     for (let i = 0; i < count; i++) {
-      points.push([Math.random() * 1024, Math.random() * 600]);
+      points.push([
+        Math.random() * hardware.screen.width,
+        Math.random() * hardware.screen.height
+      ]);
       velocities.push({
         x: (Math.random() - 0.5) * 2,
         y: (Math.random() - 0.5) * 2
@@ -109,12 +113,17 @@ const CellMachine = () => {
   };
 
   const drawVoronoi = (ctx, points) => {
-    ctx.clearRect(0, 0, 1024, 600);
+    ctx.clearRect(0, 0, hardware.screen.width, hardware.screen.height);
     ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, 1024, 600);
+    ctx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
 
     const delaunay = Delaunay.from(points);
-    const voronoi = delaunay.voronoi([0, 0, 1024, 600]);
+    const voronoi = delaunay.voronoi([
+      0,
+      0,
+      hardware.screen.width,
+      hardware.screen.height
+    ]);
 
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
@@ -451,8 +460,10 @@ const CellMachine = () => {
       point[1] += velocities[i].y * speed;
 
       // Bounce off walls
-      if (point[0] < 0 || point[0] > 1024) velocities[i].x *= -1;
-      if (point[1] < 0 || point[1] > 600) velocities[i].y *= -1;
+      if (point[0] < 0 || point[0] > hardware.screen.width)
+        velocities[i].x *= -1;
+      if (point[1] < 0 || point[1] > hardware.screen.height)
+        velocities[i].y *= -1;
     });
   };
 
@@ -508,7 +519,7 @@ const CellMachine = () => {
       // Update blur canvas if enabled
       if (isBlurredRef.current) {
         // Update blur canvas
-        blurCtx.clearRect(0, 0, 1024, 600);
+        blurCtx.clearRect(0, 0, hardware.screen.width, hardware.screen.height);
         blurCtx.filter = `blur(${blurAmountRef.current}px)`;
         blurCtx.drawImage(canvas, 0, 0);
         blurCtx.filter = "none";
@@ -517,14 +528,14 @@ const CellMachine = () => {
         blurCtx.save();
         blurCtx.globalCompositeOperation = "color-dodge";
         blurCtx.fillStyle = "#cccbcb";
-        blurCtx.fillRect(0, 0, 1024, 600);
+        blurCtx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
         blurCtx.restore();
 
         // Apply color burn
         blurCtx.save();
         blurCtx.globalCompositeOperation = "color-burn";
         blurCtx.fillStyle = "#000";
-        blurCtx.fillRect(0, 0, 1024, 600);
+        blurCtx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
         blurCtx.restore();
       }
 
@@ -536,11 +547,15 @@ const CellMachine = () => {
   return (
     <Root>
       <CanvasContainer>
-        <Canvas ref={canvasRef} width={1024} height={600} />
+        <Canvas
+          ref={canvasRef}
+          width={hardware.screen.width}
+          height={hardware.screen.height}
+        />
         <BlurCanvas
           ref={blurCanvasRef}
-          width={1024}
-          height={600}
+          width={hardware.screen.width}
+          height={hardware.screen.height}
           isVisible={isBlurredRef.current}
         />
       </CanvasContainer>

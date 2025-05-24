@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
+import hardware from "../../config/Hardware.json";
 import { Map, NavigationControl } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useSerial } from "../../functions/SerialDataContext";
@@ -193,8 +194,8 @@ const MiniMapContainer = styled.div`
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: calc(1024px / 5);
-  height: calc(600px / 5);
+  width: calc(${hardware.screen.width}px / 5);
+  height: calc(${hardware.screen.height}px / 5);
   border-radius: 0.5rem;
   overflow: hidden;
   z-index: 3;
