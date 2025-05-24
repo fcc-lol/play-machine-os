@@ -40,7 +40,7 @@ export default function HandDetection() {
   return (
     <Container>
       {points.length === 0 ? (
-        <Label>Raise your hand</Label>
+        <Label>Raise your hands</Label>
       ) : (
         points
           .filter((point) => point.point === 8)

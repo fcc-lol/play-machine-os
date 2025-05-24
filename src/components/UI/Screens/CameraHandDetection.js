@@ -92,7 +92,7 @@ export default function CameraHandDetection() {
   return (
     <Container>
       {isLoading && <Loading />}
-      {!isLoading && points.length === 0 && <Label>Raise your hand</Label>}
+      {!isLoading && points.length === 0 && <Label>Raise your hands</Label>}
       <Video
         ref={videoRef}
         autoPlay

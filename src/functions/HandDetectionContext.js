@@ -58,37 +58,6 @@ export const HAND_LANDMARK_NAMES = {
   20: "PINKY_TIP"
 };
 
-// Smoothing utility
-const createSmoothingFilter = (windowSize = 5) => {
-  const points = new Array(windowSize).fill(null);
-  let currentIndex = 0;
-
-  return {
-    addPoint: (x, y, z) => {
-      points[currentIndex] = { x, y, z };
-      currentIndex = (currentIndex + 1) % windowSize;
-
-      const validPoints = points.filter((p) => p !== null);
-      if (validPoints.length === 0) return { x, y, z };
-
-      const sum = validPoints.reduce(
-        (acc, point) => ({
-          x: acc.x + point.x,
-          y: acc.y + point.y,
-          z: acc.z + point.z
-        }),
-        { x: 0, y: 0, z: 0 }
-      );
-
-      return {
-        x: Math.round(sum.x / validPoints.length),
-        y: Math.round(sum.y / validPoints.length),
-        z: sum.z / validPoints.length
-      };
-    }
-  };
-};
-
 // Utility function to calculate distance between two points
 const calculateDistance = (point1, point2) => {
   const dx = point2.x - point1.x;
@@ -103,7 +72,6 @@ export function HandDetectionProvider({ children }) {
   const [points, setpoints] = useState([]);
   const [measurements, setmeasurements] = useState({});
   const [isLoading, setIsLoading] = useState(true);
-  const smoothingFiltersRef = useRef({});
   const { themeValues } = useTheme();
   const [videoProps, setVideoProps] = useState({
     opacity: 1,
@@ -130,45 +98,42 @@ export function HandDetectionProvider({ children }) {
 
     if (results.landmarks) {
       results.landmarks.forEach((landmarks, handIndex) => {
-        const smoothedPoints = {};
-
         landmarks.forEach((landmark, pointIndex) => {
-          const key = `hand${handIndex}_point${pointIndex}`;
-
-          if (!smoothingFiltersRef.current[key]) {
-            smoothingFiltersRef.current[key] = createSmoothingFilter(5);
-          }
-
-          const smoothed = smoothingFiltersRef.current[key].addPoint(
-            Math.round(landmark.x * video.videoWidth),
-            Math.round(landmark.y * video.videoHeight),
-            landmark.z
-          );
-
-          smoothedPoints[pointIndex] = smoothed;
+          const x = Math.round(landmark.x * video.videoWidth);
+          const y = Math.round(landmark.y * video.videoHeight);
+          const z = landmark.z;
 
           // Mirror the x coordinate for the points array
-          const mirroredX = video.videoWidth - smoothed.x;
+          const mirroredX = video.videoWidth - x;
 
           points.push({
             hand: handIndex + 1,
             point: pointIndex,
             x: mirroredX,
-            y: smoothed.y,
-            z: smoothed.z
+            y: y,
+            z: z
           });
         });
 
         // Calculate parameters for each hand
-        if (smoothedPoints[4] && smoothedPoints[8]) {
+        if (landmarks[4] && landmarks[8]) {
+          const point4 = {
+            x: Math.round(landmarks[4].x * video.videoWidth),
+            y: Math.round(landmarks[4].y * video.videoHeight)
+          };
+          const point8 = {
+            x: Math.round(landmarks[8].x * video.videoWidth),
+            y: Math.round(landmarks[8].y * video.videoHeight)
+          };
+
           // Create mirrored points for distance calculation
           const mirroredPoint4 = {
-            x: video.videoWidth - smoothedPoints[4].x,
-            y: smoothedPoints[4].y
+            x: video.videoWidth - point4.x,
+            y: point4.y
           };
           const mirroredPoint8 = {
-            x: video.videoWidth - smoothedPoints[8].x,
-            y: smoothedPoints[8].y
+            x: video.videoWidth - point8.x,
+            y: point8.y
           };
 
           newmeasurements[`hand${handIndex + 1}`] = {
@@ -184,27 +149,28 @@ export function HandDetectionProvider({ children }) {
           // Draw hand landmarks
           ctx.fillStyle = themeValues.text;
           for (const landmark of landmarks) {
-            const key = `hand${handIndex}_point${landmarks.indexOf(landmark)}`;
-            const smoothed = smoothingFiltersRef.current[key]?.addPoint(
-              Math.round(landmark.x * video.videoWidth),
-              Math.round(landmark.y * video.videoHeight),
-              landmark.z
-            ) || {
-              x: landmark.x * video.videoWidth,
-              y: landmark.y * video.videoHeight,
-              z: landmark.z
-            };
+            const x = Math.round(landmark.x * video.videoWidth);
+            const y = Math.round(landmark.y * video.videoHeight);
 
             ctx.beginPath();
-            ctx.arc(smoothed.x, smoothed.y, 5, 0, 2 * Math.PI);
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
             ctx.fill();
           }
 
           // Draw pinch measurement if available
-          if (smoothedPoints[4] && smoothedPoints[8]) {
+          if (landmarks[4] && landmarks[8]) {
+            const point4 = {
+              x: Math.round(landmarks[4].x * video.videoWidth),
+              y: Math.round(landmarks[4].y * video.videoHeight)
+            };
+            const point8 = {
+              x: Math.round(landmarks[8].x * video.videoWidth),
+              y: Math.round(landmarks[8].y * video.videoHeight)
+            };
+
             ctx.beginPath();
-            ctx.moveTo(smoothedPoints[4].x, smoothedPoints[4].y);
-            ctx.lineTo(smoothedPoints[8].x, smoothedPoints[8].y);
+            ctx.moveTo(point4.x, point4.y);
+            ctx.lineTo(point8.x, point8.y);
             ctx.strokeStyle = themeValues.text;
             ctx.lineWidth = 2;
             ctx.stroke();
