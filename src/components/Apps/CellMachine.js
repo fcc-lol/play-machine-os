@@ -92,7 +92,7 @@ const CellMachine = () => {
   }, [
     serialData.button_a.value,
     serialData.button_up.value,
-    serialData.button_down.value,
+    serialData.button_down.value
   ]);
 
   const generateRandomPoints = (count) => {
@@ -102,33 +102,10 @@ const CellMachine = () => {
       points.push([Math.random() * 1024, Math.random() * 600]);
       velocities.push({
         x: (Math.random() - 0.5) * 2,
-        y: (Math.random() - 0.5) * 2,
+        y: (Math.random() - 0.5) * 2
       });
     }
     return { points, velocities };
-  };
-
-  const updatePointsCount = () => {
-    const currentKnobValue = serialDataRef.current.knob_2.value;
-    if (currentKnobValue !== prevKnobValueRef.current) {
-      const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 100));
-      targetPointsRef.current = targetPoints;
-      const currentPoints = pointsRef.current.length;
-
-      if (targetPoints > currentPoints) {
-        // Add new points
-        const { points: newPoints, velocities: newVelocities } =
-          generateRandomPoints(targetPoints - currentPoints);
-        pointsRef.current.push(...newPoints);
-        velocitiesRef.current.push(...newVelocities);
-      } else if (targetPoints < currentPoints) {
-        // Remove excess points
-        pointsRef.current = pointsRef.current.slice(0, targetPoints);
-        velocitiesRef.current = velocitiesRef.current.slice(0, targetPoints);
-      }
-
-      prevKnobValueRef.current = currentKnobValue;
-    }
   };
 
   const drawVoronoi = (ctx, points) => {
@@ -142,10 +119,6 @@ const CellMachine = () => {
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
       if (!cell) continue;
-
-      // Calculate center point of the cell
-      const centerX = cell.reduce((sum, p) => sum + p[0], 0) / cell.length;
-      const centerY = cell.reduce((sum, p) => sum + p[1], 0) / cell.length;
 
       // Use knob1 to control stroke width (0 at 0% to 20 at 100%)
       const strokeWidth = ConvertRange(
@@ -211,7 +184,7 @@ const CellMachine = () => {
           const scale = 100;
           const clipperPath = cell.map((pt) => ({
             X: Math.round(pt[0] * scale),
-            Y: Math.round(pt[1] * scale),
+            Y: Math.round(pt[1] * scale)
           }));
 
           // If inset roundness is zero, draw sharp-cornered inset
@@ -308,7 +281,7 @@ const CellMachine = () => {
       while (tryRadius >= minRadius && !roundedPath) {
         const clipperPath = cell.map((pt) => ({
           X: Math.round(pt[0] * scale),
-          Y: Math.round(pt[1] * scale),
+          Y: Math.round(pt[1] * scale)
         }));
         const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
         co.AddPath(
@@ -498,6 +471,29 @@ const CellMachine = () => {
     pointsRef.current = points;
     velocitiesRef.current = velocities;
     targetPointsRef.current = 20;
+
+    const updatePointsCount = () => {
+      const currentKnobValue = serialDataRef.current.knob_2.value;
+      if (currentKnobValue !== prevKnobValueRef.current) {
+        const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 100));
+        targetPointsRef.current = targetPoints;
+        const currentPoints = pointsRef.current.length;
+
+        if (targetPoints > currentPoints) {
+          // Add new points
+          const { points: newPoints, velocities: newVelocities } =
+            generateRandomPoints(targetPoints - currentPoints);
+          pointsRef.current.push(...newPoints);
+          velocitiesRef.current.push(...newVelocities);
+        } else if (targetPoints < currentPoints) {
+          // Remove excess points
+          pointsRef.current = pointsRef.current.slice(0, targetPoints);
+          velocitiesRef.current = velocitiesRef.current.slice(0, targetPoints);
+        }
+
+        prevKnobValueRef.current = currentKnobValue;
+      }
+    };
 
     const animate = () => {
       updatePointsCount();

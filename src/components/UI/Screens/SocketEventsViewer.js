@@ -42,6 +42,21 @@ const Timestamp = styled.div`
   opacity: 0.5;
 `;
 
+const Button = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: ${(props) => props.theme.primary};
+  color: ${(props) => props.theme.background};
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: ${(props) => props.theme.fontFamily};
+  text-transform: ${(props) => props.theme.textTransform};
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
 function SocketEventsViewer() {
   const [messageLog, setMessageLog] = useState([]);
   const { isConnected, error, sendMessage, registerHandler } = useSocket();
@@ -55,18 +70,19 @@ function SocketEventsViewer() {
 
   // Handle incoming socket messages
   const handleMessage = useCallback((data) => {
-    // Only log getSerialData requests
-    if (data.action === "getSerialData") {
-      // Log the request
-      setMessageLog((prev) => [
-        {
-          type: "received",
-          action: "getSerialData",
-          timestamp: new Date().toISOString()
-        },
-        ...prev
-      ]);
+    // Log all incoming messages
+    setMessageLog((prev) => [
+      {
+        type: "received",
+        action: data.action,
+        data: data.data,
+        timestamp: new Date().toISOString()
+      },
+      ...prev
+    ]);
 
+    // Handle getSerialData requests
+    if (data.action === "getSerialData") {
       // Log our response
       setMessageLog((prev) => [
         {
@@ -79,6 +95,26 @@ function SocketEventsViewer() {
       ]);
     }
   }, []);
+
+  // Send a test message
+  const handleSendTestMessage = useCallback(() => {
+    const testMessage = {
+      action: "test",
+      data: { message: "Hello from SocketEventsViewer!" }
+    };
+    sendMessage(testMessage);
+
+    // Log the sent message
+    setMessageLog((prev) => [
+      {
+        type: "sent",
+        action: "test",
+        data: testMessage.data,
+        timestamp: new Date().toISOString()
+      },
+      ...prev
+    ]);
+  }, [sendMessage]);
 
   // Register our message handler
   useEffect(() => {
@@ -98,10 +134,14 @@ function SocketEventsViewer() {
           ? "Connected to socket server"
           : "Disconnected from socket server"}
       </StatusIndicator>
+      <Button onClick={handleSendTestMessage} disabled={!isConnected}>
+        Send Test Message
+      </Button>
       {messageLog.map((message, index) => (
         <Message key={index} type={message.type}>
           <Data>
             {message.type} {message.action}
+            {message.data && `: ${JSON.stringify(message.data)}`}
           </Data>
           <Timestamp>{message.timestamp}</Timestamp>
         </Message>

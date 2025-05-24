@@ -1,6 +1,4 @@
 import styled from "styled-components";
-import { useSerial } from "../../functions/SerialDataContext";
-import ConvertRange from "../../functions/ConvertRange";
 import { useEffect, useRef } from "react";
 
 const Root = styled.div`
@@ -28,7 +26,6 @@ const Canvas = styled.canvas`
 `;
 
 const BlobMachine = () => {
-  const { serialData } = useSerial();
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -200,7 +197,7 @@ const BlobMachine = () => {
         y: Math.random() * canvas.height,
         r: 50 + Math.random() * 30,
         dx: (Math.random() - 0.5) * 2,
-        dy: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2
       });
     }
     for (let i = 0; i < 30; i++) {
@@ -209,7 +206,7 @@ const BlobMachine = () => {
         y: Math.random() * canvas.height,
         r: 20 + Math.random() * 15,
         dx: (Math.random() - 0.5) * 2,
-        dy: (Math.random() - 0.5) * 2,
+        dy: (Math.random() - 0.5) * 2
       });
     }
 
