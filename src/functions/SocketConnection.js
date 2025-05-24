@@ -9,11 +9,15 @@ const SOCKET_URLS = {
 const MAX_RETRIES = 5;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
-export const useSocketConnection = (environment = "local", onMessage) => {
+export const useSocketConnection = (
+  environment = "local",
+  onMessage,
+  initialShouldConnect = true
+) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [shouldConnect, setShouldConnect] = useState(true);
+  const [shouldConnect, setShouldConnect] = useState(initialShouldConnect);
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
