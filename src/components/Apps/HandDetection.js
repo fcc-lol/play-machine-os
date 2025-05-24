@@ -21,24 +21,39 @@ const Circle = styled.div`
   pointer-events: none;
 `;
 
+const Loading = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${(props) => props.theme.menuText};
+  font-size: ${(props) => props.theme.fontSize};
+  text-align: center;
+  z-index: 10;
+  background-color: ${(props) => props.theme.background};
+`;
+
 export default function HandDetection() {
-  const { videoRef, handPoints, interpretedParams } = useHandDetection();
+  const { points, measurements, isLoading } = useHandDetection();
+
+  if (isLoading) {
+    return <Loading>Loading...</Loading>;
+  }
 
   return (
     <Container>
-      {handPoints
+      {points
         .filter((point) => point.point === 8)
         .map((point, index) => {
-          const videoWidth = videoRef.current?.videoWidth || 1280;
           const handId = `hand${point.hand}`;
-          const radius =
-            interpretedParams[handId]?.indexThumbPinchDistance || 20;
+          const radius = measurements[handId]?.indexThumbPinchDistance;
 
           return (
             <Circle
-              key={`${point.hand}-${index}`}
+              key={`${handId}-${index}`}
               style={{
-                left: `${videoWidth - point.x}px`,
+                left: `${point.x}px`,
                 top: `${point.y}px`,
                 width: `${radius * 2}px`,
                 height: `${radius * 2}px`

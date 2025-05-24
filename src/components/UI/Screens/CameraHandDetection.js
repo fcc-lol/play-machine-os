@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { useHandDetection } from "../../../functions/HandDetectionContext";
 import { useSerial } from "../../../functions/SerialDataContext";
 import { useEffect } from "react";
@@ -15,7 +15,7 @@ const Container = styled.div`
   background-color: #000000;
 `;
 
-const Canvas = styled.canvas`
+const Canvas = styled.canvas(css`
   position: absolute;
   top: 0;
   left: 0;
@@ -23,7 +23,8 @@ const Canvas = styled.canvas`
   height: 100%;
   pointer-events: none;
   z-index: 2;
-`;
+  transform: scaleX(-1);
+`);
 
 const Video = styled.video`
   position: absolute;
@@ -36,41 +37,55 @@ const Video = styled.video`
   opacity: ${(props) => props.opacity};
 `;
 
-const DebugPanel = styled.div`
+const Data = styled.div`
+  font-size: 1rem;
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: #00ff00;
-  padding: 10px;
-  border-radius: 5px;
-  font-family: monospace;
-  max-height: 80vh;
+  top: 0.5rem;
+  left: 1rem;
+  width: 100%;
+  color: ${(props) => props.theme.menuText};
   overflow-y: auto;
   z-index: 1000;
 `;
 
-const PointInfo = styled.div`
-  margin: 5px 0;
-  font-size: 12px;
+const Label = styled.div`
+  font-weight: bold;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  text-transform: ${(props) => props.theme.textTransform};
 `;
 
-const MeasurementInfo = styled(PointInfo)`
-  color: #ffd700;
-  font-weight: bold;
-  border-top: 1px solid #00ff00;
-  margin-top: 10px;
-  padding-top: 10px;
+const DataList = styled.div`
+  margin-bottom: 1rem;
+  min-width: 25%;
+  color: ${(props) => props.theme.menuText};
+`;
+
+const DataListItem = styled.div`
+  text-transform: ${(props) => props.theme.textTransform};
+`;
+
+const Loading = styled.div`
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${(props) => props.theme.menuText};
+  font-size: ${(props) => props.theme.fontSize};
+  text-align: center;
+  background-color: ${(props) => props.theme.background};
 `;
 
 export default function CameraHandDetection() {
   const {
     videoRef,
     canvasRef,
-    handPoints,
-    interpretedParams,
+    points,
+    measurements,
     HAND_LANDMARK_NAMES,
-    setVideoProps
+    setVideoProps,
+    isLoading
   } = useHandDetection();
   const { serialData } = useSerial();
 
@@ -84,6 +99,7 @@ export default function CameraHandDetection() {
 
   return (
     <Container>
+      {isLoading && <Loading>Loading...</Loading>}
       <Video
         ref={videoRef}
         autoPlay
@@ -91,19 +107,29 @@ export default function CameraHandDetection() {
         opacity={(serialData["vertical_slider_1"]?.value || 0) / 100}
       />
       <Canvas ref={canvasRef} />
-      <DebugPanel>
-        {handPoints.map((point, index) => (
-          <PointInfo key={index}>
-            Hand {point.hand} - {HAND_LANDMARK_NAMES[point.point]}: ({point.x},{" "}
-            {point.y})
-          </PointInfo>
-        ))}
-        {Object.entries(interpretedParams).map(([handId, params]) => (
-          <MeasurementInfo key={handId}>
-            {handId} - Pinch Distance: {params.indexThumbPinchDistance}px
-          </MeasurementInfo>
-        ))}
-      </DebugPanel>
+      <Data>
+        {points.length > 0 && <Label>Points</Label>}
+        <DataList>
+          {points.map((point, index) => (
+            <DataListItem key={index}>
+              Hand {point.hand}: {HAND_LANDMARK_NAMES[point.point]}: {point.x},
+              {point.y},{point.z.toFixed(2)}
+            </DataListItem>
+          ))}
+        </DataList>
+        {Object.keys(measurements).length > 0 && <Label>Measurements</Label>}
+        <DataList>
+          {Object.entries(measurements).map(([handId, params]) => (
+            <DataListItem key={handId}>
+              {Object.entries(params).map(([key, value]) => (
+                <div key={key}>
+                  {key}: {value}
+                </div>
+              ))}
+            </DataListItem>
+          ))}
+        </DataList>
+      </Data>
     </Container>
   );
 }

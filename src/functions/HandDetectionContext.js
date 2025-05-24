@@ -21,6 +21,17 @@ const Video = styled.video`
   pointer-events: none;
 `;
 
+const Canvas = styled.canvas`
+  position: absolute;
+  width: ${hardware.screen.width}px;
+  height: ${hardware.screen.height}px;
+  -moz-transform: scale(-1, 1);
+  -webkit-transform: scale(-1, 1);
+  -o-transform: scale(-1, 1);
+  transform: scale(-1, 1);
+  filter: FlipH;
+`;
+
 // Hand landmark names
 export const HAND_LANDMARK_NAMES = {
   0: "WRIST",
@@ -88,8 +99,9 @@ export function HandDetectionProvider({ children }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const handLandmarkerRef = useRef(null);
-  const [handPoints, setHandPoints] = useState([]);
-  const [interpretedParams, setInterpretedParams] = useState({});
+  const [points, setpoints] = useState([]);
+  const [measurements, setmeasurements] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
   const smoothingFiltersRef = useRef({});
   const [videoProps, setVideoProps] = useState({
     opacity: 1,
@@ -112,7 +124,7 @@ export function HandDetectionProvider({ children }) {
 
     const results = handLandmarkerRef.current.detect(video);
     const points = [];
-    const newInterpretedParams = {};
+    const newmeasurements = {};
 
     if (results.landmarks) {
       results.landmarks.forEach((landmarks, handIndex) => {
@@ -133,10 +145,13 @@ export function HandDetectionProvider({ children }) {
 
           smoothedPoints[pointIndex] = smoothed;
 
+          // Mirror the x coordinate for the points array
+          const mirroredX = video.videoWidth - smoothed.x;
+
           points.push({
             hand: handIndex + 1,
             point: pointIndex,
-            x: smoothed.x,
+            x: mirroredX,
             y: smoothed.y,
             z: smoothed.z
           });
@@ -144,10 +159,20 @@ export function HandDetectionProvider({ children }) {
 
         // Calculate parameters for each hand
         if (smoothedPoints[4] && smoothedPoints[8]) {
-          newInterpretedParams[`hand${handIndex + 1}`] = {
+          // Create mirrored points for distance calculation
+          const mirroredPoint4 = {
+            x: video.videoWidth - smoothedPoints[4].x,
+            y: smoothedPoints[4].y
+          };
+          const mirroredPoint8 = {
+            x: video.videoWidth - smoothedPoints[8].x,
+            y: smoothedPoints[8].y
+          };
+
+          newmeasurements[`hand${handIndex + 1}`] = {
             indexThumbPinchDistance: calculateDistance(
-              smoothedPoints[4],
-              smoothedPoints[8]
+              mirroredPoint4,
+              mirroredPoint8
             )
           };
         }
@@ -175,32 +200,19 @@ export function HandDetectionProvider({ children }) {
 
           // Draw pinch measurement if available
           if (smoothedPoints[4] && smoothedPoints[8]) {
-            const distance = calculateDistance(
-              smoothedPoints[4],
-              smoothedPoints[8]
-            );
-
-            // Draw measurement line
             ctx.beginPath();
             ctx.moveTo(smoothedPoints[4].x, smoothedPoints[4].y);
             ctx.lineTo(smoothedPoints[8].x, smoothedPoints[8].y);
             ctx.strokeStyle = "#FFD700";
             ctx.lineWidth = 2;
             ctx.stroke();
-
-            // Draw measurement text
-            ctx.fillStyle = "#FFD700";
-            ctx.font = "16px Arial";
-            const midX = (smoothedPoints[4].x + smoothedPoints[8].x) / 2;
-            const midY = (smoothedPoints[4].y + smoothedPoints[8].y) / 2;
-            ctx.fillText(`${distance}px`, midX, midY);
           }
         }
       });
     }
 
-    setHandPoints(points);
-    setInterpretedParams(newInterpretedParams);
+    setpoints(points);
+    setmeasurements(newmeasurements);
 
     requestAnimationFrame(detectHands);
   }, []);
@@ -211,13 +223,21 @@ export function HandDetectionProvider({ children }) {
     const initializeCamera = async () => {
       try {
         videoStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 1280, height: 720 }
+          video: {
+            width: 1280,
+            height: 720,
+            facingMode: "user"
+          }
         });
         if (videoRef.current) {
           videoRef.current.srcObject = videoStream;
+          // Apply the mirroring transform
+          videoRef.current.style.cssText =
+            "-moz-transform: scale(-1, 1); -webkit-transform: scale(-1, 1); -o-transform: scale(-1, 1); transform: scale(-1, 1); filter: FlipH;";
         }
       } catch (error) {
         console.error("Error accessing webcam:", error);
+        setIsLoading(false);
       }
     };
 
@@ -239,13 +259,16 @@ export function HandDetectionProvider({ children }) {
         );
       } catch (error) {
         console.error("Error initializing hand detection:", error);
+        setIsLoading(false);
       }
     };
 
     const startDetection = async () => {
+      setIsLoading(true);
       await initializeCamera();
       await initializeHandDetection();
       detectHands();
+      setIsLoading(false);
     };
 
     startDetection();
@@ -262,10 +285,11 @@ export function HandDetectionProvider({ children }) {
       value={{
         videoRef,
         canvasRef,
-        handPoints,
-        interpretedParams,
+        points,
+        measurements,
         HAND_LANDMARK_NAMES,
-        setVideoProps
+        setVideoProps,
+        isLoading
       }}
     >
       <Video
@@ -276,6 +300,7 @@ export function HandDetectionProvider({ children }) {
         fullWidth={videoProps.fullWidth}
         fullHeight={videoProps.fullHeight}
       />
+      <Canvas ref={canvasRef} />
       {children}
     </HandDetectionContext.Provider>
   );
