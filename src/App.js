@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, lazy } from "react";
 import { SerialDataProvider, useSerial } from "./functions/SerialDataContext";
 import { ThemeProvider, useTheme } from "./functions/ThemeContext";
 import { SocketProvider } from "./functions/SocketContext";
+import { HandDetectionProvider } from "./functions/HandDetectionContext";
 import ReadSerialData from "./functions/ReadSerialData";
 import Menu from "./components/UI/Menu";
 import Hardware from "./components/Simulator/Hardware";
@@ -157,10 +158,19 @@ const AppContent = ({ isSimulatorMode }) => {
         return null;
       }
 
-      return (
+      // Wrap app components that need hand detection
+      const needsHandDetection = ["HandDrawingApp"].includes(currentApp);
+
+      const content = (
         <React.Suspense fallback={<div>Loading...</div>}>
           <AppComponent onBack={handleBack} />
         </React.Suspense>
+      );
+
+      return needsHandDetection ? (
+        <HandDetectionProvider>{content}</HandDetectionProvider>
+      ) : (
+        content
       );
     }
 
@@ -171,10 +181,21 @@ const AppContent = ({ isSimulatorMode }) => {
         return null;
       }
 
-      return (
+      // Wrap screen components that need hand detection
+      const needsHandDetection = ["CameraHandDetection"].includes(
+        currentScreen
+      );
+
+      const content = (
         <React.Suspense fallback={<div>Loading...</div>}>
           <ScreenComponent onBack={handleBack} />
         </React.Suspense>
+      );
+
+      return needsHandDetection ? (
+        <HandDetectionProvider>{content}</HandDetectionProvider>
+      ) : (
+        content
       );
     }
 
