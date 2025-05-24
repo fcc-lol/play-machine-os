@@ -38,6 +38,12 @@ const Video = styled.video`
   opacity: ${(props) => props.opacity};
 `;
 
+const Label = styled.div`
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  text-transform: ${(props) => props.theme.textTransform};
+`;
+
 const Data = styled.div`
   font-size: 1rem;
   position: absolute;
@@ -49,11 +55,8 @@ const Data = styled.div`
   z-index: 1000;
 `;
 
-const Label = styled.div`
+const DataListLabel = styled(Label)`
   font-weight: bold;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-  text-transform: ${(props) => props.theme.textTransform};
 `;
 
 const DataList = styled.div`
@@ -89,7 +92,7 @@ export default function CameraHandDetection() {
   return (
     <Container>
       {isLoading && <Loading />}
-      {points.length === 0 && <Label>Raise your hand</Label>}
+      {!isLoading && points.length === 0 && <Label>Raise your hand</Label>}
       <Video
         ref={videoRef}
         autoPlay
@@ -98,7 +101,7 @@ export default function CameraHandDetection() {
       />
       <Canvas ref={canvasRef} />
       <Data>
-        {points.length > 0 && <Label>Points</Label>}
+        {points.length > 0 && <DataListLabel>Points</DataListLabel>}
         <DataList>
           {points.map((point, index) => (
             <DataListItem key={index}>
@@ -107,7 +110,9 @@ export default function CameraHandDetection() {
             </DataListItem>
           ))}
         </DataList>
-        {Object.keys(measurements).length > 0 && <Label>Measurements</Label>}
+        {Object.keys(measurements).length > 0 && (
+          <DataListLabel>Measurements</DataListLabel>
+        )}
         <DataList>
           {Object.entries(measurements).map(([handId, params]) => (
             <DataListItem key={handId}>

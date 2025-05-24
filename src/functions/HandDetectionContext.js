@@ -294,14 +294,7 @@ export function HandDetectionProvider({ children }) {
         isLoading
       }}
     >
-      <Video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        opacity={videoProps.opacity}
-        fullWidth={videoProps.fullWidth}
-        fullHeight={videoProps.fullHeight}
-      />
+      <Video ref={videoRef} autoPlay playsInline opacity={videoProps.opacity} />
       <Canvas ref={canvasRef} />
       {children}
     </HandDetectionContext.Provider>
