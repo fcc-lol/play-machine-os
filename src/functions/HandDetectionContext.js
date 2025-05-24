@@ -9,6 +9,7 @@ import React, {
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 import styled from "styled-components";
 import hardware from "../config/Hardware.json";
+import { useTheme } from "./ThemeContext";
 
 const HandDetectionContext = createContext();
 
@@ -103,6 +104,7 @@ export function HandDetectionProvider({ children }) {
   const [measurements, setmeasurements] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const smoothingFiltersRef = useRef({});
+  const { themeValues } = useTheme();
   const [videoProps, setVideoProps] = useState({
     opacity: 1,
     fullWidth: false,
@@ -180,7 +182,7 @@ export function HandDetectionProvider({ children }) {
         // Draw hand landmarks and measurements if canvas is available
         if (canvas && ctx) {
           // Draw hand landmarks
-          ctx.fillStyle = "#00FF00";
+          ctx.fillStyle = themeValues.text;
           for (const landmark of landmarks) {
             const key = `hand${handIndex}_point${landmarks.indexOf(landmark)}`;
             const smoothed = smoothingFiltersRef.current[key]?.addPoint(
@@ -203,7 +205,7 @@ export function HandDetectionProvider({ children }) {
             ctx.beginPath();
             ctx.moveTo(smoothedPoints[4].x, smoothedPoints[4].y);
             ctx.lineTo(smoothedPoints[8].x, smoothedPoints[8].y);
-            ctx.strokeStyle = "#FFD700";
+            ctx.strokeStyle = themeValues.text;
             ctx.lineWidth = 2;
             ctx.stroke();
           }
@@ -215,7 +217,7 @@ export function HandDetectionProvider({ children }) {
     setmeasurements(newmeasurements);
 
     requestAnimationFrame(detectHands);
-  }, []);
+  }, [themeValues]);
 
   useEffect(() => {
     let videoStream;

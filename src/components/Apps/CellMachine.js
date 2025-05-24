@@ -53,7 +53,7 @@ const CanvasContainer = styled.div`
   height: ${hardware.screen.height}px;
 `;
 
-const CellMachine = () => {
+export default function CellMachine() {
   const { serialData } = useSerial();
   const serialDataRef = useRef(serialData);
   const canvasRef = useRef(null);
@@ -561,6 +561,4 @@ const CellMachine = () => {
       </CanvasContainer>
     </Root>
   );
-};
-
-export default CellMachine;
+}

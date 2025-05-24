@@ -2,6 +2,7 @@ import styled, { css } from "styled-components";
 import { useHandDetection } from "../../../functions/HandDetectionContext";
 import { useSerial } from "../../../functions/SerialDataContext";
 import { useEffect } from "react";
+import Loading from "../Loading";
 
 const Container = styled.div`
   display: flex;
@@ -12,7 +13,7 @@ const Container = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
-  background-color: #000000;
+  background-color: ${(props) => props.theme.background};
 `;
 
 const Canvas = styled.canvas(css`
@@ -65,18 +66,6 @@ const DataListItem = styled.div`
   text-transform: ${(props) => props.theme.textTransform};
 `;
 
-const Loading = styled.div`
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${(props) => props.theme.menuText};
-  font-size: ${(props) => props.theme.fontSize};
-  text-align: center;
-  background-color: ${(props) => props.theme.background};
-`;
-
 export default function CameraHandDetection() {
   const {
     videoRef,
@@ -99,7 +88,8 @@ export default function CameraHandDetection() {
 
   return (
     <Container>
-      {isLoading && <Loading>Loading...</Loading>}
+      {isLoading && <Loading />}
+      {points.length === 0 && <Label>Raise your hand</Label>}
       <Video
         ref={videoRef}
         autoPlay

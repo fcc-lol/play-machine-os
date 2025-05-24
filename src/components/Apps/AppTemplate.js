@@ -31,7 +31,7 @@ const Circle = styled.div`
   background-color: ${(props) => props.theme.text};
 `;
 
-const Template = () => {
+const AppTemplate = () => {
   const { serialData } = useSerial();
 
   return (
@@ -66,4 +66,4 @@ const Template = () => {
   );
 };
 
-export default Template;
+export default AppTemplate;

@@ -42,8 +42,7 @@
               "id": "hand-detection",
               "label": "Hand Detection",
               "app": "HandDetection"
-            },
-            { "id": "template", "label": "Template", "app": "Template" }
+            }
           ]
         }
       },
@@ -84,6 +83,11 @@
               "id": "camera-hand-detection",
               "label": "Camera Hand Detection",
               "screen": "CameraHandDetection"
+            },
+            {
+              "id": "app-template",
+              "label": "App Template",
+              "app": "AppTemplate"
             },
             {
               "id": "about",

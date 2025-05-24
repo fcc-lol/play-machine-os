@@ -30,7 +30,7 @@ const Canvas = styled.canvas`
   image-rendering: smooth;
 `;
 
-const StainedGlassMachine = () => {
+export default function StainedGlassMachine() {
   const { serialData } = useSerial();
   const serialDataRef = useRef(serialData);
   const canvasRef = useRef(null);
@@ -205,6 +205,4 @@ const StainedGlassMachine = () => {
       />
     </Root>
   );
-};
-
-export default StainedGlassMachine;
+}

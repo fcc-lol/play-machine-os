@@ -74,7 +74,7 @@ const hslToRgb = (h, s, l) => {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 };
 
-const WaveVisualizer = () => {
+export default function WaveVisualizer() {
   const canvasRef = useRef(null);
   const { serialData } = useSerial();
   const animationRef = useRef(null);
@@ -243,6 +243,4 @@ const WaveVisualizer = () => {
   }, []); // Empty dependency array since we're using refs
 
   return <Canvas ref={canvasRef} />;
-};
-
-export default WaveVisualizer;
+}

@@ -26,7 +26,7 @@ const Root = styled.div`
   }
 `;
 
-const RainMachine = () => {
+export default function RainMachine() {
   const { serialData } = useSerial();
   const [lightnessDelta, setLightnessDelta] = useState(0);
 
@@ -181,6 +181,4 @@ const RainMachine = () => {
       />
     </Root>
   );
-};
-
-export default RainMachine;
+}

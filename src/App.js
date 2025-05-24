@@ -5,6 +5,7 @@ import { SocketProvider } from "./functions/SocketContext";
 import { HandDetectionProvider } from "./functions/HandDetectionContext";
 import ReadSerialData from "./functions/ReadSerialData";
 import Menu from "./components/UI/Menu";
+import Loading from "./components/UI/Loading";
 import Hardware from "./components/Simulator/Hardware";
 import styled, {
   StyleSheetManager,
@@ -30,14 +31,14 @@ const screens = {
 };
 
 const apps = {
+  AppTemplate: lazy(() => import("./components/Apps/AppTemplate")),
   CircleVisualizer: lazy(() => import("./components/Apps/CircleVisualizer")),
   PopulationMap: lazy(() => import("./components/Apps/PopulationMap")),
   WaveVisualizer: lazy(() => import("./components/Apps/WaveVisualizer")),
   RainMachine: lazy(() => import("./components/Apps/RainMachine")),
   CellMachine: lazy(() => import("./components/Apps/CellMachine")),
   BlobMachine: lazy(() => import("./components/Apps/BlobMachine")),
-  HandDetection: lazy(() => import("./components/Apps/HandDetection")),
-  Template: lazy(() => import("./components/Apps/Template"))
+  HandDetection: lazy(() => import("./components/Apps/HandDetection"))
 };
 
 const AppContainer = styled.div.attrs((props) => ({
@@ -164,7 +165,7 @@ const AppContent = ({ isSimulatorMode }) => {
       const needsHandDetection = ["HandDetection"].includes(currentApp);
 
       const content = (
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <React.Suspense fallback={<Loading />}>
           <AppComponent onBack={handleBack} />
         </React.Suspense>
       );
@@ -189,7 +190,7 @@ const AppContent = ({ isSimulatorMode }) => {
       );
 
       const content = (
-        <React.Suspense fallback={<div>Loading...</div>}>
+        <React.Suspense fallback={<Loading />}>
           <ScreenComponent onBack={handleBack} />
         </React.Suspense>
       );

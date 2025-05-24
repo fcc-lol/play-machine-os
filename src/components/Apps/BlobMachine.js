@@ -25,7 +25,7 @@ const Canvas = styled.canvas`
   background: #f4ff7d;
 `;
 
-const BlobMachine = () => {
+export default function BlobMachine() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -256,6 +256,4 @@ const BlobMachine = () => {
       <Canvas ref={canvasRef} />
     </Root>
   );
-};
-
-export default BlobMachine;
+}

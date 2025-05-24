@@ -39,7 +39,7 @@ const createBlob = (params = {}) => {
   };
 };
 
-const CircleVisualizer = () => {
+export default function CircleVisualizer() {
   const { serialData } = useSerial();
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
@@ -170,6 +170,4 @@ const CircleVisualizer = () => {
       <Canvas ref={canvasRef} />
     </AppContainer>
   );
-};
-
-export default CircleVisualizer;
+}

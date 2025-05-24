@@ -127,6 +127,7 @@ const RadiusDisplay = styled(TextDisplay)`
 
 const PopulationDisplay = styled(TextDisplay)`
   bottom: 3rem;
+  text-transform: ${(props) => props.theme.textTransform};
 `;
 
 const MapContainer = styled.div`
@@ -221,7 +222,7 @@ const MiniMapTarget = styled.div`
   pointer-events: none;
 `;
 
-const PopulationMap = () => {
+export default function PopulationMap() {
   const { serialData } = useSerial();
   const minZoom = Math.max(0, getZoomForRadius(MAX_RADIUS_KM));
   const maxZoom = Math.min(11, getZoomForRadius(MIN_RADIUS_KM));
@@ -593,6 +594,4 @@ const PopulationMap = () => {
       </MiniMapContainer>
     </AppContainer>
   );
-};
-
-export default PopulationMap;
+}
