@@ -76,6 +76,11 @@
               "screen": "SocketEventsViewer"
             },
             {
+              "id": "camera-hand-detection",
+              "label": "Camera Hand Detection",
+              "screen": "CameraHandDetection"
+            },
+            {
               "id": "about",
               "label": "About",
               "screen": "About"
