@@ -16,6 +16,12 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
   const writeToOutputDeviceRef = useRef(null);
   const setSerialDataRef = useRef(null);
   const hardwareStateAtSetSerialDataRef = useRef(null);
+  const serialDataRef = useRef({});
+
+  // Update ref when serialData changes
+  useEffect(() => {
+    serialDataRef.current = serialData;
+  }, [serialData]);
 
   // Function to update serial data that respects setSerialData overrides
   const updateSerialData = (newData) => {
@@ -48,7 +54,7 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
   const setSerialDataFromSocket = (data) => {
     setSerialDataRef.current = data;
     hardwareStateAtSetSerialDataRef.current = JSON.parse(
-      JSON.stringify(serialData)
+      JSON.stringify(serialDataRef.current)
     );
     setSerialData(data);
   };

@@ -57,7 +57,7 @@ export const useSocketConnection = (
       if (data.action === "getSerialData") {
         sendMessage({
           action: "serialData",
-          data: serialData,
+          data: latestSerialDataRef.current,
           isFromSelf: true
         });
       }
@@ -65,7 +65,7 @@ export const useSocketConnection = (
       // Always call the onMessage handler if provided
       onMessage?.(data);
     },
-    [sendMessage, onMessage, setSerialData, serialData]
+    [sendMessage, onMessage, setSerialData, latestSerialDataRef]
   );
 
   const connect = useCallback(() => {

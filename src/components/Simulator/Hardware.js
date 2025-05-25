@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { useSerial } from "../../functions/SerialDataContext";
 import styled from "styled-components";
 
@@ -163,10 +163,12 @@ const knobs = [
 
 const Hardware = () => {
   const { serialData, setSerialData, isSimulatorMode } = useSerial();
+  const buttonStateRef = useRef({});
+  const initializedRef = useRef(false);
 
   // Initialize serialData with localStorage values
   useEffect(() => {
-    if (!isSimulatorMode) return;
+    if (!isSimulatorMode || initializedRef.current) return;
 
     const allControls = [...sliders, ...knobs];
     const initialData = {};
@@ -177,36 +179,42 @@ const Hardware = () => {
       };
     });
     setSerialData(initialData);
+    initializedRef.current = true;
   }, [setSerialData, isSimulatorMode]);
 
   const handleButtonDown = useCallback(
     (buttonId) => {
       if (!isSimulatorMode) return;
 
-      const newData = { ...serialData };
-      newData[buttonId] = { value: true };
-      setSerialData(newData);
+      buttonStateRef.current[buttonId] = true;
+      setSerialData((prevData) => ({
+        ...prevData,
+        [buttonId]: { value: true }
+      }));
     },
-    [serialData, setSerialData, isSimulatorMode]
+    [setSerialData, isSimulatorMode]
   );
 
   const handleButtonUp = useCallback(
     (buttonId) => {
       if (!isSimulatorMode) return;
 
-      const newData = { ...serialData };
-      newData[buttonId] = { value: false };
-      setSerialData(newData);
+      buttonStateRef.current[buttonId] = false;
+      setSerialData((prevData) => ({
+        ...prevData,
+        [buttonId]: { value: false }
+      }));
     },
-    [serialData, setSerialData, isSimulatorMode]
+    [setSerialData, isSimulatorMode]
   );
 
   const handleSliderChange = (sliderId, value) => {
     if (!isSimulatorMode) return;
 
-    const newData = { ...serialData };
-    newData[sliderId] = { value: parseInt(value) };
-    setSerialData(newData);
+    setSerialData((prevData) => ({
+      ...prevData,
+      [sliderId]: { value: parseInt(value) }
+    }));
     localStorage.setItem(`slider_${sliderId}`, value);
   };
 
@@ -216,27 +224,31 @@ const Hardware = () => {
     const handleKeyDown = (e) => {
       switch (e.key) {
         case "ArrowUp":
-          handleButtonDown("button_up");
+          if (!buttonStateRef.current["button_up"])
+            handleButtonDown("button_up");
           break;
         case "ArrowRight":
-          handleButtonDown("button_right");
+          if (!buttonStateRef.current["button_right"])
+            handleButtonDown("button_right");
           break;
         case "ArrowDown":
-          handleButtonDown("button_down");
+          if (!buttonStateRef.current["button_down"])
+            handleButtonDown("button_down");
           break;
         case "ArrowLeft":
-          handleButtonDown("button_left");
+          if (!buttonStateRef.current["button_left"])
+            handleButtonDown("button_left");
           break;
         case "Enter":
-          handleButtonDown("button_a");
+          if (!buttonStateRef.current["button_a"]) handleButtonDown("button_a");
           break;
         case "Escape":
-          handleButtonDown("button_b");
+          if (!buttonStateRef.current["button_b"]) handleButtonDown("button_b");
           break;
         case "Delete":
         case "Backspace":
           e.preventDefault();
-          handleButtonDown("button_b");
+          if (!buttonStateRef.current["button_b"]) handleButtonDown("button_b");
           break;
         default:
           break;
@@ -246,27 +258,30 @@ const Hardware = () => {
     const handleKeyUp = (e) => {
       switch (e.key) {
         case "ArrowUp":
-          handleButtonUp("button_up");
+          if (buttonStateRef.current["button_up"]) handleButtonUp("button_up");
           break;
         case "ArrowRight":
-          handleButtonUp("button_right");
+          if (buttonStateRef.current["button_right"])
+            handleButtonUp("button_right");
           break;
         case "ArrowDown":
-          handleButtonUp("button_down");
+          if (buttonStateRef.current["button_down"])
+            handleButtonUp("button_down");
           break;
         case "ArrowLeft":
-          handleButtonUp("button_left");
+          if (buttonStateRef.current["button_left"])
+            handleButtonUp("button_left");
           break;
         case "Enter":
-          handleButtonUp("button_a");
+          if (buttonStateRef.current["button_a"]) handleButtonUp("button_a");
           break;
         case "Escape":
-          handleButtonUp("button_b");
+          if (buttonStateRef.current["button_b"]) handleButtonUp("button_b");
           break;
         case "Delete":
         case "Backspace":
           e.preventDefault();
-          handleButtonUp("button_b");
+          if (buttonStateRef.current["button_b"]) handleButtonUp("button_b");
           break;
         default:
           break;
@@ -280,7 +295,7 @@ const Hardware = () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [serialData, isSimulatorMode, handleButtonDown, handleButtonUp]);
+  }, [isSimulatorMode, handleButtonDown, handleButtonUp]);
 
   if (!isSimulatorMode) {
     return null;

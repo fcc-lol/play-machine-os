@@ -87,10 +87,11 @@ function ReadSerialData() {
         }
       }
 
-      updateSerialData({ ...serialData, ...processedData });
+      // Use functional update to avoid dependency on serialData
+      updateSerialData((prevData) => ({ ...prevData, ...processedData }));
       setLastProcessedTime(currentTime);
     },
-    [serialData, updateSerialData, lastProcessedTime]
+    [updateSerialData, lastProcessedTime] // Remove serialData from dependencies
   );
 
   const readSerialData = useCallback(
