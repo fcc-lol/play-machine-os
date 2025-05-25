@@ -27,15 +27,25 @@ export const useSocketConnection = (
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
-    // If we have stored hardware state and current data differs from it,
-    // it means the hardware has actually changed from its state when we received setSerialData
+    // Only clear setSerialDataRef if the current hardware state differs from what it was
+    // when we received setSerialData, and the difference is meaningful (not just a temporary fluctuation)
     if (
       hardwareStateAtSetSerialDataRef.current &&
       JSON.stringify(serialData) !==
         JSON.stringify(hardwareStateAtSetSerialDataRef.current)
     ) {
-      setSerialDataRef.current = null;
-      hardwareStateAtSetSerialDataRef.current = null;
+      // Check if the difference is meaningful by comparing each key
+      const hasMeaningfulChange = Object.keys(serialData).some((key) => {
+        const currentValue = serialData[key];
+        const storedValue = hardwareStateAtSetSerialDataRef.current[key];
+        // Consider it meaningful if the difference is more than just a small fluctuation
+        return Math.abs(currentValue - storedValue) > 1;
+      });
+
+      if (hasMeaningfulChange) {
+        setSerialDataRef.current = null;
+        hardwareStateAtSetSerialDataRef.current = null;
+      }
     }
     latestSerialDataRef.current = serialData;
   }, [serialData]);
