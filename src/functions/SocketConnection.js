@@ -21,10 +21,22 @@ export const useSocketConnection = (
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
-  const { serialData } = useSerial();
+  const setSerialDataRef = useRef(null);
+  const hardwareStateAtSetSerialDataRef = useRef(null);
+  const { serialData, setSerialData } = useSerial();
 
-  // Keep the ref updated with latest serial data
+  // Keep the refs updated with latest serial data
   useEffect(() => {
+    // If we have stored hardware state and current data differs from it,
+    // it means the hardware has actually changed from its state when we received setSerialData
+    if (
+      hardwareStateAtSetSerialDataRef.current &&
+      JSON.stringify(serialData) !==
+        JSON.stringify(hardwareStateAtSetSerialDataRef.current)
+    ) {
+      setSerialDataRef.current = null;
+      hardwareStateAtSetSerialDataRef.current = null;
+    }
     latestSerialDataRef.current = serialData;
   }, [serialData]);
 
@@ -45,19 +57,35 @@ export const useSocketConnection = (
 
   const handleIncomingMessage = useCallback(
     (data) => {
-      // Always call the onMessage handler if provided
-      onMessage?.(data);
+      // Handle setSerialData events
+      if (data.action === "setSerialData") {
+        // Access the nested data structure correctly
+        const serialDataValues = data.data.data;
+        setSerialDataRef.current = serialDataValues;
+        // Store the current hardware state when we receive setSerialData
+        hardwareStateAtSetSerialDataRef.current = JSON.parse(
+          JSON.stringify(serialData)
+        );
+        setSerialData(serialDataValues);
+      }
 
-      // Handle getSerialData requests automatically
+      // Handle getSerialData requests
       if (data.action === "getSerialData") {
+        // Use setSerialData if available, otherwise use latest serial data
+        const dataToSend =
+          setSerialDataRef.current || latestSerialDataRef.current;
+
         sendMessage({
           action: "serialData",
-          data: latestSerialDataRef.current,
+          data: dataToSend,
           isFromSelf: true
         });
       }
+
+      // Always call the onMessage handler if provided
+      onMessage?.(data);
     },
-    [sendMessage, onMessage]
+    [sendMessage, onMessage, setSerialData, serialData]
   );
 
   const connect = useCallback(() => {
