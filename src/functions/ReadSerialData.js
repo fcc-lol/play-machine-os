@@ -28,7 +28,9 @@ const ConnectButton = styled.button`
 
 function ReadSerialData() {
   const {
+    serialData,
     setSerialData,
+    updateSerialData,
     isInputConnected,
     setIsInputConnected,
     isOutputConnected,
@@ -85,10 +87,10 @@ function ReadSerialData() {
         }
       }
 
-      setSerialData((prevData) => ({ ...prevData, ...processedData }));
+      updateSerialData({ ...serialData, ...processedData });
       setLastProcessedTime(currentTime);
     },
-    [setSerialData, lastProcessedTime]
+    [serialData, updateSerialData, lastProcessedTime]
   );
 
   const readSerialData = useCallback(

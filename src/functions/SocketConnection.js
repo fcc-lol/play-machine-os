@@ -21,7 +21,7 @@ export const useSocketConnection = (
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
-  const { serialData, setSerialData, updateSerialData } = useSerial();
+  const { serialData, setSerialData } = useSerial();
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
