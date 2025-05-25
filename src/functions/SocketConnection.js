@@ -27,33 +27,40 @@ export const useSocketConnection = (
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
-    // Only update latestSerialDataRef if we don't have setSerialData
-    if (!setSerialDataRef.current) {
+    // If we have setSerialData active, only update if hardware has changed significantly
+    if (setSerialDataRef.current) {
+      if (
+        hardwareStateAtSetSerialDataRef.current &&
+        JSON.stringify(serialData) !==
+          JSON.stringify(hardwareStateAtSetSerialDataRef.current)
+      ) {
+        // Check if any hardware value has changed by more than 1 from its state
+        // when we received the setSerialData event
+        const hasSignificantHardwareChange = Object.keys(serialData).some(
+          (key) => {
+            const currentHardwareValue = serialData[key];
+            const hardwareValueAtSetSerialData =
+              hardwareStateAtSetSerialDataRef.current[key];
+            // Only consider it a significant change if the difference is more than 1
+            return (
+              Math.abs(currentHardwareValue - hardwareValueAtSetSerialData) > 1
+            );
+          }
+        );
+
+        if (hasSignificantHardwareChange) {
+          // Hardware has changed significantly from its state when we got setSerialData
+          // Clear the set data and switch back to using hardware data
+          setSerialDataRef.current = null;
+          hardwareStateAtSetSerialDataRef.current = null;
+          setSerialData(serialData);
+        }
+      }
+    } else {
+      // No setSerialData active, so just use hardware data
       latestSerialDataRef.current = serialData;
     }
-
-    // Only clear setSerialDataRef if the current hardware state differs from what it was
-    // when we received setSerialData, and the difference is meaningful (not just a temporary fluctuation)
-    if (
-      hardwareStateAtSetSerialDataRef.current &&
-      JSON.stringify(serialData) !==
-        JSON.stringify(hardwareStateAtSetSerialDataRef.current)
-    ) {
-      // Check if the difference is meaningful by comparing each key
-      const hasMeaningfulChange = Object.keys(serialData).some((key) => {
-        const currentValue = serialData[key];
-        const storedValue = hardwareStateAtSetSerialDataRef.current[key];
-        // Consider it meaningful if the difference is more than just a small fluctuation
-        return Math.abs(currentValue - storedValue) > 1;
-      });
-
-      if (hasMeaningfulChange) {
-        setSerialDataRef.current = null;
-        hardwareStateAtSetSerialDataRef.current = null;
-        latestSerialDataRef.current = serialData;
-      }
-    }
-  }, [serialData]);
+  }, [serialData, setSerialData]);
 
   const sendMessage = useCallback((message) => {
     if (socketRef.current && isConnectedRef.current) {
