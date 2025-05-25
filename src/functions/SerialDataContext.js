@@ -41,12 +41,12 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
           // Hardware has changed significantly, clear the override
           setSerialDataRef.current = null;
           hardwareStateAtSetSerialDataRef.current = null;
-          setSerialData(newData);
+          setSerialData({ ...serialDataRef.current, ...newData });
         }
       }
     } else {
       // No override active, update with hardware data
-      setSerialData(newData);
+      setSerialData({ ...serialDataRef.current, ...newData });
     }
   };
 

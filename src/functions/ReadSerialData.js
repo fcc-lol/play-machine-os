@@ -88,7 +88,7 @@ function ReadSerialData() {
       }
 
       // Use functional update to avoid dependency on serialData
-      updateSerialData((prevData) => ({ ...prevData, ...processedData }));
+      updateSerialData(processedData);
       setLastProcessedTime(currentTime);
     },
     [updateSerialData, lastProcessedTime] // Remove serialData from dependencies
