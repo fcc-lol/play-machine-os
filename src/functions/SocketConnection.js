@@ -21,18 +21,12 @@ export const useSocketConnection = (
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
-  const useHardwareValuesRef = useRef(true); // Track if we should use hardware values
   const { serialData, setSerialData } = useSerial();
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
     // Update the latest serial data reference
     latestSerialDataRef.current = serialData;
-
-    // If hardware values change, switch back to using hardware values
-    if (useHardwareValuesRef.current === false) {
-      useHardwareValuesRef.current = true;
-    }
   }, [serialData]);
 
   const sendMessage = useCallback((message) => {
@@ -54,13 +48,10 @@ export const useSocketConnection = (
     (data) => {
       // Handle setSerialData events
       if (data.action === "setSerialData") {
-        // Only use setSerialData values if we're not using hardware values
-        if (useHardwareValuesRef.current) {
-          // Access the nested data structure correctly
-          const serialDataValues = data.data.data;
-          setSerialData(serialDataValues);
-          useHardwareValuesRef.current = false;
-        }
+        // Access the nested data structure correctly
+        const serialDataValues = data.data.data;
+        // Use setSerialData which is actually setSerialDataFromSocket from the context
+        setSerialData(serialDataValues);
       }
 
       // Handle getSerialData requests
