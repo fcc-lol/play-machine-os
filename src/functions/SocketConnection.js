@@ -21,48 +21,13 @@ export const useSocketConnection = (
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
-  const setSerialDataRef = useRef(null);
-  const hardwareStateAtSetSerialDataRef = useRef(null);
-  const { serialData, setSerialData } = useSerial();
+  const { serialData, setSerialData, updateSerialData } = useSerial();
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
-    // If we have setSerialData active, only check for significant hardware changes
-    // but don't update the actual serial data
-    if (setSerialDataRef.current) {
-      if (
-        hardwareStateAtSetSerialDataRef.current &&
-        JSON.stringify(serialData) !==
-          JSON.stringify(hardwareStateAtSetSerialDataRef.current)
-      ) {
-        // Check if any hardware value has changed by more than 1 from its state
-        // when we received the setSerialData event
-        const hasSignificantHardwareChange = Object.keys(serialData).some(
-          (key) => {
-            const currentHardwareValue = serialData[key];
-            const hardwareValueAtSetSerialData =
-              hardwareStateAtSetSerialDataRef.current[key];
-            // Only consider it a significant change if the difference is more than 1
-            return (
-              Math.abs(currentHardwareValue - hardwareValueAtSetSerialData) > 1
-            );
-          }
-        );
-
-        if (hasSignificantHardwareChange) {
-          // Hardware has changed significantly from its state when we got setSerialData
-          // Clear the set data and switch back to using hardware data
-          setSerialDataRef.current = null;
-          hardwareStateAtSetSerialDataRef.current = null;
-          setSerialData(serialData);
-        }
-      }
-    } else {
-      // No setSerialData active, so just use hardware data
-      latestSerialDataRef.current = serialData;
-      setSerialData(serialData);
-    }
-  }, [serialData, setSerialData]);
+    // Update the latest serial data reference
+    latestSerialDataRef.current = serialData;
+  }, [serialData]);
 
   const sendMessage = useCallback((message) => {
     if (socketRef.current && isConnectedRef.current) {
@@ -85,24 +50,14 @@ export const useSocketConnection = (
       if (data.action === "setSerialData") {
         // Access the nested data structure correctly
         const serialDataValues = data.data.data;
-        setSerialDataRef.current = serialDataValues;
-        // Store the current hardware state when we receive setSerialData
-        hardwareStateAtSetSerialDataRef.current = JSON.parse(
-          JSON.stringify(serialData)
-        );
-        // Set the serial data to the new values
         setSerialData(serialDataValues);
       }
 
       // Handle getSerialData requests
       if (data.action === "getSerialData") {
-        // Always use setSerialData if available, otherwise use latest serial data
-        const dataToSend =
-          setSerialDataRef.current || latestSerialDataRef.current;
-
         sendMessage({
           action: "serialData",
-          data: dataToSend,
+          data: serialData,
           isFromSelf: true
         });
       }

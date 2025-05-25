@@ -14,6 +14,44 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
   const [isInputConnected, setIsInputConnected] = useState(false);
   const [isOutputConnected, setIsOutputConnected] = useState(false);
   const writeToOutputDeviceRef = useRef(null);
+  const setSerialDataRef = useRef(null);
+  const hardwareStateAtSetSerialDataRef = useRef(null);
+
+  // Function to update serial data that respects setSerialData overrides
+  const updateSerialData = (newData) => {
+    if (setSerialDataRef.current) {
+      // If we have setSerialData active, only update if hardware has changed significantly
+      if (hardwareStateAtSetSerialDataRef.current) {
+        const hasSignificantChange = Object.keys(newData).some((key) => {
+          const currentValue = newData[key]?.value;
+          const storedValue =
+            hardwareStateAtSetSerialDataRef.current[key]?.value;
+          if (currentValue === undefined || storedValue === undefined)
+            return false;
+          return Math.abs(currentValue - storedValue) > 1;
+        });
+
+        if (hasSignificantChange) {
+          // Hardware has changed significantly, clear the override
+          setSerialDataRef.current = null;
+          hardwareStateAtSetSerialDataRef.current = null;
+          setSerialData(newData);
+        }
+      }
+    } else {
+      // No override active, update with hardware data
+      setSerialData(newData);
+    }
+  };
+
+  // Function to set serial data from socket events
+  const setSerialDataFromSocket = (data) => {
+    setSerialDataRef.current = data;
+    hardwareStateAtSetSerialDataRef.current = JSON.parse(
+      JSON.stringify(serialData)
+    );
+    setSerialData(data);
+  };
 
   useEffect(() => {
     // Initialize default values for all hardware items
@@ -66,7 +104,8 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
     <SerialDataContext.Provider
       value={{
         serialData,
-        setSerialData,
+        setSerialData: setSerialDataFromSocket,
+        updateSerialData,
         isInputConnected,
         setIsInputConnected,
         isOutputConnected,
