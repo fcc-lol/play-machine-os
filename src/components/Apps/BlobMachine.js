@@ -39,7 +39,6 @@ export default function BlobMachine() {
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width;
       canvas.height = rect.height;
-      console.log("Canvas size:", canvas.width, canvas.height);
     };
 
     updateCanvasSize();
@@ -50,8 +49,6 @@ export default function BlobMachine() {
       console.error("WebGL not supported");
       return;
     }
-
-    console.log("WebGL context created successfully");
 
     // Shader sources
     const vertexShaderSource = `

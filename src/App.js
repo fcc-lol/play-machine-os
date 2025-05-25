@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, lazy } from "react";
 import { SerialDataProvider, useSerial } from "./functions/SerialDataContext";
 import { ThemeProvider, useTheme } from "./functions/ThemeContext";
-import { SocketProvider } from "./functions/SocketContext";
+import { SocketProvider, useSocket } from "./functions/SocketContext";
 import { HandDetectionProvider } from "./functions/HandDetectionContext";
 import ReadSerialData from "./functions/ReadSerialData";
 import Menu from "./components/UI/Menu";
@@ -80,7 +80,9 @@ const ScreenContainer = styled.div.attrs((props) => ({
 const DEBOUNCE_TIME = 200; // milliseconds
 
 const AppContent = ({ isSimulatorMode }) => {
-  const { serialData, isInputConnected, isOutputConnected } = useSerial();
+  const { serialData, isInputConnected, isOutputConnected, setSerialData } =
+    useSerial();
+  const { connect: connectSocket, registerHandler } = useSocket();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
   const [menuStack, setMenuStack] = useState([menu.root]);
@@ -152,6 +154,26 @@ const AppContent = ({ isSimulatorMode }) => {
   const handleMenuActionProcessed = useCallback(() => {
     setMenuAction(null);
   }, []);
+
+  // Initialize socket connection and handle messages
+  useEffect(() => {
+    connectSocket();
+
+    // Handle incoming socket messages
+    const handleMessage = (data) => {
+      // Handle setSerialData events
+      if (data.action === "setSerialData") {
+        const serialDataValues = data.data.data;
+        setSerialData(serialDataValues);
+      }
+    };
+
+    // Register handler and get cleanup function
+    const cleanup = registerHandler(handleMessage);
+    return () => {
+      cleanup();
+    };
+  }, [connectSocket, registerHandler, setSerialData]);
 
   const renderContent = () => {
     if (currentApp) {

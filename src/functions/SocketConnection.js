@@ -34,7 +34,6 @@ export const useSocketConnection = (
         const data =
           typeof message === "string" ? message : JSON.stringify(message);
         socketRef.current.send(data);
-        console.log("Message sent:", data);
       } catch (err) {
         console.error("Failed to send message:", err);
         setError("Failed to send message");
@@ -53,7 +52,8 @@ export const useSocketConnection = (
       if (data.action === "getSerialData") {
         sendMessage({
           action: "serialData",
-          data: latestSerialDataRef.current
+          data: latestSerialDataRef.current,
+          isFromSelf: true
         });
       }
     },
@@ -62,27 +62,14 @@ export const useSocketConnection = (
 
   const connect = useCallback(() => {
     if (socketRef.current || !shouldConnect) {
-      console.log("Socket connection skipped:", {
-        hasSocket: !!socketRef.current,
-        shouldConnect
-      });
       return;
     }
 
     try {
-      console.log(
-        `Attempting to connect to ${SOCKET_URLS[environment]} (Attempt ${
-          retryCount + 1
-        }/${MAX_RETRIES})`
-      );
       const ws = new WebSocket(SOCKET_URLS[environment]);
       socketRef.current = ws;
 
       ws.onopen = () => {
-        console.log(
-          "WebSocket connected successfully to",
-          SOCKET_URLS[environment]
-        );
         isConnectedRef.current = true;
         setIsConnected(true);
         setError(null);
@@ -110,30 +97,16 @@ export const useSocketConnection = (
       };
 
       ws.onclose = (event) => {
-        console.log(
-          "WebSocket closed for",
-          SOCKET_URLS[environment],
-          "with code:",
-          event.code,
-          "reason:",
-          event.reason
-        );
         isConnectedRef.current = false;
         setIsConnected(false);
         socketRef.current = null;
 
         if (shouldConnect && retryCount < MAX_RETRIES - 1) {
           const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
-          console.log(
-            `Retry attempt ${retryCount + 1}/${MAX_RETRIES} in ${delay}ms`
-          );
           setTimeout(() => {
             setRetryCount((prev) => prev + 1);
           }, delay);
         } else {
-          console.log(
-            `Max retries (${MAX_RETRIES}) reached or connection stopped. Stopping reconnection attempts.`
-          );
           setError(
             `Connection failed after ${MAX_RETRIES} attempts. Please check your connection and try again.`
           );
