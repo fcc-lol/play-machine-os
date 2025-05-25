@@ -27,7 +27,8 @@ export const useSocketConnection = (
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
-    // If we have setSerialData active, only update if hardware has changed significantly
+    // If we have setSerialData active, only check for significant hardware changes
+    // but don't update the actual serial data
     if (setSerialDataRef.current) {
       if (
         hardwareStateAtSetSerialDataRef.current &&
@@ -59,6 +60,7 @@ export const useSocketConnection = (
     } else {
       // No setSerialData active, so just use hardware data
       latestSerialDataRef.current = serialData;
+      setSerialData(serialData);
     }
   }, [serialData, setSerialData]);
 
@@ -88,6 +90,7 @@ export const useSocketConnection = (
         hardwareStateAtSetSerialDataRef.current = JSON.parse(
           JSON.stringify(serialData)
         );
+        // Set the serial data to the new values
         setSerialData(serialDataValues);
       }
 
