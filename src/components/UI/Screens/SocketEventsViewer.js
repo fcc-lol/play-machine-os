@@ -49,7 +49,20 @@ function SocketEventsViewer() {
 
   // Keep track of latest serial data for responding to requests
   const latestSerialDataRef = React.useRef(serialData);
+  const setSerialDataRef = React.useRef(null);
+  const hardwareStateAtSetSerialDataRef = React.useRef(null);
+
   useEffect(() => {
+    // If we have stored hardware state and current data differs from it,
+    // it means the hardware has actually changed from its state when we received setSerialData
+    if (
+      hardwareStateAtSetSerialDataRef.current &&
+      JSON.stringify(serialData) !==
+        JSON.stringify(hardwareStateAtSetSerialDataRef.current)
+    ) {
+      setSerialDataRef.current = null;
+      hardwareStateAtSetSerialDataRef.current = null;
+    }
     latestSerialDataRef.current = serialData;
   }, [serialData]);
 
@@ -75,6 +88,11 @@ function SocketEventsViewer() {
 
         // Access the nested data structure correctly
         const serialDataValues = data.data.data;
+        setSerialDataRef.current = serialDataValues;
+        // Store the current hardware state when we receive setSerialData
+        hardwareStateAtSetSerialDataRef.current = JSON.parse(
+          JSON.stringify(serialData)
+        );
         setSerialData(serialDataValues);
         return;
       }
@@ -92,12 +110,16 @@ function SocketEventsViewer() {
 
       // Handle getSerialData requests
       if (data.action === "getSerialData") {
+        // Use setSerialData if available, otherwise use latest serial data
+        const dataToSend =
+          setSerialDataRef.current || latestSerialDataRef.current;
+
         // Log our response
         setMessageLog((prev) => [
           {
             type: "sent",
             action: "serialData",
-            data: latestSerialDataRef.current,
+            data: dataToSend,
             timestamp: new Date().toISOString()
           },
           ...prev
