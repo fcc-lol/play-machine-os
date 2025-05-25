@@ -27,6 +27,11 @@ export const useSocketConnection = (
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
+    // Only update latestSerialDataRef if we don't have setSerialData
+    if (!setSerialDataRef.current) {
+      latestSerialDataRef.current = serialData;
+    }
+
     // Only clear setSerialDataRef if the current hardware state differs from what it was
     // when we received setSerialData, and the difference is meaningful (not just a temporary fluctuation)
     if (
@@ -45,9 +50,9 @@ export const useSocketConnection = (
       if (hasMeaningfulChange) {
         setSerialDataRef.current = null;
         hardwareStateAtSetSerialDataRef.current = null;
+        latestSerialDataRef.current = serialData;
       }
     }
-    latestSerialDataRef.current = serialData;
   }, [serialData]);
 
   const sendMessage = useCallback((message) => {
@@ -81,7 +86,7 @@ export const useSocketConnection = (
 
       // Handle getSerialData requests
       if (data.action === "getSerialData") {
-        // Use setSerialData if available, otherwise use latest serial data
+        // Always use setSerialData if available, otherwise use latest serial data
         const dataToSend =
           setSerialDataRef.current || latestSerialDataRef.current;
 
