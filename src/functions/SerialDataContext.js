@@ -34,6 +34,16 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
             hardwareStateAtSetSerialDataRef.current[key]?.value;
           if (currentValue === undefined || storedValue === undefined)
             return false;
+
+          // For boolean values (buttons), any change is significant
+          if (
+            typeof currentValue === "boolean" &&
+            typeof storedValue === "boolean"
+          ) {
+            return currentValue !== storedValue;
+          }
+
+          // For numeric values (sliders), check if change is greater than 1
           return Math.abs(currentValue - storedValue) > 1;
         });
 
