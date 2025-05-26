@@ -82,7 +82,12 @@ const DEBOUNCE_TIME = 200; // milliseconds
 const AppContent = ({ isSimulatorMode }) => {
   const { serialData, isInputConnected, isOutputConnected, setSerialData } =
     useSerial();
-  const { connect: connectSocket, registerHandler } = useSocket();
+  const {
+    connect: connectSocket,
+    registerHandler,
+    sendMessage,
+    setCurrentAppRef
+  } = useSocket();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
   const [menuStack, setMenuStack] = useState([menu.root]);
@@ -103,6 +108,14 @@ const AppContent = ({ isSimulatorMode }) => {
 
   const handleBack = useCallback(
     (submenu) => {
+      if (currentApp) {
+        sendMessage({
+          action: "appChanged",
+          data: { appId: null },
+          isFromSelf: true,
+          broadcast: true
+        });
+      }
       setCurrentScreen(null);
       setCurrentApp(null);
       if (submenu) {
@@ -111,7 +124,7 @@ const AppContent = ({ isSimulatorMode }) => {
         setMenuStack(previousMenuStack);
       }
     },
-    [previousMenuStack]
+    [previousMenuStack, currentApp, sendMessage]
   );
 
   const handleScreenSelect = useCallback(
@@ -128,8 +141,15 @@ const AppContent = ({ isSimulatorMode }) => {
       setPreviousMenuStack([...menuStack]);
       setCurrentApp(appId);
       setCurrentScreen(null);
+      // Update currentAppRef in the socket connection
+      setCurrentAppRef(appId);
+      // Emit socket event when app changes
+      sendMessage({
+        action: "appChanged",
+        data: { appId }
+      });
     },
-    [menuStack]
+    [menuStack, sendMessage, setCurrentAppRef]
   );
 
   useEffect(() => {
@@ -164,7 +184,19 @@ const AppContent = ({ isSimulatorMode }) => {
       // Handle setSerialData events
       if (data.action === "setSerialData") {
         const serialDataValues = data.data.data;
+        setSerialData(serialDataValues.serialData || serialDataValues);
+      }
+      // Handle serialData events (from getSerialData response)
+      if (data.action === "serialData") {
+        const serialDataValues = data.data.serialData;
         setSerialData(serialDataValues);
+      }
+      // Handle getSerialData requests
+      if (data.action === "getSerialData") {
+        // Just acknowledge the request, the SocketConnection will handle sending the data
+        sendMessage({
+          action: "getSerialData"
+        });
       }
     };
 
@@ -173,7 +205,7 @@ const AppContent = ({ isSimulatorMode }) => {
     return () => {
       cleanup();
     };
-  }, [connectSocket, registerHandler, setSerialData]);
+  }, [connectSocket, registerHandler, setSerialData, sendMessage]);
 
   const renderContent = () => {
     if (currentApp) {
@@ -242,7 +274,7 @@ const AppContent = ({ isSimulatorMode }) => {
   return (
     <>
       <AppContainer>
-        <ScreenContainer $onDevice={!isSimulatorMode}>
+        <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected && isOutputConnected && renderContent()}
         </ScreenContainer>

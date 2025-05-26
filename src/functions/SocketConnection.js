@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSerial } from "./SerialDataContext";
+import html2canvas from "html2canvas";
+import hardware from "../config/Hardware.json";
 
 const SOCKET_URLS = {
   local: "ws://localhost:3103",
@@ -8,6 +10,56 @@ const SOCKET_URLS = {
 
 const MAX_RETRIES = 5;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
+
+const generateUniqueId = () => {
+  return (
+    Math.random().toString(36).substring(2, 15) +
+    Math.random().toString(36).substring(2, 15)
+  );
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const captureScreen = async () => {
+  const screenElement = document.getElementById("screen-container");
+  if (!screenElement) return null;
+
+  try {
+    const canvas = await html2canvas(screenElement, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      width: hardware.screen.width,
+      height: hardware.screen.height,
+      scale: 1
+    });
+    return canvas.toDataURL("image/png");
+  } catch (error) {
+    console.error("Failed to capture screen:", error);
+    return null;
+  }
+};
+
+const captureMultipleScreenshots = async (count, id, sendMessage) => {
+  for (let i = 0; i < count; i++) {
+    const screenshot = await captureScreen();
+    if (screenshot) {
+      sendMessage({
+        action: "screenshotData",
+        data: screenshot,
+        id,
+        index: i,
+        total: count,
+        isFromSelf: true
+      });
+    }
+    // Wait 1 second before taking the next screenshot
+    if (i < count - 1) {
+      // Don't wait after the last screenshot
+      await sleep(1000);
+    }
+  }
+};
 
 export const useSocketConnection = (
   environment = "local",
@@ -21,6 +73,7 @@ export const useSocketConnection = (
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
+  const currentAppRef = useRef(null);
   const { serialData, setSerialData } = useSerial();
 
   // Keep the refs updated with latest serial data
@@ -45,22 +98,54 @@ export const useSocketConnection = (
   }, []);
 
   const handleIncomingMessage = useCallback(
-    (data) => {
+    async (data) => {
       // Handle setSerialData events
       if (data.action === "setSerialData") {
         // Access the nested data structure correctly
         const serialDataValues = data.data.data;
         // Use setSerialData which is actually setSerialDataFromSocket from the context
+        setSerialData(serialDataValues.serialData || serialDataValues);
+      }
+
+      // Handle serialData events (from getSerialData response)
+      if (data.action === "serialData") {
+        const serialDataValues = data.data.serialData;
         setSerialData(serialDataValues);
+      }
+
+      // Handle appChanged events
+      if (data.action === "appChanged") {
+        currentAppRef.current = data.data.appId;
+      }
+
+      // Handle getCurrentApp requests
+      if (data.action === "getCurrentApp") {
+        sendMessage({
+          action: "currentApp",
+          data: { appId: currentAppRef.current },
+          isFromSelf: true,
+          broadcast: true
+        });
       }
 
       // Handle getSerialData requests
       if (data.action === "getSerialData") {
+        // Generate a unique ID for this request
+        const id = generateUniqueId();
+
+        // First send the serial data immediately
         sendMessage({
           action: "serialData",
-          data: latestSerialDataRef.current,
+          data: {
+            serialData: latestSerialDataRef.current,
+            currentApp: currentAppRef.current
+          },
+          id,
           isFromSelf: true
         });
+
+        // Then capture 6 screenshots asynchronously
+        captureMultipleScreenshots(6, id, sendMessage);
       }
 
       // Always call the onMessage handler if provided
@@ -177,11 +262,18 @@ export const useSocketConnection = (
     setError(null);
   }, []);
 
+  // Expose a setter for currentAppRef so the app can update it directly
+  const setCurrentAppRef = (appId) => {
+    currentAppRef.current = appId;
+  };
+
   return {
     isConnected,
     error,
     sendMessage,
     connect: manualConnect,
-    disconnect
+    disconnect,
+    // Expose setter
+    setCurrentAppRef
   };
 };
