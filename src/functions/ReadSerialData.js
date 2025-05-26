@@ -28,8 +28,6 @@ const ConnectButton = styled.button`
 
 function ReadSerialData() {
   const {
-    serialData,
-    setSerialData,
     updateSerialData,
     isInputConnected,
     setIsInputConnected,
