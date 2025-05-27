@@ -80,6 +80,11 @@
               "screen": "SocketEventsViewer"
             },
             {
+              "id": "remote-viewer",
+              "label": "Remote Viewer",
+              "screen": "RemoteViewer"
+            },
+            {
               "id": "camera-hand-detection",
               "label": "Camera Hand Detection",
               "screen": "CameraHandDetection"

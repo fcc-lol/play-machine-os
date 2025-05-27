@@ -27,6 +27,7 @@ const screens = {
   CameraHandDetection: lazy(() =>
     import("./components/UI/Screens/CameraHandDetection")
   ),
+  RemoteViewer: lazy(() => import("./components/UI/Screens/RemoteViewer")),
   About: lazy(() => import("./components/UI/Screens/About"))
 };
 
