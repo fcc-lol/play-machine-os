@@ -24,9 +24,8 @@ const StatusIndicator = styled.div`
 
 const RemoteList = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
-  width: 100%;
 `;
 
 const RemoteCard = styled.div`
@@ -35,23 +34,6 @@ const RemoteCard = styled.div`
   border-radius: 0.5rem;
   padding: 1rem;
   width: 100%;
-`;
-
-const RemoteHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-`;
-
-const RemoteId = styled.div`
-  font-weight: bold;
-  color: ${(props) => props.theme.text};
-`;
-
-const DeviceType = styled.div`
-  color: ${(props) => props.theme.text};
-  opacity: 0.7;
 `;
 
 const RemoteData = styled.div`
@@ -69,6 +51,7 @@ const DataItem = styled.div`
 const Label = styled.span`
   color: ${(props) => props.theme.text};
   opacity: 0.7;
+  width: 6rem;
 `;
 
 const Value = styled.span`
@@ -77,31 +60,43 @@ const Value = styled.span`
 `;
 
 function RemoteViewer() {
-  const [remotes, setRemotes] = useState({});
+  const [remotes, setRemotes] = useState({
+    // Add a sample remote for testing
+    "001": {
+      deviceType: "play-remote",
+      value: 75
+    }
+  });
   const { isConnected, error, registerHandler } = useSocket();
 
   // Handle incoming socket messages
   const handleMessage = useCallback((data) => {
     if (data.action === "remoteRegistration") {
       // Add new remote to the list
-      setRemotes((prev) => ({
-        ...prev,
-        [data.data.deviceId]: {
-          deviceType: data.data.deviceType,
-          lastUpdate: new Date().toISOString(),
-          value: null
-        }
-      }));
+      setRemotes((prev) => {
+        // Remove sample remote if it exists
+        const { "sample-remote": _, ...rest } = prev;
+        return {
+          ...rest,
+          [data.data.deviceId]: {
+            deviceType: data.data.deviceType,
+            value: null
+          }
+        };
+      });
     } else if (data.action === "remoteSerialData") {
       // Update remote data
-      setRemotes((prev) => ({
-        ...prev,
-        [data.data.deviceId]: {
-          ...prev[data.data.deviceId],
-          lastUpdate: new Date().toISOString(),
-          value: data.data.value
-        }
-      }));
+      setRemotes((prev) => {
+        // Remove sample remote if it exists
+        const { "sample-remote": _, ...rest } = prev;
+        return {
+          ...rest,
+          [data.data.deviceId]: {
+            ...prev[data.data.deviceId],
+            value: data.data.value
+          }
+        };
+      });
     }
   }, []);
 
@@ -125,20 +120,18 @@ function RemoteViewer() {
       <RemoteList>
         {Object.entries(remotes).map(([deviceId, remote]) => (
           <RemoteCard key={deviceId}>
-            <RemoteHeader>
-              <RemoteId>Remote {deviceId}</RemoteId>
-              <DeviceType>{remote.deviceType}</DeviceType>
-            </RemoteHeader>
             <RemoteData>
               <DataItem>
-                <Label>Last Update:</Label>
-                <Value>
-                  {new Date(remote.lastUpdate).toLocaleTimeString()}
-                </Value>
+                <Label>Type</Label>
+                <Value>{remote.deviceType}</Value>
+              </DataItem>
+              <DataItem>
+                <Label>Identifier</Label>
+                <Value>{deviceId}</Value>
               </DataItem>
               {remote.value !== null && (
                 <DataItem>
-                  <Label>Value:</Label>
+                  <Label>Value</Label>
                   <Value>{remote.value}</Value>
                 </DataItem>
               )}
