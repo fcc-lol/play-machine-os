@@ -301,7 +301,6 @@ export const useSocketConnection = (onMessage, initialShouldConnect = true) => {
 
       try {
         const validationUrl = `${API_URL[env]}/validate-api-key?apiKey=${apiKey}`;
-        console.log("Validating API key against:", validationUrl);
         const response = await fetch(validationUrl);
         const data = await response.json();
         setIsApiKeyValid(data.valid);
