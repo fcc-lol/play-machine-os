@@ -67,30 +67,26 @@ function RemoteViewer() {
   const handleMessage = useCallback((data) => {
     if (data.action === "remoteRegistration") {
       // Add new remote to the list
-      setRemotes((prev) => {
-        // Remove sample remote if it exists
-        const { "sample-remote": _, ...rest } = prev;
-        return {
-          ...rest,
-          [data.data.deviceId]: {
-            deviceType: data.data.deviceType,
-            value: null
-          }
-        };
-      });
+      setRemotes((prev) => ({
+        ...prev,
+        [data.data.deviceId]: {
+          deviceType: data.data.deviceType || "Unknown",
+          value: null
+        }
+      }));
     } else if (data.action === "remoteSerialData") {
       // Update remote data
-      setRemotes((prev) => {
-        // Remove sample remote if it exists
-        const { "sample-remote": _, ...rest } = prev;
-        return {
-          ...rest,
-          [data.data.deviceId]: {
-            ...prev[data.data.deviceId],
-            value: data.data.value
-          }
-        };
-      });
+      setRemotes((prev) => ({
+        ...prev,
+        [data.data.deviceId]: {
+          ...prev[data.data.deviceId],
+          deviceType:
+            prev[data.data.deviceId]?.deviceType ||
+            data.data.deviceType ||
+            "Unknown",
+          value: data.data.value
+        }
+      }));
     }
   }, []);
 
@@ -117,7 +113,7 @@ function RemoteViewer() {
             <RemoteData>
               <DataItem>
                 <Label>Type</Label>
-                <Value>{remote.deviceType}</Value>
+                <Value>{remote.deviceType || "Unknown"}</Value>
               </DataItem>
               <DataItem>
                 <Label>Identifier</Label>
