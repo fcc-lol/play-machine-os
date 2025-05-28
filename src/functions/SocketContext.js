@@ -7,10 +7,6 @@ export const SocketProvider = ({ children }) => {
   // Keep track of registered message handlers
   const messageHandlers = useRef(new Set());
 
-  // Determine environment based on hostname
-  const environment =
-    window.location.hostname === "localhost" ? "local" : "production";
-
   // Check if socket should be disabled via URL parameter
   const shouldDisableSocket =
     new URLSearchParams(window.location.search).get("useSocket") === "false";
@@ -28,11 +24,7 @@ export const SocketProvider = ({ children }) => {
   };
 
   // Initialize socket connection
-  const socket = useSocketConnection(
-    environment,
-    handleMessage,
-    !shouldDisableSocket
-  );
+  const socket = useSocketConnection(handleMessage, !shouldDisableSocket);
 
   // Add registerHandler to the context value
   const contextValue = {

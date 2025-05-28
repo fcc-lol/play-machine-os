@@ -14,6 +14,7 @@ import styled, {
 import isPropValid from "@emotion/is-prop-valid";
 import menu from "./config/Menu.json";
 import hardware from "./config/Hardware.json";
+import { API_URL } from "./config/API";
 
 // Import screens and apps dynamically
 const screens = {
@@ -97,6 +98,17 @@ const MissingAPIKey = styled.div`
   justify-content: center;
   font-family: system-ui;
 `;
+
+const InvalidAPIKey = styled(MissingAPIKey)`
+  color: #ff4444;
+`;
+
+const getEnvironmentFromUrl = () => {
+  const isLocalhost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  return isLocalhost ? "local" : "production";
+};
 
 const AppContent = ({ isSimulatorMode }) => {
   const { serialData, isInputConnected, isOutputConnected, setSerialData } =
@@ -315,14 +327,58 @@ function ThemeWrapper({ children }) {
 function App() {
   const [isSimulatorMode, setIsSimulatorMode] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
+  const [isApiKeyValid, setIsApiKeyValid] = useState(true);
+  const [isValidating, setIsValidating] = useState(true);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const onDevice = urlParams.get("onDevice");
-    const apiKey = urlParams.get("apiKey");
-    setIsSimulatorMode(onDevice === "false");
-    setHasApiKey(!!apiKey);
+    const validateApiKey = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const onDevice = urlParams.get("onDevice");
+      const apiKey = urlParams.get("apiKey");
+      const env = getEnvironmentFromUrl();
+
+      setIsSimulatorMode(onDevice === "false");
+      setHasApiKey(!!apiKey);
+
+      if (apiKey) {
+        try {
+          const validationUrl = `${API_URL[env]}/validate-api-key?apiKey=${apiKey}`;
+          const response = await fetch(validationUrl);
+          const data = await response.json();
+          setIsApiKeyValid(data.valid);
+        } catch (error) {
+          setIsApiKeyValid(false);
+        }
+      }
+      setIsValidating(false);
+    };
+
+    validateApiKey();
   }, []);
+
+  if (isValidating) {
+    return (
+      <StyleSheetManager shouldForwardProp={isPropValid}>
+        <ThemeProvider>
+          <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+            <SocketProvider>
+              <ThemeWrapper>
+                <AppContainer>
+                  <ScreenContainer
+                    id="screen-container"
+                    $onDevice={!isSimulatorMode}
+                  >
+                    <Loading />
+                  </ScreenContainer>
+                </AppContainer>
+                <Hardware />
+              </ThemeWrapper>
+            </SocketProvider>
+          </SerialDataProvider>
+        </ThemeProvider>
+      </StyleSheetManager>
+    );
+  }
 
   if (!hasApiKey) {
     return (
@@ -337,6 +393,30 @@ function App() {
                     $onDevice={!isSimulatorMode}
                   >
                     <MissingAPIKey>No API key set</MissingAPIKey>
+                  </ScreenContainer>
+                </AppContainer>
+                <Hardware />
+              </ThemeWrapper>
+            </SocketProvider>
+          </SerialDataProvider>
+        </ThemeProvider>
+      </StyleSheetManager>
+    );
+  }
+
+  if (!isApiKeyValid) {
+    return (
+      <StyleSheetManager shouldForwardProp={isPropValid}>
+        <ThemeProvider>
+          <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+            <SocketProvider>
+              <ThemeWrapper>
+                <AppContainer>
+                  <ScreenContainer
+                    id="screen-container"
+                    $onDevice={!isSimulatorMode}
+                  >
+                    <InvalidAPIKey>Invalid API key</InvalidAPIKey>
                   </ScreenContainer>
                 </AppContainer>
                 <Hardware />
