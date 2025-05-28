@@ -80,6 +80,24 @@ const ScreenContainer = styled.div.attrs((props) => ({
 
 const DEBOUNCE_TIME = 200; // milliseconds
 
+const MissingAPIKey = styled.div`
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  color: white;
+  font-weight: bold;
+  font-size: 2rem;
+  border: none;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui;
+`;
+
 const AppContent = ({ isSimulatorMode }) => {
   const { serialData, isInputConnected, isOutputConnected, setSerialData } =
     useSerial();
@@ -296,12 +314,39 @@ function ThemeWrapper({ children }) {
 // App component now sets up both providers
 function App() {
   const [isSimulatorMode, setIsSimulatorMode] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const onDevice = urlParams.get("onDevice");
+    const apiKey = urlParams.get("apiKey");
     setIsSimulatorMode(onDevice === "false");
+    setHasApiKey(!!apiKey);
   }, []);
+
+  if (!hasApiKey) {
+    return (
+      <StyleSheetManager shouldForwardProp={isPropValid}>
+        <ThemeProvider>
+          <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+            <SocketProvider>
+              <ThemeWrapper>
+                <AppContainer>
+                  <ScreenContainer
+                    id="screen-container"
+                    $onDevice={!isSimulatorMode}
+                  >
+                    <MissingAPIKey>No API key set</MissingAPIKey>
+                  </ScreenContainer>
+                </AppContainer>
+                <Hardware />
+              </ThemeWrapper>
+            </SocketProvider>
+          </SerialDataProvider>
+        </ThemeProvider>
+      </StyleSheetManager>
+    );
+  }
 
   return (
     <StyleSheetManager shouldForwardProp={isPropValid}>

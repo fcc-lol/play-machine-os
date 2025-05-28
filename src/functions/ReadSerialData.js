@@ -24,6 +24,7 @@ const ConnectButton = styled.button`
   font-size: 2rem;
   border: none;
   position: absolute;
+  font-family: system-ui;
 `;
 
 const RefreshButton = styled.button`

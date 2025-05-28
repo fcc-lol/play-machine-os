@@ -11,6 +11,12 @@ const SOCKET_URLS = {
 const MAX_RETRIES = 5;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 
+// Get API key from URL query parameters
+const getApiKeyFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("apiKey");
+};
+
 const generateUniqueId = () => {
   return (
     Math.random().toString(36).substring(2, 15) +
@@ -75,6 +81,7 @@ export const useSocketConnection = (
   const latestSerialDataRef = useRef(null);
   const currentAppRef = useRef(null);
   const { serialData, setSerialData } = useSerial();
+  const apiKeyRef = useRef(getApiKeyFromUrl());
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
@@ -85,8 +92,12 @@ export const useSocketConnection = (
   const sendMessage = useCallback((message) => {
     if (socketRef.current && isConnectedRef.current) {
       try {
-        const data =
-          typeof message === "string" ? message : JSON.stringify(message);
+        // Add API key to all messages
+        const messageWithApiKey = {
+          ...(typeof message === "string" ? JSON.parse(message) : message),
+          apiKey: apiKeyRef.current
+        };
+        const data = JSON.stringify(messageWithApiKey);
         socketRef.current.send(data);
       } catch (err) {
         console.error("Failed to send message:", err);
