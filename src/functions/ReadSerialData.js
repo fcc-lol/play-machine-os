@@ -385,12 +385,13 @@ function ReadSerialData() {
 
   const refreshButton = useMemo(
     () =>
+      (!isInputConnected || !isOutputConnected) &&
       !isSimulatorMode && (
         <RefreshButton onClick={() => window.location.reload()}>
           Refresh
         </RefreshButton>
       ),
-    [isSimulatorMode]
+    [isInputConnected, isOutputConnected, isSimulatorMode]
   );
 
   // Add function to write to output device
