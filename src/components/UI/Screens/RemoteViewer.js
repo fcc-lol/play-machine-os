@@ -60,13 +60,7 @@ const Value = styled.span`
 `;
 
 function RemoteViewer() {
-  const [remotes, setRemotes] = useState({
-    // Add a sample remote for testing
-    "001": {
-      deviceType: "play-remote",
-      value: 75
-    }
-  });
+  const [remotes, setRemotes] = useState({});
   const { isConnected, error, registerHandler } = useSocket();
 
   // Handle incoming socket messages
