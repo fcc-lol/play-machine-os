@@ -26,6 +26,20 @@ const ConnectButton = styled.button`
   position: absolute;
 `;
 
+const RefreshButton = styled.button`
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-weight: bold;
+  font-size: 1.125rem;
+  border: none;
+  padding: 1rem 1.5rem;
+  border-radius: 0.5rem;
+  z-index: 1000;
+`;
+
 function ReadSerialData() {
   const {
     updateSerialData,
@@ -369,6 +383,16 @@ function ReadSerialData() {
     ]
   );
 
+  const refreshButton = useMemo(
+    () =>
+      !isSimulatorMode && (
+        <RefreshButton onClick={() => window.location.reload()}>
+          Refresh
+        </RefreshButton>
+      ),
+    [isSimulatorMode]
+  );
+
   // Add function to write to output device
   const writeToOutputDevice = useCallback(
     async (data) => {
@@ -408,7 +432,12 @@ function ReadSerialData() {
     }
   }, [isOutputConnected, writeToOutputDevice, isSimulatorMode]);
 
-  return connectButton;
+  return (
+    <>
+      {connectButton}
+      {refreshButton}
+    </>
+  );
 }
 
 export default ReadSerialData;
