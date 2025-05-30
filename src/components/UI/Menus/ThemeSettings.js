@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTheme } from "../../../functions/ThemeContext";
+import { useSocket } from "../../../functions/SocketContext";
 
 export const ThemeSettings = ({
   currentMenu,
@@ -8,6 +9,7 @@ export const ThemeSettings = ({
   onThemeSelect
 }) => {
   const { changeTheme, currentTheme } = useTheme();
+  const { sendMessage } = useSocket();
   const hasSetInitialIndex = useRef(false);
 
   // Set initial selected index for Theme Settings menu based on current theme
@@ -42,6 +44,13 @@ export const ThemeSettings = ({
     } else if (selectedItem.id) {
       // Apply the theme permanently and save to localStorage
       changeTheme(selectedItem.id, true);
+      // Send socket event for theme change
+      sendMessage({
+        action: "currentTheme",
+        data: { theme: selectedItem.id },
+        isFromSelf: true,
+        broadcast: true
+      });
       onThemeSelect?.(selectedItem);
       return true;
     }

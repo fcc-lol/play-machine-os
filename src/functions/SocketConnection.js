@@ -199,6 +199,17 @@ export const useSocketConnection = (onMessage, initialShouldConnect = true) => {
         captureMultipleScreenshots(6, id, sendMessage);
       }
 
+      // Handle getCurrentTheme events
+      if (data.action === "getCurrentTheme") {
+        const currentTheme = localStorage.getItem("theme") || "hacker"; // Default to hacker if no theme is stored
+        sendMessage({
+          action: "currentTheme",
+          data: { theme: currentTheme },
+          isFromSelf: true,
+          broadcast: true
+        });
+      }
+
       // Always call the onMessage handler if provided
       onMessage?.(data);
     },
