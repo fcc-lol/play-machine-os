@@ -59,23 +59,38 @@ const Value = styled.span`
   font-weight: bold;
 `;
 
+const ButtonState = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid ${(props) => props.theme.text};
+`;
+
+const ButtonStateItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
 function RemoteViewer() {
   const [remotes, setRemotes] = useState({});
   const { isConnected, error, registerHandler } = useSocket();
 
-  // Handle incoming socket messages
   const handleMessage = useCallback((data) => {
     if (data.action === "remoteRegistration") {
-      // Add new remote to the list
       setRemotes((prev) => ({
         ...prev,
         [data.data.deviceId]: {
           deviceType: data.data.deviceType || "Unknown",
-          value: null
+          value: null,
+          encoderButton: false,
+          confirmButton: false,
+          backButton: false
         }
       }));
     } else if (data.action === "remoteSerialData") {
-      // Update remote data
       setRemotes((prev) => ({
         ...prev,
         [data.data.deviceId]: {
@@ -84,13 +99,15 @@ function RemoteViewer() {
             prev[data.data.deviceId]?.deviceType ||
             data.data.deviceType ||
             "Unknown",
-          value: data.data.value
+          value: data.data.value,
+          encoderButton: data.data.encoderButton || false,
+          confirmButton: data.data.confirmButton || false,
+          backButton: data.data.backButton || false
         }
       }));
     }
   }, []);
 
-  // Register our message handler
   useEffect(() => {
     if (isConnected) {
       const cleanup = registerHandler(handleMessage);
@@ -125,6 +142,20 @@ function RemoteViewer() {
                   <Value>{remote.value}</Value>
                 </DataItem>
               )}
+              <ButtonState>
+                <ButtonStateItem>
+                  <Label>Encoder</Label>
+                  <Value>{remote.encoderButton ? "Pressed" : "Released"}</Value>
+                </ButtonStateItem>
+                <ButtonStateItem>
+                  <Label>Confirm</Label>
+                  <Value>{remote.confirmButton ? "Pressed" : "Released"}</Value>
+                </ButtonStateItem>
+                <ButtonStateItem>
+                  <Label>Back</Label>
+                  <Value>{remote.backButton ? "Pressed" : "Released"}</Value>
+                </ButtonStateItem>
+              </ButtonState>
             </RemoteData>
           </RemoteCard>
         ))}
