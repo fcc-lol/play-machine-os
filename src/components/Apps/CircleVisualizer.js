@@ -106,9 +106,6 @@ export default function CircleVisualizer() {
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Set blend mode
-      ctx.globalCompositeOperation = "hard-light";
-
       // Get size multiplier from knob_1
       const sizeMultiplier = (serialData.knob_1?.value || 3) / 5 + 0.4; // Minimum size at knob_1 = 0 will be 0.4x, maximum at 100 will be 20.4x
 
