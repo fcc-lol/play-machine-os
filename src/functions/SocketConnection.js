@@ -3,6 +3,7 @@ import { useSerial } from "./SerialDataContext";
 import html2canvas from "html2canvas";
 import hardware from "../config/Hardware.json";
 import { API_URL, SOCKET_URL } from "../config/API";
+import { getEnvironmentFromUrl } from "../utils/GetEnvironment";
 
 const MAX_RETRIES = 5;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
@@ -11,15 +12,6 @@ const INITIAL_RETRY_DELAY = 1000; // 1 second
 const getApiKeyFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
   return params.get("apiKey");
-};
-
-// Get environment based on window.location
-const getEnvironmentFromUrl = () => {
-  const isLocalhost =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
-  const env = isLocalhost ? "local" : "production";
-  return env;
 };
 
 const generateUniqueId = () => {

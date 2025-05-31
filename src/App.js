@@ -15,6 +15,7 @@ import isPropValid from "@emotion/is-prop-valid";
 import menu from "./config/Menu.json";
 import hardware from "./config/Hardware.json";
 import { API_URL } from "./config/API";
+import { getEnvironmentFromUrl } from "./utils/GetEnvironment";
 
 // Import screens and apps dynamically
 const screens = {
@@ -102,13 +103,6 @@ const MissingAPIKey = styled.div`
 const InvalidAPIKey = styled(MissingAPIKey)`
   color: #ff4444;
 `;
-
-const getEnvironmentFromUrl = () => {
-  const isLocalhost =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
-  return isLocalhost ? "local" : "production";
-};
 
 const AppContent = ({ isSimulatorMode }) => {
   const { serialData, isInputConnected, isOutputConnected, setSerialData } =
@@ -318,8 +312,25 @@ const AppContent = ({ isSimulatorMode }) => {
 // Theme wrapper component to handle theme provider setup
 function ThemeWrapper({ children }) {
   const { themeValues } = useTheme();
+
+  // Provide a fallback theme while loading or if themeValues is null
+  const fallbackTheme = {
+    background: "#000000",
+    text: "#00ff00",
+    fontFamily: "monospace",
+    fontSize: "1rem",
+    textTransform: "uppercase",
+    menuBackground: "#000000",
+    menuText: "#00ff00",
+    menuSelectedBackground: "#00ff00",
+    menuSelectedText: "#000000",
+    border: "#00ff00"
+  };
+
+  const themeToUse = themeValues || fallbackTheme;
+
   return (
-    <StyledThemeProvider theme={themeValues}>{children}</StyledThemeProvider>
+    <StyledThemeProvider theme={themeToUse}>{children}</StyledThemeProvider>
   );
 }
 

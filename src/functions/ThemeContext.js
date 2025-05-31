@@ -1,23 +1,60 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import themes from "../config/Themes.json";
+import { API_URL } from "../config/API";
+import { getEnvironmentFromUrl } from "../utils/GetEnvironment";
 
 const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children, theme = Object.keys(themes)[0] }) => {
+export const ThemeProvider = ({ children, theme = "hacker" }) => {
+  const [themes, setThemes] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentTheme, setCurrentTheme] = useState(() => {
     // Initialize from localStorage on mount
     return localStorage.getItem("theme") || theme;
   });
-  const [themeValues, setThemeValues] = useState(() => {
-    // Initialize theme values based on stored theme
-    const storedTheme = localStorage.getItem("theme") || theme;
-    return themes[storedTheme];
-  });
+  const [themeValues, setThemeValues] = useState(null);
+
+  // Fetch themes from API
+  useEffect(() => {
+    const fetchThemes = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const env = getEnvironmentFromUrl();
+        const response = await fetch(`${API_URL[env]}/themes`);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch themes: ${response.status}`);
+        }
+
+        const themesData = await response.json();
+        setThemes(themesData);
+
+        // Set initial theme values based on current theme
+        const storedTheme = localStorage.getItem("theme") || theme;
+        const themeToUse = themesData[storedTheme]
+          ? storedTheme
+          : Object.keys(themesData)[0];
+        setCurrentTheme(themeToUse);
+        setThemeValues(themesData[themeToUse]);
+      } catch (err) {
+        console.error("Error fetching themes:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchThemes();
+  }, [theme]);
 
   useEffect(() => {
-    // Update theme values whenever currentTheme changes
-    setThemeValues(themes[currentTheme]);
-  }, [currentTheme]);
+    // Update theme values whenever currentTheme changes and themes are loaded
+    if (themes[currentTheme]) {
+      setThemeValues(themes[currentTheme]);
+    }
+  }, [currentTheme, themes]);
 
   const changeTheme = (themeName, saveToStorage = false) => {
     if (!themes[themeName]) {
@@ -35,7 +72,16 @@ export const ThemeProvider = ({ children, theme = Object.keys(themes)[0] }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, themeValues, changeTheme }}>
+    <ThemeContext.Provider
+      value={{
+        currentTheme,
+        themeValues,
+        changeTheme,
+        themes,
+        isLoading,
+        error
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
