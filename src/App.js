@@ -80,6 +80,18 @@ const ScreenContainer = styled.div.attrs((props) => ({
   }
 `;
 
+const BrightnessOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  opacity: ${(props) => 1 - (props.$brightness || 1)};
+  pointer-events: none;
+  z-index: 1000;
+`;
+
 const DEBOUNCE_TIME = 200; // milliseconds
 
 const MissingAPIKey = styled.div`
@@ -119,7 +131,14 @@ const AppContent = ({ isSimulatorMode }) => {
   const [previousMenuStack, setPreviousMenuStack] = useState([menu.root]);
   const [menuAction, setMenuAction] = useState(null);
   const [selectedIndices, setSelectedIndices] = useState({});
+  const [brightness, setBrightness] = useState(1);
   const lastButtonPressTime = useRef({});
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const brightnessValue = parseFloat(urlParams.get("brightness") || "1");
+    setBrightness(Math.min(Math.max(brightnessValue, 0), 1)); // Clamp between 0 and 1
+  }, []);
 
   const isButtonDebounced = (buttonId) => {
     const now = Date.now();
@@ -302,6 +321,7 @@ const AppContent = ({ isSimulatorMode }) => {
         <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected && isOutputConnected && renderContent()}
+          <BrightnessOverlay $brightness={brightness} />
         </ScreenContainer>
       </AppContainer>
       <Hardware />
