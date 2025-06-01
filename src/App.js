@@ -176,8 +176,16 @@ const AppContent = ({ isSimulatorMode }) => {
       setPreviousMenuStack([...menuStack]);
       setCurrentScreen(screen);
       setCurrentApp(null);
+      // Update currentAppRef in the socket connection and notify other clients
+      setCurrentAppRef(null);
+      sendMessage({
+        action: "appChanged",
+        data: { appId: null },
+        isFromSelf: true,
+        broadcast: true
+      });
     },
-    [menuStack]
+    [menuStack, sendMessage, setCurrentAppRef]
   );
 
   const handleAppSelect = useCallback(
@@ -235,6 +243,19 @@ const AppContent = ({ isSimulatorMode }) => {
         const serialDataValues = data.data.serialData;
         setSerialData(serialDataValues);
       }
+      // Handle appChanged events to keep currentApp state synchronized
+      if (data.action === "appChanged" && !data.isFromSelf) {
+        const { appId } = data.data;
+        if (appId === null) {
+          setCurrentApp(null);
+          setCurrentScreen(null);
+          setCurrentAppRef(null);
+        } else {
+          setCurrentApp(appId);
+          setCurrentScreen(null);
+          setCurrentAppRef(appId);
+        }
+      }
       // Note: getSerialData requests are handled directly by SocketConnection
       // which sends back serialData and screenshotData messages
     };
@@ -244,7 +265,13 @@ const AppContent = ({ isSimulatorMode }) => {
     return () => {
       cleanup();
     };
-  }, [connectSocket, registerHandler, setSerialData, sendMessage]);
+  }, [
+    connectSocket,
+    registerHandler,
+    setSerialData,
+    sendMessage,
+    setCurrentAppRef
+  ]);
 
   const renderContent = () => {
     if (currentApp) {
