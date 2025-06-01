@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
@@ -33,35 +34,41 @@ const Circle = styled.div`
 
 const AppTemplate = () => {
   const { serialData } = useSerial();
+  const serialDataRef = useRef(serialData);
+
+  useEffect(() => {
+    serialDataRef.current = serialData;
+  }, [serialData]);
+
+  // Create display data with readable names - always show all keys
+  const displayData = {
+    verticalSlider1: serialData.vertical_slider_1?.value ?? null,
+    verticalSlider2: serialData.vertical_slider_2?.value ?? null,
+    verticalSlider3: serialData.vertical_slider_3?.value ?? null,
+    knob1: serialData.knob_1?.value ?? null,
+    horizontalSlider: serialData.horizontal_slider?.value ?? null,
+    knob2: serialData.knob_2?.value ?? null,
+    knob3: serialData.knob_3?.value ?? null,
+    knob4: serialData.knob_4?.value ?? null,
+    knob5: serialData.knob_5?.value ?? null,
+    buttonA: serialData.button_a?.value ?? false,
+    buttonB: serialData.button_b?.value ?? false,
+    buttonUp: serialData.button_up?.value ?? false,
+    buttonDown: serialData.button_down?.value ?? false,
+    buttonLeft: serialData.button_left?.value ?? false,
+    buttonRight: serialData.button_right?.value ?? false
+  };
 
   return (
     <Root>
       <Circle
-        size={ConvertRange(serialData.horizontal_slider.value, 100, 500)}
+        size={
+          serialData.horizontal_slider?.value
+            ? ConvertRange(serialData.horizontal_slider.value, 100, 500)
+            : 100
+        }
       />
-      <pre>
-        {JSON.stringify(
-          {
-            verticalSlider1: serialData.vertical_slider_1.value,
-            verticalSlider2: serialData.vertical_slider_2.value,
-            verticalSlider3: serialData.vertical_slider_3.value,
-            knob1: serialData.knob_1.value,
-            horizontalSlider: serialData.horizontal_slider.value,
-            knob2: serialData.knob_2.value,
-            knob3: serialData.knob_3.value,
-            knob4: serialData.knob_4.value,
-            knob5: serialData.knob_5.value,
-            buttonA: serialData.button_a.value,
-            buttonB: serialData.button_b.value,
-            buttonUp: serialData.button_up.value,
-            buttonDown: serialData.button_down.value,
-            buttonLeft: serialData.button_left.value,
-            buttonRight: serialData.button_right.value
-          },
-          null,
-          2
-        )}
-      </pre>
+      <pre>{JSON.stringify(displayData, null, 2)}</pre>
     </Root>
   );
 };
