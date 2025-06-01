@@ -74,7 +74,7 @@ export const useSocketConnection = (
   }, []);
 
   const captureMultipleScreenshots = useCallback(
-    async (count, id, sendMessage) => {
+    async (count, id, sendMessage, requestId) => {
       // Don't capture screenshots if API key is invalid
       if (!apiKeyRef.current) {
         console.error("Cannot capture screenshots - no API key provided");
@@ -88,6 +88,7 @@ export const useSocketConnection = (
             action: "screenshotData",
             data: screenshot,
             id,
+            requestId,
             index: i,
             total: count,
             isFromSelf: true
@@ -183,8 +184,9 @@ export const useSocketConnection = (
 
       // Handle getSerialData requests
       if (data.action === "getSerialData") {
-        // Generate a unique ID for this request
-        const id = generateUniqueId();
+        // Use the requestId from the incoming request
+        const requestId = data.requestId;
+        const responseId = generateUniqueId(); // Generate a single ID for both serialData and screenshots
 
         // First send the serial data immediately
         sendMessage({
@@ -193,12 +195,14 @@ export const useSocketConnection = (
             serialData: latestSerialDataRef.current,
             currentApp: currentAppRef.current
           },
-          id,
+          id: responseId,
+          requestId,
+          apiKey: apiKeyRef.current,
           isFromSelf: true
         });
 
         // Then capture 6 screenshots asynchronously
-        captureMultipleScreenshots(6, id, sendMessage);
+        captureMultipleScreenshots(6, responseId, sendMessage, requestId);
       }
 
       // Handle getCurrentTheme events

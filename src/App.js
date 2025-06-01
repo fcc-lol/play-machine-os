@@ -256,8 +256,6 @@ const AppContent = ({ isSimulatorMode }) => {
           setCurrentAppRef(appId);
         }
       }
-      // Note: getSerialData requests are handled directly by SocketConnection
-      // which sends back serialData and screenshotData messages
     };
 
     // Register handler and get cleanup function
