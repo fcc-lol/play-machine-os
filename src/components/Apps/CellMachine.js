@@ -73,6 +73,16 @@ export default function CellMachine() {
 
   // Handle button presses
   useEffect(() => {
+    // Add safety checks for serialData properties
+    if (
+      !serialData ||
+      !serialData.button_a ||
+      !serialData.button_up ||
+      !serialData.button_down
+    ) {
+      return;
+    }
+
     const currentButtonState = serialData.button_a.value;
 
     // Toggle blur on/off with button_a
@@ -90,11 +100,7 @@ export default function CellMachine() {
 
     // Update previous button state
     prevButtonStateRef.current = currentButtonState;
-  }, [
-    serialData.button_a.value,
-    serialData.button_up.value,
-    serialData.button_down.value
-  ]);
+  }, [serialData]);
 
   const generateRandomPoints = (count) => {
     const points = [];
@@ -128,6 +134,30 @@ export default function CellMachine() {
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
       if (!cell) continue;
+
+      // Add safety checks for serialDataRef.current and its properties
+      if (
+        !serialDataRef.current ||
+        !serialDataRef.current.knob_1 ||
+        !serialDataRef.current.knob_4 ||
+        !serialDataRef.current.knob_5 ||
+        !serialDataRef.current.knob_3 ||
+        !serialDataRef.current.vertical_slider_1 ||
+        !serialDataRef.current.vertical_slider_2 ||
+        !serialDataRef.current.vertical_slider_3
+      ) {
+        // Use default values if serialData is not available
+        ctx.fillStyle = "hsl(180, 50%, 50%)";
+        ctx.beginPath();
+        for (let j = 0; j < cell.length; j++) {
+          const pt = cell[j];
+          if (j === 0) ctx.moveTo(pt[0], pt[1]);
+          else ctx.lineTo(pt[0], pt[1]);
+        }
+        ctx.closePath();
+        ctx.fill();
+        continue;
+      }
 
       // Use knob1 to control stroke width (0 at 0% to 20 at 100%)
       const strokeWidth = ConvertRange(
@@ -484,6 +514,11 @@ export default function CellMachine() {
     targetPointsRef.current = 20;
 
     const updatePointsCount = () => {
+      // Add safety check for knob_2
+      if (!serialDataRef.current || !serialDataRef.current.knob_2) {
+        return;
+      }
+
       const currentKnobValue = serialDataRef.current.knob_2.value;
       if (currentKnobValue !== prevKnobValueRef.current) {
         const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 100));
@@ -508,11 +543,13 @@ export default function CellMachine() {
 
     const animate = () => {
       updatePointsCount();
-      const speed = ConvertRange(
-        serialDataRef.current.horizontal_slider.value,
-        0,
-        6
-      );
+
+      // Add safety check for horizontal_slider
+      const speed =
+        serialDataRef.current && serialDataRef.current.horizontal_slider
+          ? ConvertRange(serialDataRef.current.horizontal_slider.value, 0, 6)
+          : 0;
+
       updatePoints(pointsRef.current, velocitiesRef.current, speed);
       drawVoronoi(ctx, pointsRef.current);
 
