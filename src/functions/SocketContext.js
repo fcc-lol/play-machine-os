@@ -6,6 +6,8 @@ const SocketContext = createContext();
 export const SocketProvider = ({ children }) => {
   // Keep track of registered message handlers
   const messageHandlers = useRef(new Set());
+  // Keep track of registered outgoing message handlers
+  const outgoingMessageHandlers = useRef(new Set());
 
   // Check if socket should be disabled via URL parameter
   const shouldDisableSocket =
@@ -23,15 +25,34 @@ export const SocketProvider = ({ children }) => {
     });
   };
 
-  // Initialize socket connection
-  const socket = useSocketConnection(handleMessage, !shouldDisableSocket);
+  // Handle outgoing messages and distribute to all registered handlers
+  const handleOutgoingMessage = (message) => {
+    outgoingMessageHandlers.current.forEach((handler) => {
+      try {
+        handler(message);
+      } catch (error) {
+        console.error("Error in outgoing socket message handler:", error);
+      }
+    });
+  };
 
-  // Add registerHandler to the context value
+  // Initialize socket connection with outgoing message handler
+  const socket = useSocketConnection(
+    handleMessage,
+    !shouldDisableSocket,
+    handleOutgoingMessage
+  );
+
+  // Add registerHandler and registerOutgoingHandler to the context value
   const contextValue = {
     ...socket,
     registerHandler: (handler) => {
       messageHandlers.current.add(handler);
       return () => messageHandlers.current.delete(handler);
+    },
+    registerOutgoingHandler: (handler) => {
+      outgoingMessageHandlers.current.add(handler);
+      return () => outgoingMessageHandlers.current.delete(handler);
     }
   };
 

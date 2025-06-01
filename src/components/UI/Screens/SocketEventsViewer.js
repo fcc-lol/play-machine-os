@@ -43,15 +43,11 @@ const Timestamp = styled.div`
 
 function SocketEventsViewer() {
   const [messageLog, setMessageLog] = useState([]);
-  const { isConnected, error, registerHandler } = useSocket();
+  const { isConnected, error, registerHandler, registerOutgoingHandler } =
+    useSocket();
 
   // Handle incoming socket messages
-  const handleMessage = useCallback((data) => {
-    // Skip logging if it's a serialData message with isFromSelf flag
-    if (data.action === "serialData" && data.isFromSelf) {
-      return;
-    }
-
+  const handleIncomingMessage = useCallback((data) => {
     // Log all incoming messages
     setMessageLog((prev) => [
       {
@@ -64,14 +60,44 @@ function SocketEventsViewer() {
     ]);
   }, []);
 
-  // Register our message handler
+  // Handle outgoing socket messages
+  const handleOutgoingMessage = useCallback((message) => {
+    // Parse message if it's a string, otherwise use as-is
+    const parsedMessage =
+      typeof message === "string" ? JSON.parse(message) : message;
+
+    // Log all outgoing messages
+    setMessageLog((prev) => [
+      {
+        type: "sent",
+        action: parsedMessage.action,
+        data: parsedMessage.data,
+        timestamp: new Date().toISOString()
+      },
+      ...prev
+    ]);
+  }, []);
+
+  // Register our message handlers
   useEffect(() => {
     if (isConnected) {
-      // Register handler and get cleanup function
-      const cleanup = registerHandler(handleMessage);
-      return cleanup;
+      // Register handler for incoming messages and get cleanup function
+      const cleanupIncoming = registerHandler(handleIncomingMessage);
+      // Register handler for outgoing messages and get cleanup function
+      const cleanupOutgoing = registerOutgoingHandler(handleOutgoingMessage);
+
+      return () => {
+        cleanupIncoming();
+        cleanupOutgoing();
+      };
     }
-  }, [isConnected, registerHandler, handleMessage]);
+  }, [
+    isConnected,
+    registerHandler,
+    registerOutgoingHandler,
+    handleIncomingMessage,
+    handleOutgoingMessage
+  ]);
 
   return (
     <Page>
@@ -82,14 +108,24 @@ function SocketEventsViewer() {
           ? "Connected to socket server"
           : "Disconnected from socket server"}
       </StatusIndicator>
-      {messageLog.map((message, index) => (
-        <Message key={index} type={message.type}>
-          <Data>
-            {message.type} {message.action}
-          </Data>
-          <Timestamp>{message.timestamp}</Timestamp>
-        </Message>
-      ))}
+      {messageLog
+        .sort((a, b) => {
+          // First sort by timestamp (newest first)
+          const timeDiff = new Date(b.timestamp) - new Date(a.timestamp);
+          if (timeDiff !== 0) return timeDiff;
+          // If same timestamp, sent messages come first
+          if (a.type === "sent" && b.type === "received") return -1;
+          if (a.type === "received" && b.type === "sent") return 1;
+          return 0;
+        })
+        .map((message, index) => (
+          <Message key={index} type={message.type}>
+            <Data>
+              {message.type} {message.action}
+            </Data>
+            <Timestamp>{message.timestamp}</Timestamp>
+          </Message>
+        ))}
     </Page>
   );
 }

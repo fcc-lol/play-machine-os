@@ -235,13 +235,8 @@ const AppContent = ({ isSimulatorMode }) => {
         const serialDataValues = data.data.serialData;
         setSerialData(serialDataValues);
       }
-      // Handle getSerialData requests
-      if (data.action === "getSerialData") {
-        // Just acknowledge the request, the SocketConnection will handle sending the data
-        sendMessage({
-          action: "getSerialData"
-        });
-      }
+      // Note: getSerialData requests are handled directly by SocketConnection
+      // which sends back serialData and screenshotData messages
     };
 
     // Register handler and get cleanup function

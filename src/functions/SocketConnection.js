@@ -23,7 +23,11 @@ const generateUniqueId = () => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const useSocketConnection = (onMessage, initialShouldConnect = true) => {
+export const useSocketConnection = (
+  onMessage,
+  initialShouldConnect = true,
+  onOutgoingMessage = null
+) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -113,6 +117,12 @@ export const useSocketConnection = (onMessage, initialShouldConnect = true) => {
             ...(typeof message === "string" ? JSON.parse(message) : message),
             apiKey: apiKeyRef.current
           };
+
+          // Call the outgoing message handler if provided
+          if (onOutgoingMessage) {
+            onOutgoingMessage(messageWithApiKey);
+          }
+
           const data = JSON.stringify(messageWithApiKey);
           socketRef.current.send(data);
         } catch (err) {
@@ -123,7 +133,7 @@ export const useSocketConnection = (onMessage, initialShouldConnect = true) => {
         console.error("Cannot send message - socket not ready");
       }
     },
-    [isApiKeyValid]
+    [isApiKeyValid, onOutgoingMessage]
   );
 
   const disconnect = useCallback(() => {
