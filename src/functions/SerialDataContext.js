@@ -62,12 +62,10 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
 
   // Function to set serial data from socket events
   const setSerialDataFromSocket = (data) => {
-    // Only store hardware state if we don't already have socket data active
-    if (!setSerialDataRef.current) {
-      hardwareStateAtSetSerialDataRef.current = JSON.parse(
-        JSON.stringify(serialDataRef.current)
-      );
-    }
+    // Store the current hardware state when receiving socket data
+    hardwareStateAtSetSerialDataRef.current = JSON.parse(
+      JSON.stringify(serialDataRef.current)
+    );
     // Set the override data
     setSerialDataRef.current = data;
     // Update the serial data with the new socket data
