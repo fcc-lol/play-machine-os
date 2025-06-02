@@ -23,53 +23,44 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
     serialDataRef.current = serialData;
   }, [serialData]);
 
+  // Function to set serial data from socket events
+  const setSerialDataFromSocket = (data) => {
+    // Always update with the new socket data
+    setSerialDataRef.current = data;
+    setSerialData(data);
+  };
+
   // Function to update serial data that respects setSerialData overrides
   const updateSerialData = (newData) => {
     if (setSerialDataRef.current) {
       // If we have setSerialData active, check if hardware has changed
-      if (hardwareStateAtSetSerialDataRef.current) {
-        const hasHardwareChange = Object.keys(newData).some((key) => {
-          const currentValue = newData[key]?.value;
-          const storedValue =
-            hardwareStateAtSetSerialDataRef.current[key]?.value;
-          if (currentValue === undefined || storedValue === undefined)
-            return false;
+      const hasHardwareChange = Object.keys(newData).some((key) => {
+        const currentValue = newData[key]?.value;
+        const storedValue = serialDataRef.current[key]?.value;
+        if (currentValue === undefined || storedValue === undefined)
+          return false;
 
-          // For boolean values (buttons), any change is significant
-          if (
-            typeof currentValue === "boolean" &&
-            typeof storedValue === "boolean"
-          ) {
-            return currentValue !== storedValue;
-          }
-
-          // For numeric values (sliders), check if change is greater than 1
-          return Math.abs(currentValue - storedValue) > 1;
-        });
-
-        if (hasHardwareChange) {
-          // Hardware has changed, clear the override and use hardware inputs
-          setSerialDataRef.current = null;
-          hardwareStateAtSetSerialDataRef.current = null;
-          setSerialData({ ...serialDataRef.current, ...newData });
+        // For boolean values (buttons), any change is significant
+        if (
+          typeof currentValue === "boolean" &&
+          typeof storedValue === "boolean"
+        ) {
+          return currentValue !== storedValue;
         }
+
+        // For numeric values (sliders), check if change is greater than 1
+        return Math.abs(currentValue - storedValue) > 1;
+      });
+
+      if (hasHardwareChange) {
+        // Hardware has changed, clear the override and use hardware inputs
+        setSerialDataRef.current = null;
+        setSerialData({ ...serialDataRef.current, ...newData });
       }
     } else {
       // No override active, update with hardware data
       setSerialData({ ...serialDataRef.current, ...newData });
     }
-  };
-
-  // Function to set serial data from socket events
-  const setSerialDataFromSocket = (data) => {
-    // Store the current hardware state when receiving socket data
-    hardwareStateAtSetSerialDataRef.current = JSON.parse(
-      JSON.stringify(serialDataRef.current)
-    );
-    // Set the override data
-    setSerialDataRef.current = data;
-    // Update the serial data with the new socket data
-    setSerialData(data);
   };
 
   useEffect(() => {
