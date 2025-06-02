@@ -26,9 +26,9 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
   // Function to update serial data that respects setSerialData overrides
   const updateSerialData = (newData) => {
     if (setSerialDataRef.current) {
-      // If we have setSerialData active, only update if hardware has changed significantly
+      // If we have setSerialData active, check if hardware has changed
       if (hardwareStateAtSetSerialDataRef.current) {
-        const hasSignificantChange = Object.keys(newData).some((key) => {
+        const hasHardwareChange = Object.keys(newData).some((key) => {
           const currentValue = newData[key]?.value;
           const storedValue =
             hardwareStateAtSetSerialDataRef.current[key]?.value;
@@ -47,8 +47,8 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
           return Math.abs(currentValue - storedValue) > 1;
         });
 
-        if (hasSignificantChange) {
-          // Hardware has changed significantly, clear the override
+        if (hasHardwareChange) {
+          // Hardware has changed, clear the override and use hardware inputs
           setSerialDataRef.current = null;
           hardwareStateAtSetSerialDataRef.current = null;
           setSerialData({ ...serialDataRef.current, ...newData });
@@ -62,11 +62,14 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
 
   // Function to set serial data from socket events
   const setSerialDataFromSocket = (data) => {
+    // Only store hardware state if we don't already have socket data active
+    if (!setSerialDataRef.current) {
+      hardwareStateAtSetSerialDataRef.current = JSON.parse(
+        JSON.stringify(serialDataRef.current)
+      );
+    }
+    // Set the override data
     setSerialDataRef.current = data;
-    // Store the current hardware state at the time of receiving new socket data
-    hardwareStateAtSetSerialDataRef.current = JSON.parse(
-      JSON.stringify(serialDataRef.current)
-    );
     // Update the serial data with the new socket data
     setSerialData(data);
   };

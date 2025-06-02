@@ -104,7 +104,7 @@ function ReadSerialData() {
       updateSerialData(processedData);
       setLastProcessedTime(currentTime);
     },
-    [updateSerialData, lastProcessedTime] // Remove serialData from dependencies
+    [lastProcessedTime, updateSerialData]
   );
 
   const readSerialData = useCallback(
