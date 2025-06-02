@@ -38,7 +38,12 @@ export const useSocketConnection = (
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
   const currentAppRef = useRef(null);
-  const { serialData, setSerialData } = useSerial();
+  const {
+    serialData,
+    setSerialData,
+    updateSerialData,
+    setSerialDataFromSocket
+  } = useSerial();
   const apiKeyRef = useRef(getApiKeyFromUrl());
   const envRef = useRef(getEnvironmentFromUrl());
 
@@ -164,7 +169,7 @@ export const useSocketConnection = (
       // Handle serialData events (from getSerialData response)
       if (data.action === "serialData") {
         const serialDataValues = data.data.serialData;
-        setSerialData(serialDataValues);
+        setSerialDataFromSocket(serialDataValues);
       }
 
       // Handle appChanged events
@@ -223,9 +228,11 @@ export const useSocketConnection = (
       sendMessage,
       onMessage,
       setSerialData,
+      updateSerialData,
       latestSerialDataRef,
       isApiKeyValid,
-      captureMultipleScreenshots
+      captureMultipleScreenshots,
+      setSerialDataFromSocket
     ]
   );
 

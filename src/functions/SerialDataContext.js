@@ -63,9 +63,11 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
   // Function to set serial data from socket events
   const setSerialDataFromSocket = (data) => {
     setSerialDataRef.current = data;
+    // Store the current hardware state at the time of receiving new socket data
     hardwareStateAtSetSerialDataRef.current = JSON.parse(
       JSON.stringify(serialDataRef.current)
     );
+    // Update the serial data with the new socket data
     setSerialData(data);
   };
 
