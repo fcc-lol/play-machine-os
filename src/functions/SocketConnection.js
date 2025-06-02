@@ -74,7 +74,7 @@ export const useSocketConnection = (
   }, []);
 
   const captureMultipleScreenshots = useCallback(
-    async (count, id, sendMessage) => {
+    async (count, id, sendMessage, socketId) => {
       // Don't capture screenshots if API key is invalid
       if (!apiKeyRef.current) {
         console.error("Cannot capture screenshots - no API key provided");
@@ -90,7 +90,8 @@ export const useSocketConnection = (
             id,
             index: i,
             total: count,
-            isFromSelf: true
+            isFromSelf: true,
+            socketId
           });
         }
         // Wait 1 second before taking the next screenshot
@@ -176,6 +177,7 @@ export const useSocketConnection = (
         sendMessage({
           action: "currentApp",
           data: { appId: currentAppRef.current },
+          socketId: data.socketId,
           isFromSelf: true,
           broadcast: true
         });
@@ -193,12 +195,13 @@ export const useSocketConnection = (
             currentApp: currentAppRef.current
           },
           id: responseId,
+          socketId: data.socketId,
           apiKey: apiKeyRef.current,
           isFromSelf: true
         });
 
         // Then capture 6 screenshots asynchronously
-        captureMultipleScreenshots(6, responseId, sendMessage);
+        captureMultipleScreenshots(6, responseId, sendMessage, data.socketId);
       }
 
       // Handle getCurrentTheme events
@@ -207,6 +210,7 @@ export const useSocketConnection = (
         sendMessage({
           action: "currentTheme",
           data: { theme: currentTheme },
+          socketId: data.socketId,
           isFromSelf: true,
           broadcast: true
         });
