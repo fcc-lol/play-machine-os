@@ -87,8 +87,9 @@ function RemoteViewer() {
           value: null,
           encoderButton: false,
           confirmButton: false,
-          backButton: false
-        }
+          backButton: false,
+          batteryVoltage: null,
+        },
       }));
     } else if (data.action === "remoteSerialData") {
       setRemotes((prev) => ({
@@ -102,8 +103,9 @@ function RemoteViewer() {
           value: data.data.value,
           encoderButton: data.data.encoderButton || false,
           confirmButton: data.data.confirmButton || false,
-          backButton: data.data.backButton || false
-        }
+          backButton: data.data.backButton || false,
+          batteryVoltage: data.data.batteryVoltage || null,
+        },
       }));
     }
   }, []);
@@ -142,6 +144,14 @@ function RemoteViewer() {
                   <Value>{remote.value}</Value>
                 </DataItem>
               )}
+              <DataItem>
+                <Label>Battery</Label>
+                <Value>
+                  {remote.batteryVoltage !== null
+                    ? `${remote.batteryVoltage}V`
+                    : "N/A"}
+                </Value>
+              </DataItem>
               <ButtonState>
                 <ButtonStateItem>
                   <Label>Encoder</Label>
