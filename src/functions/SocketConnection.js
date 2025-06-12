@@ -206,7 +206,8 @@ export const useSocketConnection = (
           data: { theme: currentTheme },
           socketId: data.socketId,
           isFromSelf: true,
-          broadcast: true
+          broadcast: true,
+          from: "play-machine-os"
         });
       }
 
