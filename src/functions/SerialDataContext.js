@@ -26,9 +26,6 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
 
   // Function to set serial data from socket events
   const setSerialDataFromSocket = (data) => {
-    console.log("Socket data received:", data);
-    console.log("Current hardware state:", latestHardwareStateRef.current);
-
     // Store the latest actual hardware state when socket data arrives
     hardwareStateAtSetSerialDataRef.current = {
       ...latestHardwareStateRef.current
@@ -81,7 +78,6 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
         });
 
         if (hasHardwareChange) {
-          console.log("Hardware change detected, switching to hardware inputs");
           // Hardware has changed, clear the override and use hardware inputs
           setSerialDataRef.current = null;
           hardwareStateAtSetSerialDataRef.current = null;
