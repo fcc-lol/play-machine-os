@@ -49,7 +49,8 @@ export const ThemeSettings = ({
         action: "currentTheme",
         data: { theme: selectedItem.id },
         isFromSelf: true,
-        broadcast: true
+        broadcast: true,
+        from: "play-machine-os-theme-changed"
       });
       onThemeSelect?.(selectedItem);
       return true;
