@@ -90,7 +90,6 @@ export const useSocketConnection = (
             id,
             index: i,
             total: count,
-            isFromSelf: true,
             socketId
           });
         }
@@ -171,9 +170,7 @@ export const useSocketConnection = (
         sendMessage({
           action: "currentApp",
           data: { appId: currentAppRef.current },
-          socketId: data.socketId,
-          isFromSelf: true,
-          broadcast: true
+          socketId: data.socketId
         });
       }
 
@@ -190,8 +187,7 @@ export const useSocketConnection = (
           },
           id: responseId,
           socketId: data.socketId,
-          apiKey: apiKeyRef.current,
-          isFromSelf: true
+          apiKey: apiKeyRef.current
         });
 
         // Then capture 6 screenshots asynchronously
@@ -204,10 +200,7 @@ export const useSocketConnection = (
         sendMessage({
           action: "currentTheme",
           data: { theme: currentTheme },
-          socketId: data.socketId,
-          isFromSelf: true,
-          broadcast: true,
-          from: "play-machine-os"
+          socketId: data.socketId
         });
       }
 

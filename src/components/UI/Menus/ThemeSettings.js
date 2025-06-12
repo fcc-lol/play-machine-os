@@ -47,10 +47,7 @@ export const ThemeSettings = ({
       // Send socket event for theme change
       sendMessage({
         action: "currentTheme",
-        data: { theme: selectedItem.id },
-        isFromSelf: true,
-        broadcast: true,
-        from: "play-machine-os-theme-changed"
+        data: { theme: selectedItem.id }
       });
       onThemeSelect?.(selectedItem);
       return true;

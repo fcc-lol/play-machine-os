@@ -155,9 +155,7 @@ const AppContent = ({ isSimulatorMode }) => {
       if (currentApp) {
         sendMessage({
           action: "appChanged",
-          data: { appId: null },
-          isFromSelf: true,
-          broadcast: true
+          data: { appId: null }
         });
       }
       setCurrentScreen(null);
@@ -180,9 +178,7 @@ const AppContent = ({ isSimulatorMode }) => {
       setCurrentAppRef(null);
       sendMessage({
         action: "appChanged",
-        data: { appId: null },
-        isFromSelf: true,
-        broadcast: true
+        data: { appId: null }
       });
     },
     [menuStack, sendMessage, setCurrentAppRef]
@@ -244,7 +240,7 @@ const AppContent = ({ isSimulatorMode }) => {
         setSerialData(serialDataValues);
       }
       // Handle appChanged events to keep currentApp state synchronized
-      if (data.action === "appChanged" && !data.isFromSelf) {
+      if (data.action === "appChanged") {
         const { appId } = data.data;
         if (appId === null) {
           setCurrentApp(null);
