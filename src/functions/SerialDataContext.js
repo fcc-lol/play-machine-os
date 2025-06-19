@@ -121,35 +121,46 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
     if (setSerialDataRef.current) {
       // If we have setSerialData active, check if hardware has changed
       if (hardwareStateAtSetSerialDataRef.current) {
-        const hasHardwareChange = Object.keys(
-          latestHardwareStateRef.current
-        ).some((key) => {
-          const currentValue = latestHardwareStateRef.current[key]?.value;
-          const storedValue =
-            hardwareStateAtSetSerialDataRef.current[key]?.value;
+        // Only check for changes in the currently selected control that could override remote data
+        const currentSelectedControl =
+          ALL_CONTROLS[selectedControlIndexRef.current];
+        const selectedControlId = currentSelectedControl?.id;
 
-          // Skip if either value is undefined
-          if (currentValue === undefined || storedValue === undefined)
-            return false;
+        // Check if the currently selected control has been physically moved
+        const hasHardwareChange =
+          selectedControlId &&
+          latestHardwareStateRef.current[selectedControlId] &&
+          hardwareStateAtSetSerialDataRef.current[selectedControlId]
+            ? (() => {
+                const currentValue =
+                  latestHardwareStateRef.current[selectedControlId]?.value;
+                const storedValue =
+                  hardwareStateAtSetSerialDataRef.current[selectedControlId]
+                    ?.value;
 
-          // For boolean values (buttons), any change is significant
-          if (
-            typeof currentValue === "boolean" &&
-            typeof storedValue === "boolean"
-          ) {
-            return currentValue !== storedValue;
-          }
+                // Skip if either value is undefined
+                if (currentValue === undefined || storedValue === undefined)
+                  return false;
 
-          // For numeric values (sliders), check if change is greater than 1
-          if (
-            typeof currentValue === "number" &&
-            typeof storedValue === "number"
-          ) {
-            return Math.abs(currentValue - storedValue) > 1;
-          }
+                // For boolean values (buttons), any change is significant
+                if (
+                  typeof currentValue === "boolean" &&
+                  typeof storedValue === "boolean"
+                ) {
+                  return currentValue !== storedValue;
+                }
 
-          return false;
-        });
+                // For numeric values (sliders/knobs), use higher threshold to account for analog noise
+                if (
+                  typeof currentValue === "number" &&
+                  typeof storedValue === "number"
+                ) {
+                  return Math.abs(currentValue - storedValue) > 5;
+                }
+
+                return false;
+              })()
+            : false;
 
         if (hasHardwareChange) {
           // Hardware has changed, clear the override and use hardware inputs
