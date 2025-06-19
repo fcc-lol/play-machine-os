@@ -46,14 +46,40 @@ const apps = {
 
 const AppContainer = styled.div.attrs((props) => ({
   style: {
-    background: props.theme.background
+    background: props.theme.background,
+    ...(props.$stretchToFill && {
+      width: "100vw",
+      height: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "fixed",
+      top: 0,
+      left: 0
+    })
   }
 }))`
-  width: ${hardware.screen.width}px;
-  height: ${hardware.screen.height}px;
+  width: ${(props) =>
+    props.$stretchToFill ? "auto" : `${hardware.screen.width}px`};
+  height: ${(props) =>
+    props.$stretchToFill ? "auto" : `${hardware.screen.height}px`};
   margin: 0;
-  position: absolute;
+  position: ${(props) => (props.$stretchToFill ? "fixed" : "absolute")};
   overflow: hidden;
+
+  ${(props) =>
+    props.$stretchToFill &&
+    `
+    & > div {
+      width: ${hardware.screen.width}px;
+      height: ${hardware.screen.height}px;
+      transform: scale(var(--scale-factor, 1));
+      transform-origin: center center;
+      position: relative;
+      flex-shrink: 0;
+      flex-grow: 0;
+    }
+  `}
 `;
 
 const ScreenContainer = styled.div.attrs((props) => ({
@@ -116,7 +142,7 @@ const InvalidAPIKey = styled(MissingAPIKey)`
   color: #ff4444;
 `;
 
-const AppContent = ({ isSimulatorMode }) => {
+const AppContent = ({ isSimulatorMode, stretchToFill }) => {
   const {
     serialData,
     isInputConnected,
@@ -144,6 +170,30 @@ const AppContent = ({ isSimulatorMode }) => {
     const brightnessValue = parseFloat(urlParams.get("brightness") || "1");
     setBrightness(Math.min(Math.max(brightnessValue, 0), 1)); // Clamp between 0 and 1
   }, []);
+
+  // Calculate and set scale factor for stretchToFill mode
+  useEffect(() => {
+    if (stretchToFill) {
+      const calculateScale = () => {
+        const viewportWidth = window.innerWidth;
+
+        // Calculate scale factor based on width to make it 100% of window width
+        const scaleFactor = viewportWidth / hardware.screen.width;
+
+        document.documentElement.style.setProperty(
+          "--scale-factor",
+          scaleFactor
+        );
+      };
+
+      calculateScale();
+      window.addEventListener("resize", calculateScale);
+
+      return () => {
+        window.removeEventListener("resize", calculateScale);
+      };
+    }
+  }, [stretchToFill]);
 
   const isButtonDebounced = (buttonId) => {
     const now = Date.now();
@@ -339,14 +389,14 @@ const AppContent = ({ isSimulatorMode }) => {
   // Render the actual UI structure
   return (
     <>
-      <AppContainer>
+      <AppContainer $stretchToFill={stretchToFill}>
         <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected && isOutputConnected && renderContent()}
           <BrightnessOverlay $brightness={brightness} />
         </ScreenContainer>
       </AppContainer>
-      <Hardware />
+      {isSimulatorMode && <Hardware />}
     </>
   );
 };
@@ -380,6 +430,7 @@ function ThemeWrapper({ children }) {
 function App() {
   const [isSimulatorMode, setIsSimulatorMode] = useState(false);
   const [multiPlayerMode, setMultiPlayerMode] = useState(false);
+  const [stretchToFill, setStretchToFill] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
   const [isApiKeyValid, setIsApiKeyValid] = useState(true);
   const [isValidating, setIsValidating] = useState(true);
@@ -390,11 +441,13 @@ function App() {
       const onDevice = urlParams.get("onDevice");
       const apiKey = urlParams.get("apiKey");
       const multiPlayerModeParam = urlParams.get("multiPlayerMode");
+      const stretchToFillParam = urlParams.get("stretchToFill");
       const env = getEnvironmentFromUrl();
 
       // isSimulatorMode is determined by onDevice parameter (backward compatibility)
       setIsSimulatorMode(onDevice === "false");
       setMultiPlayerMode(multiPlayerModeParam === "true");
+      setStretchToFill(stretchToFillParam === "true");
       setHasApiKey(!!apiKey);
 
       if (apiKey) {
@@ -423,7 +476,7 @@ function App() {
           >
             <SocketProvider>
               <ThemeWrapper>
-                <AppContainer>
+                <AppContainer $stretchToFill={stretchToFill}>
                   <ScreenContainer
                     id="screen-container"
                     $onDevice={!isSimulatorMode}
@@ -431,7 +484,7 @@ function App() {
                     <Loading />
                   </ScreenContainer>
                 </AppContainer>
-                <Hardware />
+                {isSimulatorMode && <Hardware />}
               </ThemeWrapper>
             </SocketProvider>
           </SerialDataProvider>
@@ -450,7 +503,7 @@ function App() {
           >
             <SocketProvider>
               <ThemeWrapper>
-                <AppContainer>
+                <AppContainer $stretchToFill={stretchToFill}>
                   <ScreenContainer
                     id="screen-container"
                     $onDevice={!isSimulatorMode}
@@ -458,7 +511,7 @@ function App() {
                     <MissingAPIKey>No API key set</MissingAPIKey>
                   </ScreenContainer>
                 </AppContainer>
-                <Hardware />
+                {isSimulatorMode && <Hardware />}
               </ThemeWrapper>
             </SocketProvider>
           </SerialDataProvider>
@@ -477,7 +530,7 @@ function App() {
           >
             <SocketProvider>
               <ThemeWrapper>
-                <AppContainer>
+                <AppContainer $stretchToFill={stretchToFill}>
                   <ScreenContainer
                     id="screen-container"
                     $onDevice={!isSimulatorMode}
@@ -485,7 +538,7 @@ function App() {
                     <InvalidAPIKey>Invalid API key</InvalidAPIKey>
                   </ScreenContainer>
                 </AppContainer>
-                <Hardware />
+                {isSimulatorMode && <Hardware />}
               </ThemeWrapper>
             </SocketProvider>
           </SerialDataProvider>
@@ -503,7 +556,10 @@ function App() {
         >
           <SocketProvider>
             <ThemeWrapper>
-              <AppContent isSimulatorMode={isSimulatorMode} />
+              <AppContent
+                isSimulatorMode={isSimulatorMode}
+                stretchToFill={stretchToFill}
+              />
             </ThemeWrapper>
           </SocketProvider>
         </SerialDataProvider>

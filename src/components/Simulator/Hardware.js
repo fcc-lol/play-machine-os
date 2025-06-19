@@ -11,7 +11,7 @@ const SimulatorContainer = styled.div`
   border-radius: 0.5rem;
   color: #ffffff;
   font-family: system-ui;
-  z-index: 1000;
+  z-index: 1001;
   cursor: default;
   width: 25rem;
   font-family: monospace;
