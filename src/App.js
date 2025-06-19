@@ -392,6 +392,7 @@ function App() {
       const multiPlayerModeParam = urlParams.get("multiPlayerMode");
       const env = getEnvironmentFromUrl();
 
+      // isSimulatorMode is determined by onDevice parameter (backward compatibility)
       setIsSimulatorMode(onDevice === "false");
       setMultiPlayerMode(multiPlayerModeParam === "true");
       setHasApiKey(!!apiKey);

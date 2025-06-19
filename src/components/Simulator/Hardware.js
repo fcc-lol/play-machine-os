@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import { useSerial, ALL_CONTROLS } from "../../functions/SerialDataContext";
 import styled from "styled-components";
 
@@ -166,6 +166,22 @@ const Hardware = () => {
   } = useSerial();
   const buttonStateRef = useRef({});
   const initializedRef = useRef(false);
+
+  // Check for explicit simulator visibility control via URL parameter
+  const [showSimulatorOverride, setShowSimulatorOverride] = useState(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const showSimulator = urlParams.get("showSimulator");
+    setShowSimulatorOverride(showSimulator);
+  }, []);
+
+  // Determine if simulator should be visible
+  // showSimulator parameter takes precedence over isSimulatorMode for visibility only
+  const shouldShowSimulator =
+    showSimulatorOverride !== null
+      ? showSimulatorOverride === "true"
+      : isSimulatorMode;
 
   // Initialize serialData with localStorage values
   useEffect(() => {
@@ -340,7 +356,7 @@ const Hardware = () => {
     hasActiveRemotes
   ]);
 
-  if (!isSimulatorMode) {
+  if (!shouldShowSimulator) {
     return null;
   }
 

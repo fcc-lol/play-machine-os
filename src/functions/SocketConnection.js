@@ -35,13 +35,59 @@ export const useSocketConnection = (
   const [shouldConnect, setShouldConnect] = useState(initialShouldConnect);
   const [isApiKeyValid, setIsApiKeyValid] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
+  const [environment, setEnvironment] = useState(getEnvironmentFromUrl());
+
   const socketRef = useRef(null);
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
   const currentAppRef = useRef(null);
   const { serialData, setSerialData, updateSerialData } = useSerial();
   const apiKeyRef = useRef(getApiKeyFromUrl());
-  const envRef = useRef(getEnvironmentFromUrl());
+
+  // Define disconnect function first since it's used in the environment effect
+  const disconnect = useCallback(() => {
+    setShouldConnect(false);
+    if (socketRef.current) {
+      socketRef.current.close();
+      socketRef.current = null;
+    }
+    isConnectedRef.current = false;
+    setIsConnected(false);
+    setRetryCount(0);
+  }, []);
+
+  // Watch for URL parameter changes and update environment
+  useEffect(() => {
+    const checkEnvironment = () => {
+      const newEnv = getEnvironmentFromUrl();
+      if (newEnv !== environment) {
+        setEnvironment(newEnv);
+        // Disconnect and reconnect if environment changes
+        if (socketRef.current) {
+          disconnect();
+        }
+      }
+    };
+
+    // Check immediately
+    checkEnvironment();
+
+    // Set up a listener for URL changes
+    const handleUrlChange = () => {
+      checkEnvironment();
+    };
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener("popstate", handleUrlChange);
+
+    // Also check periodically for URL changes (in case of programmatic changes)
+    const interval = setInterval(checkEnvironment, 1000);
+
+    return () => {
+      window.removeEventListener("popstate", handleUrlChange);
+      clearInterval(interval);
+    };
+  }, [environment, disconnect]);
 
   // Keep the refs updated with latest serial data
   useEffect(() => {
@@ -137,17 +183,6 @@ export const useSocketConnection = (
     [isApiKeyValid, onOutgoingMessage]
   );
 
-  const disconnect = useCallback(() => {
-    setShouldConnect(false);
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-    isConnectedRef.current = false;
-    setIsConnected(false);
-    setRetryCount(0);
-  }, []);
-
   const handleIncomingMessage = useCallback(
     async (data) => {
       if (!isApiKeyValid || !apiKeyRef.current) {
@@ -240,7 +275,7 @@ export const useSocketConnection = (
     }
 
     try {
-      const env = envRef.current;
+      const env = environment;
       const socketUrl = SOCKET_URL[env];
       if (!socketUrl) {
         throw new Error(`Invalid environment: ${env}`);
@@ -292,21 +327,27 @@ export const useSocketConnection = (
     } catch (err) {
       console.error(
         "Failed to create WebSocket for",
-        SOCKET_URL[envRef.current],
+        SOCKET_URL[environment],
         ":",
         err
       );
       setError("Connection failed");
       setShouldConnect(false);
     }
-  }, [retryCount, handleIncomingMessage, shouldConnect, isApiKeyValid]);
+  }, [
+    retryCount,
+    handleIncomingMessage,
+    shouldConnect,
+    isApiKeyValid,
+    environment
+  ]);
 
   // Validate API key before allowing connection
   useEffect(() => {
     const validateApiKey = async () => {
       setIsValidating(true);
       const apiKey = apiKeyRef.current;
-      const env = envRef.current;
+      const env = environment;
 
       if (!apiKey) {
         setIsApiKeyValid(false);
@@ -349,7 +390,7 @@ export const useSocketConnection = (
     return () => {
       clearInterval(revalidationInterval);
     };
-  }, [disconnect]);
+  }, [disconnect, environment]);
 
   useEffect(() => {
     if (

@@ -13,6 +13,36 @@ export const ThemeProvider = ({ children, theme = "hacker" }) => {
     return localStorage.getItem("theme") || theme;
   });
   const [themeValues, setThemeValues] = useState(null);
+  const [environment, setEnvironment] = useState(getEnvironmentFromUrl());
+
+  // Watch for environment changes
+  useEffect(() => {
+    const checkEnvironment = () => {
+      const newEnv = getEnvironmentFromUrl();
+      if (newEnv !== environment) {
+        setEnvironment(newEnv);
+      }
+    };
+
+    // Check immediately
+    checkEnvironment();
+
+    // Set up a listener for URL changes
+    const handleUrlChange = () => {
+      checkEnvironment();
+    };
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener("popstate", handleUrlChange);
+
+    // Also check periodically for URL changes (in case of programmatic changes)
+    const interval = setInterval(checkEnvironment, 1000);
+
+    return () => {
+      window.removeEventListener("popstate", handleUrlChange);
+      clearInterval(interval);
+    };
+  }, [environment]);
 
   // Fetch themes from API
   useEffect(() => {
@@ -21,8 +51,7 @@ export const ThemeProvider = ({ children, theme = "hacker" }) => {
         setIsLoading(true);
         setError(null);
 
-        const env = getEnvironmentFromUrl();
-        const response = await fetch(`${API_URL[env]}/themes`);
+        const response = await fetch(`${API_URL[environment]}/themes`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch themes: ${response.status}`);
@@ -47,7 +76,7 @@ export const ThemeProvider = ({ children, theme = "hacker" }) => {
     };
 
     fetchThemes();
-  }, [theme]);
+  }, [theme, environment]);
 
   useEffect(() => {
     // Update theme values whenever currentTheme changes and themes are loaded
