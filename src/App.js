@@ -117,8 +117,13 @@ const InvalidAPIKey = styled(MissingAPIKey)`
 `;
 
 const AppContent = ({ isSimulatorMode }) => {
-  const { serialData, isInputConnected, isOutputConnected, setSerialData } =
-    useSerial();
+  const {
+    serialData,
+    isInputConnected,
+    isOutputConnected,
+    setSerialData,
+    multiPlayerMode
+  } = useSerial();
   const {
     connect: connectSocket,
     registerHandler,
@@ -326,6 +331,7 @@ const AppContent = ({ isSimulatorMode }) => {
         onMenuActionProcessed={handleMenuActionProcessed}
         selectedIndices={selectedIndices}
         setSelectedIndices={setSelectedIndices}
+        multiPlayerMode={multiPlayerMode}
       />
     );
   };

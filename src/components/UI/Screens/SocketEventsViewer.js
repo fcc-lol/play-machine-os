@@ -35,6 +35,7 @@ const Message = styled.div`
 
 const Data = styled.div`
   font-weight: bold;
+  text-transform: ${(props) => props.theme.textTransform};
 `;
 
 const Timestamp = styled.div`
@@ -121,7 +122,8 @@ function SocketEventsViewer() {
         .map((message, index) => (
           <Message key={index} type={message.type}>
             <Data>
-              {message.type} {message.action}
+              {message.type.charAt(0).toUpperCase() + message.type.slice(1)}{" "}
+              {message.action}
             </Data>
             <Timestamp>{message.timestamp}</Timestamp>
           </Message>

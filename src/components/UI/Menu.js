@@ -56,16 +56,35 @@ const Menu = ({
   menuAction,
   onMenuActionProcessed,
   selectedIndices,
-  setSelectedIndices
+  setSelectedIndices,
+  multiPlayerMode = false
 }) => {
   const currentMenu = menuStack[menuStack.length - 1];
   const currentMenuItems = useMemo(() => {
+    // Filter out Remote Viewer if multiPlayerMode is false
+    let filteredItems = currentMenu.items;
+    if (!multiPlayerMode) {
+      filteredItems = currentMenu.items.filter((item) => {
+        // Check if this is the Remote Viewer item directly
+        if (item.id === "remote-viewer") {
+          return false;
+        }
+        // Check if this is a submenu that contains Remote Viewer
+        if (item.submenu && item.submenu.items) {
+          item.submenu.items = item.submenu.items.filter(
+            (subItem) => subItem.id !== "remote-viewer"
+          );
+        }
+        return true;
+      });
+    }
+
     // Add back menu item to all submenus except the main menu
     if (menuStack.length > 1) {
-      return [...currentMenu.items, { id: "back", label: "Back" }];
+      return [...filteredItems, { id: "back", label: "Back" }];
     }
-    return currentMenu.items;
-  }, [currentMenu.items, menuStack.length]);
+    return filteredItems;
+  }, [currentMenu.items, menuStack.length, multiPlayerMode]);
 
   const { handleThemeSelection, previewTheme, menuItemsWithCurrentTheme } =
     ThemeSettings({
