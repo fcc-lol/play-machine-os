@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useRef } from "react";
-import { useSerial } from "../../functions/SerialDataContext";
+import { useSerial, ALL_CONTROLS } from "../../functions/SerialDataContext";
 import styled from "styled-components";
 
 const SimulatorContainer = styled.div`
@@ -13,7 +13,7 @@ const SimulatorContainer = styled.div`
   font-family: system-ui;
   z-index: 1000;
   cursor: default;
-  width: 23rem;
+  width: 25rem;
   font-family: monospace;
   text-transform: uppercase;
   gap: 2rem;
@@ -58,7 +58,7 @@ const Button = styled.button`
 
 const VerticalSlidersContainer = styled.div`
   display: flex;
-  gap: 1.25rem;
+  gap: 1rem;
   justify-content: center;
 `;
 
@@ -67,6 +67,9 @@ const SliderContainer = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 2px solid ${(props) => (props.isSelected ? "#ffffff" : "transparent")};
 
   ${(props) =>
     props.vertical &&
@@ -116,7 +119,6 @@ const Slider = styled.input`
 const KnobContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
 `;
 
 const Knob = styled.div`
@@ -125,6 +127,9 @@ const Knob = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  border: 2px solid ${(props) => (props.isSelected ? "#ffffff" : "transparent")};
 `;
 
 const Label = styled.div`
@@ -146,23 +151,19 @@ const buttons = [
   { id: "button_b", label: "B", gridColumn: "1", gridRow: "2" }
 ];
 
-const sliders = [
-  { id: "vertical_slider_1", label: "Slider 1" },
-  { id: "vertical_slider_2", label: "Slider 2" },
-  { id: "vertical_slider_3", label: "Slider 3" }
-];
-
-const knobs = [
-  { id: "knob_1", label: "Knob 1" },
-  { id: "horizontal_slider", label: "Slider" },
-  { id: "knob_2", label: "Knob 2" },
-  { id: "knob_3", label: "Knob 3" },
-  { id: "knob_4", label: "Knob 4" },
-  { id: "knob_5", label: "Knob 5" }
-];
+// Use the shared controls from context instead of local definitions
+const sliders = ALL_CONTROLS.slice(0, 3); // First 3 are sliders
+const knobs = ALL_CONTROLS.slice(3); // Rest are knobs
 
 const Hardware = () => {
-  const { serialData, setSerialData, isSimulatorMode } = useSerial();
+  const {
+    serialData,
+    setSerialData,
+    updateSerialData,
+    isSimulatorMode,
+    selectedControl,
+    hasActiveRemotes
+  } = useSerial();
   const buttonStateRef = useRef({});
   const initializedRef = useRef(false);
 
@@ -170,29 +171,54 @@ const Hardware = () => {
   useEffect(() => {
     if (!isSimulatorMode || initializedRef.current) return;
 
-    const allControls = [...sliders, ...knobs];
     const initialData = {};
-    allControls.forEach((control) => {
+
+    // Initialize sliders and knobs with localStorage values
+    ALL_CONTROLS.forEach((control) => {
       const savedValue = localStorage.getItem(`slider_${control.id}`);
       initialData[control.id] = {
         value: savedValue !== null ? parseInt(savedValue) : 0
       };
     });
+
+    // Initialize buttons with false values
+    buttons.forEach((button) => {
+      initialData[button.id] = { value: false };
+    });
+
+    // Initialize encoder button
+    initialData.encoderButton = { value: false };
+
     setSerialData(initialData);
     initializedRef.current = true;
   }, [setSerialData, isSimulatorMode]);
+
+  const handleEncoderButtonDown = useCallback(() => {
+    if (!isSimulatorMode) return;
+
+    updateSerialData({
+      encoderButton: { value: true }
+    });
+  }, [updateSerialData, isSimulatorMode]);
+
+  const handleEncoderButtonUp = useCallback(() => {
+    if (!isSimulatorMode) return;
+
+    updateSerialData({
+      encoderButton: { value: false }
+    });
+  }, [updateSerialData, isSimulatorMode]);
 
   const handleButtonDown = useCallback(
     (buttonId) => {
       if (!isSimulatorMode) return;
 
       buttonStateRef.current[buttonId] = true;
-      setSerialData((prevData) => ({
-        ...prevData,
+      updateSerialData({
         [buttonId]: { value: true }
-      }));
+      });
     },
-    [setSerialData, isSimulatorMode]
+    [updateSerialData, isSimulatorMode]
   );
 
   const handleButtonUp = useCallback(
@@ -200,21 +226,19 @@ const Hardware = () => {
       if (!isSimulatorMode) return;
 
       buttonStateRef.current[buttonId] = false;
-      setSerialData((prevData) => ({
-        ...prevData,
+      updateSerialData({
         [buttonId]: { value: false }
-      }));
+      });
     },
-    [setSerialData, isSimulatorMode]
+    [updateSerialData, isSimulatorMode]
   );
 
   const handleSliderChange = (sliderId, value) => {
     if (!isSimulatorMode) return;
 
-    setSerialData((prevData) => ({
-      ...prevData,
+    updateSerialData({
       [sliderId]: { value: parseInt(value) }
-    }));
+    });
     localStorage.setItem(`slider_${sliderId}`, value);
   };
 
@@ -250,6 +274,12 @@ const Hardware = () => {
           e.preventDefault();
           if (!buttonStateRef.current["button_b"]) handleButtonDown("button_b");
           break;
+        case " ": // Spacebar for encoder button (only when remotes are active)
+          if (hasActiveRemotes) {
+            e.preventDefault();
+            handleEncoderButtonDown();
+          }
+          break;
         default:
           break;
       }
@@ -283,6 +313,12 @@ const Hardware = () => {
           e.preventDefault();
           if (buttonStateRef.current["button_b"]) handleButtonUp("button_b");
           break;
+        case " ": // Spacebar for encoder button (only when remotes are active)
+          if (hasActiveRemotes) {
+            e.preventDefault();
+            handleEncoderButtonUp();
+          }
+          break;
         default:
           break;
       }
@@ -295,18 +331,36 @@ const Hardware = () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isSimulatorMode, handleButtonDown, handleButtonUp]);
+  }, [
+    isSimulatorMode,
+    handleButtonDown,
+    handleButtonUp,
+    handleEncoderButtonDown,
+    handleEncoderButtonUp,
+    hasActiveRemotes
+  ]);
 
   if (!isSimulatorMode) {
     return null;
   }
 
+  // Only show selection highlighting when remotes are active
+  const showSelection = hasActiveRemotes && selectedControl;
+
   return (
     <SimulatorContainer>
       <VerticalSlidersContainer>
         {sliders.map((slider) => (
-          <SliderContainer key={slider.id} vertical={true}>
-            <Label>{slider.label}</Label>
+          <SliderContainer
+            key={slider.id}
+            vertical={true}
+            isSelected={showSelection && selectedControl?.id === slider.id}
+          >
+            <Label
+              isSelected={showSelection && selectedControl?.id === slider.id}
+            >
+              {slider.label}
+            </Label>
             <Slider
               type="range"
               min="0"
@@ -314,23 +368,40 @@ const Hardware = () => {
               value={serialData[slider.id]?.value || 0}
               onChange={(e) => handleSliderChange(slider.id, e.target.value)}
               vertical={true}
+              isSelected={showSelection && selectedControl?.id === slider.id}
             />
-            <Value>{serialData[slider.id]?.value || 0}%</Value>
+            <Value
+              isSelected={showSelection && selectedControl?.id === slider.id}
+            >
+              {serialData[slider.id]?.value || 0}%
+            </Value>
           </SliderContainer>
         ))}
       </VerticalSlidersContainer>
       <KnobContainer>
         {knobs.map((knob) => (
-          <Knob key={knob.id}>
-            <Label>{knob.label}</Label>
+          <Knob
+            key={knob.id}
+            isSelected={showSelection && selectedControl?.id === knob.id}
+          >
+            <Label
+              isSelected={showSelection && selectedControl?.id === knob.id}
+            >
+              {knob.label}
+            </Label>
             <Slider
               type="range"
               min="0"
               max="100"
               value={serialData[knob.id]?.value || 0}
               onChange={(e) => handleSliderChange(knob.id, e.target.value)}
+              isSelected={showSelection && selectedControl?.id === knob.id}
             />
-            <Value>{serialData[knob.id]?.value || 0}%</Value>
+            <Value
+              isSelected={showSelection && selectedControl?.id === knob.id}
+            >
+              {serialData[knob.id]?.value || 0}%
+            </Value>
           </Knob>
         ))}
       </KnobContainer>

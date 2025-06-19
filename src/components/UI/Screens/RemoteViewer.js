@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import styled from "styled-components";
 import { useSocket } from "../../../functions/SocketContext";
+import { useSerial } from "../../../functions/SerialDataContext";
 
 const Page = styled.div`
   display: flex;
@@ -77,6 +78,7 @@ const ButtonStateItem = styled.div`
 function RemoteViewer() {
   const [remotes, setRemotes] = useState({});
   const { isConnected, error, registerHandler } = useSocket();
+  const { selectedControl, hasActiveRemotes } = useSerial();
 
   const handleMessage = useCallback((data) => {
     if (data.action === "remoteRegistration") {
@@ -88,8 +90,8 @@ function RemoteViewer() {
           encoderButton: false,
           confirmButton: false,
           backButton: false,
-          batteryVoltage: null,
-        },
+          batteryVoltage: null
+        }
       }));
     } else if (data.action === "remoteSerialData") {
       setRemotes((prev) => ({
@@ -104,8 +106,8 @@ function RemoteViewer() {
           encoderButton: data.data.encoderButton || false,
           confirmButton: data.data.confirmButton || false,
           backButton: data.data.backButton || false,
-          batteryVoltage: data.data.batteryVoltage || null,
-        },
+          batteryVoltage: data.data.batteryVoltage || null
+        }
       }));
     }
   }, []);
@@ -138,10 +140,16 @@ function RemoteViewer() {
                 <Label>Identifier</Label>
                 <Value>{deviceId}</Value>
               </DataItem>
+              {hasActiveRemotes && selectedControl && (
+                <DataItem>
+                  <Label>Target</Label>
+                  <Value>{selectedControl.label}</Value>
+                </DataItem>
+              )}
               {remote.value !== null && (
                 <DataItem>
                   <Label>Value</Label>
-                  <Value>{remote.value}</Value>
+                  <Value>{remote.value || "???"}</Value>
                 </DataItem>
               )}
               <DataItem>
@@ -149,7 +157,7 @@ function RemoteViewer() {
                 <Value>
                   {remote.batteryVoltage !== null
                     ? `${remote.batteryVoltage}V`
-                    : "N/A"}
+                    : "???"}
                 </Value>
               </DataItem>
               <ButtonState>

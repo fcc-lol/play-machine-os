@@ -9,6 +9,7 @@ import { useSerial } from "./SerialDataContext";
 import styled from "styled-components";
 import hardware from "../config/Hardware.json";
 import ConvertRange from "../functions/ConvertRange";
+import { applyRemoteMappings } from "../utils/RemoteMapping";
 
 const roundToNearestTenth = (number) => Math.round(number);
 
@@ -97,11 +98,21 @@ function ReadSerialData() {
             }
             processedData[config.label] = { value };
           }
+        } else if (id.includes("remote_")) {
+          // Handle remote inputs
+          const rawNumValue = parseFloat(rawValue);
+          let value = roundToNearestTenth(rawNumValue);
+          // Ensure value is within 0-100 range
+          value = Math.max(0, Math.min(100, value));
+          processedData[id] = { value };
         }
       }
 
+      // Apply remote mappings to override input data
+      const finalData = applyRemoteMappings(processedData);
+
       // Use functional update to avoid dependency on serialData
-      updateSerialData(processedData);
+      updateSerialData(finalData);
       setLastProcessedTime(currentTime);
     },
     [lastProcessedTime, updateSerialData]

@@ -40,6 +40,19 @@ const DebugItem = styled.div`
 const Label = styled.span`
   font-weight: bold;
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const RemoteIndicator = styled.span`
+  background: ${(props) => props.theme.menuText};
+  color: ${(props) => props.theme.menuBackground};
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
 `;
 
 const Value = styled.span`
@@ -47,13 +60,51 @@ const Value = styled.span`
 `;
 
 export default function PhysicalInputMonitor() {
-  const { serialData, isInputConnected, isOutputConnected, isSimulatorMode } =
-    useSerial();
+  const {
+    serialData,
+    isInputConnected,
+    isOutputConnected,
+    isSimulatorMode,
+    hasActiveRemotes,
+    selectedControl
+  } = useSerial();
 
   // Get all button labels from hardwareConfig
   const allButtonLabels = Object.entries(hardwareConfig.buttons).map(
     ([id, label]) => label
   );
+
+  // Get all potentiometer labels from hardwareConfig
+  const allPotentiometerLabels = Object.entries(
+    hardwareConfig.potentiometers
+  ).map(([id, config]) => config.label);
+
+  // Create a set of all legitimate hardware keys
+  const legitimateHardwareKeys = new Set([
+    ...allButtonLabels,
+    ...allPotentiometerLabels
+  ]);
+
+  // Function to check if a control is being overridden by remote
+  const isRemoteOverride = (key) => {
+    return hasActiveRemotes && selectedControl?.id === key;
+  };
+
+  // Function to get the remote device ID from serial data
+  const getRemoteDeviceId = () => {
+    if (!hasActiveRemotes) return null;
+
+    // Find the first remote_ key in serialData to extract the device ID
+    const remoteKey = Object.keys(serialData).find((key) =>
+      key.startsWith("remote_")
+    );
+    if (remoteKey) {
+      return remoteKey.replace("remote_", "");
+    }
+    return null;
+  };
+
+  const remoteDeviceId = getRemoteDeviceId();
 
   // Split the data into two columns
   const allItems = [
@@ -63,19 +114,25 @@ export default function PhysicalInputMonitor() {
         ? "Simulator"
         : isInputConnected && isOutputConnected
         ? "Connected"
-        : "Disconnected"
+        : "Disconnected",
+      isRemoteOverride: false
     },
-    // Add all other serial data items first
+    // Add all other serial data items that correspond to actual hardware
     ...Object.entries(serialData)
-      .filter(([key]) => !allButtonLabels.includes(key))
+      .filter(
+        ([key]) =>
+          legitimateHardwareKeys.has(key) && !allButtonLabels.includes(key)
+      )
       .map(([key, data]) => ({
         key,
-        value: JSON.stringify(data.value)
+        value: JSON.stringify(data.value),
+        isRemoteOverride: isRemoteOverride(key)
       })),
     // Add all buttons with their current values at the bottom
     ...allButtonLabels.map((label) => ({
       key: label,
-      value: serialData[label]?.value ?? false
+      value: serialData[label]?.value ?? false,
+      isRemoteOverride: isRemoteOverride(label)
     }))
   ];
 
@@ -87,12 +144,17 @@ export default function PhysicalInputMonitor() {
     <Root>
       <Column>
         {leftColumn.map((item) => (
-          <DebugItem key={item.key}>
+          <DebugItem key={item.key} isRemoteOverride={item.isRemoteOverride}>
             <Label>
               {item.key
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
               :
+              {item.isRemoteOverride && (
+                <RemoteIndicator>
+                  Remote {remoteDeviceId || "Unknown"}
+                </RemoteIndicator>
+              )}
             </Label>
             <Value>{String(item.value).toUpperCase()}</Value>
           </DebugItem>
@@ -100,12 +162,17 @@ export default function PhysicalInputMonitor() {
       </Column>
       <Column>
         {rightColumn.map((item) => (
-          <DebugItem key={item.key}>
+          <DebugItem key={item.key} isRemoteOverride={item.isRemoteOverride}>
             <Label>
               {item.key
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
               :
+              {item.isRemoteOverride && (
+                <RemoteIndicator>
+                  Remote {remoteDeviceId || "Unknown"}
+                </RemoteIndicator>
+              )}
             </Label>
             <Value>{String(item.value).toUpperCase()}</Value>
           </DebugItem>

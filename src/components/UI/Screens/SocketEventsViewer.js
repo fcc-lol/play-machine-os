@@ -66,8 +66,6 @@ function SocketEventsViewer() {
     const parsedMessage =
       typeof message === "string" ? JSON.parse(message) : message;
 
-    console.log("outgoing message", parsedMessage);
-
     // Log all outgoing messages
     setMessageLog((prev) => [
       {

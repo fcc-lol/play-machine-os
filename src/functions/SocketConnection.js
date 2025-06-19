@@ -4,6 +4,7 @@ import html2canvas from "html2canvas";
 import hardware from "../config/Hardware.json";
 import { API_URL, SOCKET_URL } from "../config/API";
 import { getEnvironmentFromUrl } from "../utils/GetEnvironment";
+import { convertSocketRemoteData } from "../utils/RemoteMapping";
 
 const MAX_RETRIES = 5;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
@@ -38,7 +39,7 @@ export const useSocketConnection = (
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
   const currentAppRef = useRef(null);
-  const { serialData, setSerialData } = useSerial();
+  const { serialData, setSerialData, updateSerialData } = useSerial();
   const apiKeyRef = useRef(getApiKeyFromUrl());
   const envRef = useRef(getEnvironmentFromUrl());
 
@@ -160,6 +161,15 @@ export const useSocketConnection = (
         setSerialData(serialDataValues.serialData || serialDataValues);
       }
 
+      // Handle remoteSerialData events
+      if (data.action === "remoteSerialData") {
+        const remoteData = convertSocketRemoteData(data);
+        if (Object.keys(remoteData).length > 0) {
+          // Update serial data through the updateSerialData function to ensure proper mapping
+          updateSerialData(remoteData);
+        }
+      }
+
       // Handle appChanged events
       if (data.action === "appChanged") {
         currentAppRef.current = data.data.appId;
@@ -211,6 +221,7 @@ export const useSocketConnection = (
       sendMessage,
       onMessage,
       setSerialData,
+      updateSerialData,
       latestSerialDataRef,
       isApiKeyValid,
       captureMultipleScreenshots
