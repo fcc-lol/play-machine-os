@@ -65,14 +65,9 @@
               }
             },
             {
-              "id": "led-controller",
-              "label": "LED Controller",
-              "screen": "LEDController"
-            },
-            {
-              "id": "physical-input-monitor",
-              "label": "Physical Input Monitor",
-              "screen": "PhysicalInputMonitor"
+              "id": "remote-viewer",
+              "label": "Remote Viewer",
+              "screen": "RemoteViewer"
             },
             {
               "id": "socket-events-viewer",
@@ -80,9 +75,14 @@
               "screen": "SocketEventsViewer"
             },
             {
-              "id": "remote-viewer",
-              "label": "Remote Viewer",
-              "screen": "RemoteViewer"
+              "id": "physical-input-monitor",
+              "label": "Physical Input Monitor",
+              "screen": "PhysicalInputMonitor"
+            },
+            {
+              "id": "led-controller",
+              "label": "LED Controller",
+              "screen": "LEDController"
             },
             {
               "id": "camera-hand-detection",

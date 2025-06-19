@@ -1,12 +1,10 @@
 const API_URL = {
-  // local: "http://localhost:3205/api",
-  local: "https://play-machine-server.noshado.ws/api",
+  local: "http://localhost:3205/api",
   production: "https://play-machine-server.noshado.ws/api"
 };
 
 const SOCKET_URL = {
-  // local: "ws://localhost:3103",
-  local: "wss://play-machine-server.noshado.ws",
+  local: "ws://localhost:3103",
   production: "wss://play-machine-server.noshado.ws"
 };
 
