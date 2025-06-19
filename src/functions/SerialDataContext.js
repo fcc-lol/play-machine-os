@@ -95,86 +95,97 @@ export function SerialDataProvider({ children, isSimulatorMode }) {
   }, []);
 
   // Function to update serial data that respects setSerialData overrides
-  const updateSerialData = useCallback((newData) => {
-    const currentIndex = selectedControlIndexRef.current;
+  const updateSerialData = useCallback(
+    (newData) => {
+      const currentIndex = selectedControlIndexRef.current;
 
-    // Check if this data contains remote information
-    const hasRemoteData = Object.keys(newData).some((key) =>
-      key.startsWith("remote_")
-    );
-    if (hasRemoteData) {
-      setHasActiveRemotes(true);
-    }
-
-    // Get the current selected control at this moment
-    const currentSelectedControl = ALL_CONTROLS[currentIndex];
-
-    // Apply remote mappings to all incoming data
-    const mappedNewData = applyRemoteMappings(newData, currentSelectedControl);
-
-    // Always update the latest hardware state with mapped data
-    latestHardwareStateRef.current = {
-      ...latestHardwareStateRef.current,
-      ...mappedNewData
-    };
-
-    if (setSerialDataRef.current) {
-      // If we have setSerialData active, check if hardware has changed
-      if (hardwareStateAtSetSerialDataRef.current) {
-        // Only check for changes in the currently selected control that could override remote data
-        const currentSelectedControl =
-          ALL_CONTROLS[selectedControlIndexRef.current];
-        const selectedControlId = currentSelectedControl?.id;
-
-        // Check if the currently selected control has been physically moved
-        const hasHardwareChange =
-          selectedControlId &&
-          latestHardwareStateRef.current[selectedControlId] &&
-          hardwareStateAtSetSerialDataRef.current[selectedControlId]
-            ? (() => {
-                const currentValue =
-                  latestHardwareStateRef.current[selectedControlId]?.value;
-                const storedValue =
-                  hardwareStateAtSetSerialDataRef.current[selectedControlId]
-                    ?.value;
-
-                // Skip if either value is undefined
-                if (currentValue === undefined || storedValue === undefined)
-                  return false;
-
-                // For boolean values (buttons), any change is significant
-                if (
-                  typeof currentValue === "boolean" &&
-                  typeof storedValue === "boolean"
-                ) {
-                  return currentValue !== storedValue;
-                }
-
-                // For numeric values (sliders/knobs), use higher threshold to account for analog noise
-                if (
-                  typeof currentValue === "number" &&
-                  typeof storedValue === "number"
-                ) {
-                  return Math.abs(currentValue - storedValue) > 5;
-                }
-
-                return false;
-              })()
-            : false;
-
-        if (hasHardwareChange) {
-          // Hardware has changed, clear the override and use hardware inputs
-          setSerialDataRef.current = null;
-          hardwareStateAtSetSerialDataRef.current = null;
-          setSerialData({ ...latestHardwareStateRef.current });
-        }
-        // If no hardware change, keep the socket data active
+      // Check if this data contains remote information
+      const hasRemoteData = Object.keys(newData).some((key) =>
+        key.startsWith("remote_")
+      );
+      if (hasRemoteData) {
+        setHasActiveRemotes(true);
       }
-    } else {
-      // No override active, update with mapped hardware data
-      setSerialData({ ...serialDataRef.current, ...mappedNewData });
-    }
-  }, []);
+
+      // Get the current selected control at this moment
+      const currentSelectedControl = ALL_CONTROLS[currentIndex];
+
+      // Apply remote mappings to all incoming data
+      const mappedNewData = applyRemoteMappings(
+        newData,
+        currentSelectedControl
+      );
+
+      // If we have active remote device control, filter out hardware input for the currently selected control
+      let filteredData = { ...mappedNewData };
+      if (hasActiveRemotes && currentSelectedControl && !hasRemoteData) {
+        const selectedControlId = currentSelectedControl.id;
+
+        // Remove hardware input for the control being remotely controlled by a remote device
+        if (filteredData[selectedControlId]) {
+          delete filteredData[selectedControlId];
+        }
+      }
+
+      // Always update the latest hardware state with original mapped data (for reference)
+      latestHardwareStateRef.current = {
+        ...latestHardwareStateRef.current,
+        ...mappedNewData
+      };
+
+      if (setSerialDataRef.current) {
+        // Companion app socket data is active - check if hardware has changed significantly
+        if (hardwareStateAtSetSerialDataRef.current && !hasRemoteData) {
+          const hasHardwareChange = Object.keys(
+            latestHardwareStateRef.current
+          ).some((key) => {
+            const currentValue = latestHardwareStateRef.current[key]?.value;
+            const storedValue =
+              hardwareStateAtSetSerialDataRef.current[key]?.value;
+
+            // Skip if either value is undefined
+            if (currentValue === undefined || storedValue === undefined)
+              return false;
+
+            // For boolean values (buttons), any change is significant
+            if (
+              typeof currentValue === "boolean" &&
+              typeof storedValue === "boolean"
+            ) {
+              return currentValue !== storedValue;
+            }
+
+            // For numeric values (sliders/knobs), use higher threshold to account for analog noise
+            if (
+              typeof currentValue === "number" &&
+              typeof storedValue === "number"
+            ) {
+              return Math.abs(currentValue - storedValue) > 1;
+            }
+
+            return false;
+          });
+
+          if (hasHardwareChange) {
+            // Hardware has changed significantly, clear the companion app override
+            setSerialDataRef.current = null;
+            hardwareStateAtSetSerialDataRef.current = null;
+            setSerialData({ ...latestHardwareStateRef.current });
+            return;
+          }
+        }
+
+        // Update with filtered data (respecting remote device control filtering)
+        if (hasRemoteData || Object.keys(filteredData).length > 0) {
+          setSerialData({ ...serialDataRef.current, ...filteredData });
+        }
+      } else {
+        // No companion app override active, update with filtered data
+        setSerialData({ ...serialDataRef.current, ...filteredData });
+      }
+    },
+    [hasActiveRemotes]
+  );
 
   useEffect(() => {
     // Initialize default values for all hardware items
