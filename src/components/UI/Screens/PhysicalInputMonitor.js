@@ -149,7 +149,6 @@ export default function PhysicalInputMonitor() {
               {item.key
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
-              :
               {item.isRemoteOverride && (
                 <RemoteIndicator>
                   Remote {remoteDeviceId || "Unknown"}
@@ -167,7 +166,6 @@ export default function PhysicalInputMonitor() {
               {item.key
                 .replace(/_/g, " ")
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
-              :
               {item.isRemoteOverride && (
                 <RemoteIndicator>
                   Remote {remoteDeviceId || "Unknown"}
