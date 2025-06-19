@@ -373,6 +373,7 @@ function ThemeWrapper({ children }) {
 // App component now sets up both providers
 function App() {
   const [isSimulatorMode, setIsSimulatorMode] = useState(false);
+  const [multiPlayerMode, setMultiPlayerMode] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
   const [isApiKeyValid, setIsApiKeyValid] = useState(true);
   const [isValidating, setIsValidating] = useState(true);
@@ -382,9 +383,11 @@ function App() {
       const urlParams = new URLSearchParams(window.location.search);
       const onDevice = urlParams.get("onDevice");
       const apiKey = urlParams.get("apiKey");
+      const multiPlayerModeParam = urlParams.get("multiPlayerMode");
       const env = getEnvironmentFromUrl();
 
       setIsSimulatorMode(onDevice === "false");
+      setMultiPlayerMode(multiPlayerModeParam === "true");
       setHasApiKey(!!apiKey);
 
       if (apiKey) {
@@ -407,7 +410,10 @@ function App() {
     return (
       <StyleSheetManager shouldForwardProp={isPropValid}>
         <ThemeProvider>
-          <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+          <SerialDataProvider
+            isSimulatorMode={isSimulatorMode}
+            multiPlayerMode={multiPlayerMode}
+          >
             <SocketProvider>
               <ThemeWrapper>
                 <AppContainer>
@@ -431,7 +437,10 @@ function App() {
     return (
       <StyleSheetManager shouldForwardProp={isPropValid}>
         <ThemeProvider>
-          <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+          <SerialDataProvider
+            isSimulatorMode={isSimulatorMode}
+            multiPlayerMode={multiPlayerMode}
+          >
             <SocketProvider>
               <ThemeWrapper>
                 <AppContainer>
@@ -455,7 +464,10 @@ function App() {
     return (
       <StyleSheetManager shouldForwardProp={isPropValid}>
         <ThemeProvider>
-          <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+          <SerialDataProvider
+            isSimulatorMode={isSimulatorMode}
+            multiPlayerMode={multiPlayerMode}
+          >
             <SocketProvider>
               <ThemeWrapper>
                 <AppContainer>
@@ -478,7 +490,10 @@ function App() {
   return (
     <StyleSheetManager shouldForwardProp={isPropValid}>
       <ThemeProvider>
-        <SerialDataProvider isSimulatorMode={isSimulatorMode}>
+        <SerialDataProvider
+          isSimulatorMode={isSimulatorMode}
+          multiPlayerMode={multiPlayerMode}
+        >
           <SocketProvider>
             <ThemeWrapper>
               <AppContent isSimulatorMode={isSimulatorMode} />
