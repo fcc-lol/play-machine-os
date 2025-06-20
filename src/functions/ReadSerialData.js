@@ -50,7 +50,8 @@ function ReadSerialData() {
     isOutputConnected,
     setIsOutputConnected,
     isSimulatorMode,
-    writeToOutputDeviceRef
+    writeToOutputDeviceRef,
+    remoteControlMappings
   } = useSerial();
 
   const [lastProcessedTime, setLastProcessedTime] = useState(0);
@@ -109,13 +110,16 @@ function ReadSerialData() {
       }
 
       // Apply remote mappings to override input data
-      const finalData = applyRemoteMappings(processedData);
+      const finalData = applyRemoteMappings(
+        processedData,
+        remoteControlMappings
+      );
 
       // Use functional update to avoid dependency on serialData
       updateSerialData(finalData);
       setLastProcessedTime(currentTime);
     },
-    [lastProcessedTime, updateSerialData]
+    [lastProcessedTime, updateSerialData, remoteControlMappings]
   );
 
   const readSerialData = useCallback(
