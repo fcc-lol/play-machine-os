@@ -14,21 +14,26 @@ export const applyRemoteMappings = (inputData, remoteControlMappings = {}) => {
       inputData[key] &&
       inputData[key].value !== undefined
     ) {
-      // Extract the device ID from the remote key (e.g., "remote_device1" -> "device1")
-      const deviceId = key.replace("remote_", "");
+      // Get the device ID from the data payload (not from the key name)
+      const deviceId = inputData[key].deviceId;
 
-      // Get the assigned control for this specific remote device
-      const assignedControl = remoteControlMappings[deviceId];
+      if (deviceId) {
+        // Get the assigned control for this specific remote device
+        const assignedControl = remoteControlMappings[deviceId];
 
-      if (assignedControl) {
-        // Map this remote data to the control assigned to this specific device
-        remoteOverrides[assignedControl.id] = inputData[key];
+        if (assignedControl) {
+          // Map this remote data to the control assigned to this specific device
+          remoteOverrides[assignedControl.id] = {
+            value: inputData[key].value,
+            deviceId: deviceId // Preserve device ID for reference
+          };
 
-        // Save remote value to localStorage (same as manual simulator changes)
-        localStorage.setItem(
-          `slider_${assignedControl.id}`,
-          inputData[key].value
-        );
+          // Save remote value to localStorage (same as manual simulator changes)
+          localStorage.setItem(
+            `slider_${assignedControl.id}`,
+            inputData[key].value
+          );
+        }
       }
     }
   });
@@ -50,29 +55,37 @@ export const convertSocketRemoteData = (socketData) => {
       socketData.data;
 
     if (deviceId) {
-      // Handle the main value (for knobs/sliders) - use device-specific key
+      // Handle the main value (for knobs/sliders) - include deviceId in payload
       if (value !== undefined) {
         const remoteKey = `remote_${deviceId}`;
-        convertedData[remoteKey] = { value: Math.max(0, Math.min(100, value)) };
+        convertedData[remoteKey] = {
+          value: Math.max(0, Math.min(100, value)),
+          deviceId: deviceId
+        };
       }
 
-      // Handle encoder button - use device-specific key
+      // Handle encoder button - include deviceId in payload
       if (encoderButton !== undefined) {
         convertedData[`encoderButton_${deviceId}`] = {
-          value: Boolean(encoderButton)
+          value: Boolean(encoderButton),
+          deviceId: deviceId
         };
       }
 
-      // Handle confirm button (could map to button_a) - use device-specific key
+      // Handle confirm button (could map to button_a) - include deviceId in payload
       if (confirmButton !== undefined) {
         convertedData[`button_a_${deviceId}`] = {
-          value: Boolean(confirmButton)
+          value: Boolean(confirmButton),
+          deviceId: deviceId
         };
       }
 
-      // Handle back button (could map to button_b) - use device-specific key
+      // Handle back button (could map to button_b) - include deviceId in payload
       if (backButton !== undefined) {
-        convertedData[`button_b_${deviceId}`] = { value: Boolean(backButton) };
+        convertedData[`button_b_${deviceId}`] = {
+          value: Boolean(backButton),
+          deviceId: deviceId
+        };
       }
     }
   }
