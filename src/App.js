@@ -148,7 +148,8 @@ const AppContent = ({ isSimulatorMode, stretchToFill }) => {
     isInputConnected,
     isOutputConnected,
     setSerialData,
-    multiPlayerMode
+    multiPlayerMode,
+    externalController
   } = useSerial();
   const {
     connect: connectSocket,
@@ -392,7 +393,9 @@ const AppContent = ({ isSimulatorMode, stretchToFill }) => {
       <AppContainer $stretchToFill={stretchToFill}>
         <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
           <ReadSerialData />
-          {isInputConnected && isOutputConnected && renderContent()}
+          {isInputConnected &&
+            (isOutputConnected || externalController) &&
+            renderContent()}
           <BrightnessOverlay $brightness={brightness} />
         </ScreenContainer>
       </AppContainer>

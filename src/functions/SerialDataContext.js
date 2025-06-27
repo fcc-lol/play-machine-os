@@ -14,6 +14,18 @@ import {
   getNextControlIndex
 } from "../utils/RemoteMapping";
 
+// Helper function to get the appropriate hardware configuration
+const getHardwareConfig = (useAltMapping = false) => {
+  if (useAltMapping && hardwareConfig.altMapping) {
+    return {
+      ...hardwareConfig,
+      potentiometers: hardwareConfig.altMapping.potentiometers,
+      buttons: hardwareConfig.altMapping.buttons
+    };
+  }
+  return hardwareConfig;
+};
+
 const SerialDataContext = createContext();
 
 // Define the order of controls for encoder navigation
@@ -46,6 +58,11 @@ export function SerialDataProvider({
     initializeRemoteControlMappings(ALL_CONTROLS)
   );
   const [hasActiveRemotes, setHasActiveRemotes] = useState(false);
+  // Check URL parameter for disabling LED serial connection
+  const [externalController] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("externalController") === "true";
+  });
   const writeToOutputDeviceRef = useRef(null);
   const setSerialDataRef = useRef(null);
   const hardwareStateAtSetSerialDataRef = useRef(null);
@@ -310,36 +327,41 @@ export function SerialDataProvider({
   }, []);
 
   useEffect(() => {
+    // Get the appropriate hardware configuration
+    const activeHardwareConfig = getHardwareConfig(externalController);
+
     // Initialize default values for all hardware items
     const defaultData = {};
 
     // Initialize buttons
-    Object.entries(hardwareConfig.buttons).forEach(([id, label]) => {
+    Object.entries(activeHardwareConfig.buttons).forEach(([id, label]) => {
       defaultData[label] = { value: false };
     });
 
     // Initialize potentiometers
-    Object.entries(hardwareConfig.potentiometers).forEach(([id, config]) => {
-      let value = 0;
-      if (isSimulatorMode) {
-        // In simulator mode, use localStorage
-        const savedValue = localStorage.getItem(`slider_${config.label}`);
-        if (savedValue !== null) {
-          value = parseInt(savedValue);
-        }
-      } else {
-        // In non-simulator mode, use the last known value from serial input
-        const lastValue = serialData[config.label]?.value;
-        if (lastValue !== undefined) {
-          value = lastValue;
-          // Invert the value if the potentiometer is configured as inverted
-          if (config.inverted) {
-            value = 100 - value;
+    Object.entries(activeHardwareConfig.potentiometers).forEach(
+      ([id, config]) => {
+        let value = 0;
+        if (isSimulatorMode) {
+          // In simulator mode, use localStorage
+          const savedValue = localStorage.getItem(`slider_${config.label}`);
+          if (savedValue !== null) {
+            value = parseInt(savedValue);
+          }
+        } else {
+          // In non-simulator mode, use the last known value from serial input
+          const lastValue = serialData[config.label]?.value;
+          if (lastValue !== undefined) {
+            value = lastValue;
+            // Invert the value if the potentiometer is configured as inverted
+            if (config.inverted) {
+              value = 100 - value;
+            }
           }
         }
+        defaultData[config.label] = { value };
       }
-      defaultData[config.label] = { value };
-    });
+    );
 
     // Initialize latestHardwareStateRef with default values
     latestHardwareStateRef.current = { ...defaultData };
@@ -347,17 +369,22 @@ export function SerialDataProvider({
     // Only set initial connected states and data in simulator mode
     if (isSimulatorMode) {
       setIsInputConnected(true);
+      // Always set output connected in simulator mode, or when LED serial is ignored
       setIsOutputConnected(true);
       setSerialData(defaultData);
     } else {
-      // In non-simulator mode, preserve existing values
+      // In non-simulator mode, set output connected if LED serial is ignored
+      if (externalController) {
+        setIsOutputConnected(true);
+      }
+      // Preserve existing values
       setSerialData((prevData) => ({
         ...prevData,
         ...defaultData
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSimulatorMode]);
+  }, [isSimulatorMode, externalController]);
 
   return (
     <SerialDataContext.Provider
@@ -371,6 +398,7 @@ export function SerialDataProvider({
         setIsOutputConnected,
         isSimulatorMode,
         multiPlayerMode,
+        externalController,
         writeToOutputDeviceRef,
         remoteControlMappings,
         setRemoteControlMappings,

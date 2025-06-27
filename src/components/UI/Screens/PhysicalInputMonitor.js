@@ -59,6 +59,18 @@ const Value = styled.span`
   font-size: 1.5rem;
 `;
 
+// Helper function to get the appropriate hardware configuration
+const getHardwareConfig = (useAltMapping = false) => {
+  if (useAltMapping && hardwareConfig.altMapping) {
+    return {
+      ...hardwareConfig,
+      potentiometers: hardwareConfig.altMapping.potentiometers,
+      buttons: hardwareConfig.altMapping.buttons
+    };
+  }
+  return hardwareConfig;
+};
+
 export default function PhysicalInputMonitor() {
   const {
     serialData,
@@ -66,17 +78,21 @@ export default function PhysicalInputMonitor() {
     isOutputConnected,
     isSimulatorMode,
     hasActiveRemotes,
-    remoteControlMappings
+    remoteControlMappings,
+    externalController
   } = useSerial();
 
-  // Get all button labels from hardwareConfig
-  const allButtonLabels = Object.entries(hardwareConfig.buttons).map(
+  // Get the appropriate hardware configuration
+  const activeHardwareConfig = getHardwareConfig(externalController);
+
+  // Get all button labels from activeHardwareConfig
+  const allButtonLabels = Object.entries(activeHardwareConfig.buttons).map(
     ([id, label]) => label
   );
 
-  // Get all potentiometer labels from hardwareConfig
+  // Get all potentiometer labels from activeHardwareConfig
   const allPotentiometerLabels = Object.entries(
-    hardwareConfig.potentiometers
+    activeHardwareConfig.potentiometers
   ).map(([id, config]) => config.label);
 
   // Create a set of all legitimate hardware keys
