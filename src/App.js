@@ -56,15 +56,29 @@ const AppContainer = styled.div.attrs((props) => ({
       position: "fixed",
       top: 0,
       left: 0
+    }),
+    ...(props.$fullScreen && {
+      width: "100vw",
+      height: "100vh",
+      position: "fixed",
+      top: 0,
+      left: 0
     })
   }
 }))`
-  width: ${(props) =>
-    props.$stretchToFill ? "auto" : `${hardware.screen.width}px`};
-  height: ${(props) =>
-    props.$stretchToFill ? "auto" : `${hardware.screen.height}px`};
+  width: ${(props) => {
+    if (props.$fullScreen) return "100vw";
+    if (props.$stretchToFill) return "auto";
+    return `${hardware.screen.width}px`;
+  }};
+  height: ${(props) => {
+    if (props.$fullScreen) return "100vh";
+    if (props.$stretchToFill) return "auto";
+    return `${hardware.screen.height}px`;
+  }};
   margin: 0;
-  position: ${(props) => (props.$stretchToFill ? "fixed" : "absolute")};
+  position: ${(props) =>
+    props.$stretchToFill || props.$fullScreen ? "fixed" : "absolute"};
   overflow: hidden;
 
   ${(props) =>
@@ -142,7 +156,7 @@ const InvalidAPIKey = styled(MissingAPIKey)`
   color: #ff4444;
 `;
 
-const AppContent = ({ isSimulatorMode, stretchToFill }) => {
+const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
   const {
     serialData,
     isInputConnected,
@@ -389,7 +403,7 @@ const AppContent = ({ isSimulatorMode, stretchToFill }) => {
   // Render the actual UI structure
   return (
     <>
-      <AppContainer $stretchToFill={stretchToFill}>
+      <AppContainer $stretchToFill={stretchToFill} $fullScreen={fullScreen}>
         <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected && isOutputConnected && renderContent()}
@@ -431,6 +445,7 @@ function App() {
   const [isSimulatorMode, setIsSimulatorMode] = useState(false);
   const [multiPlayerMode, setMultiPlayerMode] = useState(false);
   const [stretchToFill, setStretchToFill] = useState(false);
+  const [fullScreen, setFullScreen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
   const [isApiKeyValid, setIsApiKeyValid] = useState(true);
   const [isValidating, setIsValidating] = useState(true);
@@ -442,12 +457,14 @@ function App() {
       const apiKey = urlParams.get("apiKey");
       const multiPlayerModeParam = urlParams.get("multiPlayerMode");
       const stretchToFillParam = urlParams.get("stretchToFill");
+      const fullScreenParam = urlParams.get("fullScreen");
       const env = getEnvironmentFromUrl();
 
       // isSimulatorMode is determined by onDevice parameter (backward compatibility)
       setIsSimulatorMode(onDevice === "false");
       setMultiPlayerMode(multiPlayerModeParam === "true");
       setStretchToFill(stretchToFillParam === "true");
+      setFullScreen(fullScreenParam === "true");
       setHasApiKey(!!apiKey);
 
       if (apiKey) {
@@ -476,7 +493,10 @@ function App() {
           >
             <SocketProvider>
               <ThemeWrapper>
-                <AppContainer $stretchToFill={stretchToFill}>
+                <AppContainer
+                  $stretchToFill={stretchToFill}
+                  $fullScreen={fullScreen}
+                >
                   <ScreenContainer
                     id="screen-container"
                     $onDevice={!isSimulatorMode}
@@ -503,7 +523,10 @@ function App() {
           >
             <SocketProvider>
               <ThemeWrapper>
-                <AppContainer $stretchToFill={stretchToFill}>
+                <AppContainer
+                  $stretchToFill={stretchToFill}
+                  $fullScreen={fullScreen}
+                >
                   <ScreenContainer
                     id="screen-container"
                     $onDevice={!isSimulatorMode}
@@ -530,7 +553,10 @@ function App() {
           >
             <SocketProvider>
               <ThemeWrapper>
-                <AppContainer $stretchToFill={stretchToFill}>
+                <AppContainer
+                  $stretchToFill={stretchToFill}
+                  $fullScreen={fullScreen}
+                >
                   <ScreenContainer
                     id="screen-container"
                     $onDevice={!isSimulatorMode}
@@ -559,6 +585,7 @@ function App() {
               <AppContent
                 isSimulatorMode={isSimulatorMode}
                 stretchToFill={stretchToFill}
+                fullScreen={fullScreen}
               />
             </ThemeWrapper>
           </SocketProvider>

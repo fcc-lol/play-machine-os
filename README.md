@@ -14,6 +14,27 @@ The application supports several URL parameters for configuration:
 - `multiPlayerMode`: Enables multiplayer mode (`true`/`false`)
 - `brightness`: Controls screen brightness (0.0 to 1.0)
 - `env`: Overrides environment detection (`local` or `production`). Forces API and Socket URLs to use specified environment
+- `stretchToFill`: Scales the app to fill the viewport while maintaining aspect ratio (`true`/`false`)
+- `fullScreen`: Makes the app take up 100% of viewport width and height without maintaining aspect ratio (`true`/`false`)
+
+### Display Mode Examples
+
+```bash
+# Default mode - uses hardware screen dimensions
+?onDevice=false
+
+# Stretch to fill viewport while maintaining aspect ratio
+?stretchToFill=true
+
+# Full screen mode - 100% viewport width/height without aspect ratio
+?fullScreen=true
+```
+
+**Display Behavior:**
+
+- **Default**: App uses the original hardware screen dimensions (e.g., 320x240px)
+- **`stretchToFill=true`**: App maintains aspect ratio and scales to fit the viewport
+- **`fullScreen=true`**: App takes up 100% of viewport width and height without scaling or aspect ratio constraints
 
 ### Simulator Control Examples
 
