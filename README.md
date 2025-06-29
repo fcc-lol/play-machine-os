@@ -1,6 +1,8 @@
-# play-machine-os
+# Play Machine OS
 
-A web-based operating system for interactive machines with hardware simulation capabilities.
+Identifier: play-machine-os
+
+Created: Sat 31 Aug 2024 07:15:41 PM EDT
 
 ## URL Parameters
 
