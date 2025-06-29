@@ -161,7 +161,7 @@ const Hardware = () => {
     setSerialData,
     updateSerialData,
     isSimulatorMode,
-    selectedControl,
+    remoteControlMappings,
     hasActiveRemotes
   } = useSerial();
   const buttonStateRef = useRef({});
@@ -175,6 +175,16 @@ const Hardware = () => {
     const showSimulator = urlParams.get("showSimulator");
     setShowSimulatorOverride(showSimulator);
   }, []);
+
+  // Helper function to check if a control is assigned to any remote
+  const isControlAssigned = useCallback(
+    (controlId) => {
+      return Object.values(remoteControlMappings).some(
+        (control) => control?.id === controlId
+      );
+    },
+    [remoteControlMappings]
+  );
 
   // Determine if simulator should be visible
   // showSimulator parameter takes precedence over isSimulatorMode for visibility only
@@ -361,7 +371,7 @@ const Hardware = () => {
   }
 
   // Only show selection highlighting when remotes are active
-  const showSelection = hasActiveRemotes && selectedControl;
+  const showSelection = hasActiveRemotes;
 
   return (
     <SimulatorContainer>
@@ -370,11 +380,9 @@ const Hardware = () => {
           <SliderContainer
             key={slider.id}
             vertical={true}
-            isSelected={showSelection && selectedControl?.id === slider.id}
+            isSelected={showSelection && isControlAssigned(slider.id)}
           >
-            <Label
-              isSelected={showSelection && selectedControl?.id === slider.id}
-            >
+            <Label isSelected={showSelection && isControlAssigned(slider.id)}>
               {slider.label}
             </Label>
             <Slider
@@ -384,11 +392,9 @@ const Hardware = () => {
               value={serialData[slider.id]?.value || 0}
               onChange={(e) => handleSliderChange(slider.id, e.target.value)}
               vertical={true}
-              isSelected={showSelection && selectedControl?.id === slider.id}
+              isSelected={showSelection && isControlAssigned(slider.id)}
             />
-            <Value
-              isSelected={showSelection && selectedControl?.id === slider.id}
-            >
+            <Value isSelected={showSelection && isControlAssigned(slider.id)}>
               {serialData[slider.id]?.value || 0}%
             </Value>
           </SliderContainer>
@@ -398,11 +404,9 @@ const Hardware = () => {
         {knobs.map((knob) => (
           <Knob
             key={knob.id}
-            isSelected={showSelection && selectedControl?.id === knob.id}
+            isSelected={showSelection && isControlAssigned(knob.id)}
           >
-            <Label
-              isSelected={showSelection && selectedControl?.id === knob.id}
-            >
+            <Label isSelected={showSelection && isControlAssigned(knob.id)}>
               {knob.label}
             </Label>
             <Slider
@@ -411,11 +415,9 @@ const Hardware = () => {
               max="100"
               value={serialData[knob.id]?.value || 0}
               onChange={(e) => handleSliderChange(knob.id, e.target.value)}
-              isSelected={showSelection && selectedControl?.id === knob.id}
+              isSelected={showSelection && isControlAssigned(knob.id)}
             />
-            <Value
-              isSelected={showSelection && selectedControl?.id === knob.id}
-            >
+            <Value isSelected={showSelection && isControlAssigned(knob.id)}>
               {serialData[knob.id]?.value || 0}%
             </Value>
           </Knob>

@@ -78,7 +78,7 @@ const ButtonStateItem = styled.div`
 function RemoteViewer() {
   const [remotes, setRemotes] = useState({});
   const { isConnected, error, registerHandler } = useSocket();
-  const { selectedControl, hasActiveRemotes } = useSerial();
+  const { getAssignedControl, hasActiveRemotes } = useSerial();
 
   const handleMessage = useCallback((data) => {
     if (data.action === "remoteRegistration") {
@@ -140,12 +140,18 @@ function RemoteViewer() {
                 <Label>Identifier</Label>
                 <Value>{deviceId}</Value>
               </DataItem>
-              {hasActiveRemotes && selectedControl && (
-                <DataItem>
-                  <Label>Target</Label>
-                  <Value>{selectedControl.label}</Value>
-                </DataItem>
-              )}
+              {hasActiveRemotes &&
+                (() => {
+                  const assignedControl = getAssignedControl(deviceId);
+                  return (
+                    assignedControl && (
+                      <DataItem>
+                        <Label>Target</Label>
+                        <Value>{assignedControl.label}</Value>
+                      </DataItem>
+                    )
+                  );
+                })()}
               {remote.value !== null && (
                 <DataItem>
                   <Label>Value</Label>

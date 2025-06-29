@@ -7,7 +7,24 @@ import React, {
   useCallback
 } from "react";
 import hardwareConfig from "../config/Hardware.json";
-import { applyRemoteMappings } from "../utils/RemoteMapping";
+import {
+  applyRemoteMappings,
+  initializeRemoteControlMappings,
+  saveRemoteControlMappings,
+  getNextControlIndex
+} from "../utils/RemoteMapping";
+
+// Helper function to get the appropriate hardware configuration
+const getHardwareConfig = (useAltMapping = false) => {
+  if (useAltMapping && hardwareConfig.altMapping) {
+    return {
+      ...hardwareConfig,
+      potentiometers: hardwareConfig.altMapping.potentiometers,
+      buttons: hardwareConfig.altMapping.buttons
+    };
+  }
+  return hardwareConfig;
+};
 
 const SerialDataContext = createContext();
 
@@ -37,41 +54,101 @@ export function SerialDataProvider({
   const [serialData, setSerialData] = useState({});
   const [isInputConnected, setIsInputConnected] = useState(false);
   const [isOutputConnected, setIsOutputConnected] = useState(false);
-  const [selectedControlIndex, setSelectedControlIndex] = useState(0);
+  const [remoteControlMappings, setRemoteControlMappings] = useState(() =>
+    initializeRemoteControlMappings(ALL_CONTROLS)
+  );
   const [hasActiveRemotes, setHasActiveRemotes] = useState(false);
+  // Check URL parameter for disabling LED serial connection
+  const [externalController] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("externalController") === "true";
+  });
   const writeToOutputDeviceRef = useRef(null);
   const setSerialDataRef = useRef(null);
   const hardwareStateAtSetSerialDataRef = useRef(null);
   const latestHardwareStateRef = useRef({});
   const serialDataRef = useRef({});
-  const previousEncoderButtonRef = useRef(false);
-  const selectedControlIndexRef = useRef(0);
+  const previousEncoderButtonsRef = useRef({});
+  const remoteControlMappingsRef = useRef(remoteControlMappings);
 
-  // Update ref when selectedControlIndex changes
+  // Update ref when remoteControlMappings changes
   useEffect(() => {
-    selectedControlIndexRef.current = selectedControlIndex;
-  }, [selectedControlIndex]);
+    remoteControlMappingsRef.current = remoteControlMappings;
+    saveRemoteControlMappings(remoteControlMappings);
+  }, [remoteControlMappings]);
 
   // Update ref when serialData changes
   useEffect(() => {
     serialDataRef.current = serialData;
   }, [serialData]);
 
-  // Handle encoder button cycling
+  // Handle per-device encoder button cycling
   useEffect(() => {
-    const currentEncoderButton = serialData.encoderButton?.value || false;
-    const previousEncoderButton = previousEncoderButtonRef.current;
+    // Check each device's encoder button
+    Object.keys(serialData).forEach((key) => {
+      if (key.startsWith("encoderButton_")) {
+        const deviceId = key.replace("encoderButton_", "");
+        const currentEncoderButton = serialData[key]?.value || false;
+        const previousEncoderButton =
+          previousEncoderButtonsRef.current[deviceId] || false;
 
-    // Detect rising edge (button press)
-    if (currentEncoderButton && !previousEncoderButton) {
-      setSelectedControlIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % ALL_CONTROLS.length;
-        return nextIndex;
-      });
-    }
+        // Detect rising edge (button press)
+        if (currentEncoderButton && !previousEncoderButton) {
+          setRemoteControlMappings((prevMappings) => {
+            const currentAssignment = prevMappings[deviceId];
+            let startIndex = 0;
 
-    previousEncoderButtonRef.current = currentEncoderButton;
-  }, [serialData.encoderButton?.value, selectedControlIndex]);
+            if (currentAssignment) {
+              // Find current control index
+              const currentIndex = ALL_CONTROLS.findIndex(
+                (control) => control.id === currentAssignment.id
+              );
+              startIndex = getNextControlIndex(currentIndex, ALL_CONTROLS);
+            }
+
+            // Find next available control that's not assigned to another remote
+            let newControlIndex = startIndex;
+            let attempts = 0;
+            const maxAttempts = ALL_CONTROLS.length;
+
+            while (attempts < maxAttempts) {
+              const candidateControl = ALL_CONTROLS[newControlIndex];
+
+              // Check if this control is assigned to any other remote (not this one)
+              const isAssignedToOtherRemote = Object.entries(prevMappings).some(
+                ([otherDeviceId, assignedControl]) =>
+                  otherDeviceId !== deviceId &&
+                  assignedControl?.id === candidateControl.id
+              );
+
+              // If not assigned to another remote, use it
+              if (!isAssignedToOtherRemote) {
+                break;
+              }
+
+              // Try next control
+              newControlIndex = getNextControlIndex(
+                newControlIndex,
+                ALL_CONTROLS
+              );
+              attempts++;
+            }
+
+            // If all controls are taken, fallback to the next control anyway
+            // This handles the edge case where we have more remotes than controls
+            const newControl = ALL_CONTROLS[newControlIndex];
+
+            return {
+              ...prevMappings,
+              [deviceId]: newControl
+            };
+          });
+        }
+
+        previousEncoderButtonsRef.current[deviceId] = currentEncoderButton;
+      }
+    });
+  }, [serialData]);
 
   // Function to set serial data from socket events
   const setSerialDataFromSocket = useCallback(
@@ -80,7 +157,12 @@ export function SerialDataProvider({
       if (!multiPlayerMode) {
         // Filter out any remote data
         const filteredData = Object.keys(data).reduce((acc, key) => {
-          if (!key.startsWith("remote_")) {
+          if (
+            !key.startsWith("remote_") &&
+            !key.startsWith("encoderButton_") &&
+            !key.startsWith("button_a_") &&
+            !key.startsWith("button_b_")
+          ) {
             acc[key] = data[key];
           }
           return acc;
@@ -95,18 +177,22 @@ export function SerialDataProvider({
         data = filteredData;
       }
 
-      const currentIndex = selectedControlIndexRef.current;
+      const currentMappings = remoteControlMappingsRef.current;
 
       // Check if this data contains remote information
-      const hasRemoteData = Object.keys(data).some((key) =>
-        key.startsWith("remote_")
+      const hasRemoteData = Object.keys(data).some(
+        (key) =>
+          key.startsWith("remote_") ||
+          key.startsWith("encoderButton_") ||
+          key.startsWith("button_a_") ||
+          key.startsWith("button_b_")
       );
       if (hasRemoteData) {
         setHasActiveRemotes(true);
       }
 
       // Apply remote mappings to socket data before using it
-      const mappedData = applyRemoteMappings(data, ALL_CONTROLS[currentIndex]);
+      const mappedData = applyRemoteMappings(data, currentMappings);
 
       // Store the latest actual hardware state when socket data arrives
       hardwareStateAtSetSerialDataRef.current = {
@@ -132,7 +218,12 @@ export function SerialDataProvider({
       // If multiPlayerMode is false, filter out any remote data
       if (!multiPlayerMode) {
         const filteredData = Object.keys(newData).reduce((acc, key) => {
-          if (!key.startsWith("remote_")) {
+          if (
+            !key.startsWith("remote_") &&
+            !key.startsWith("encoderButton_") &&
+            !key.startsWith("button_a_") &&
+            !key.startsWith("button_b_")
+          ) {
             acc[key] = newData[key];
           }
           return acc;
@@ -147,24 +238,22 @@ export function SerialDataProvider({
         newData = filteredData;
       }
 
-      const currentIndex = selectedControlIndexRef.current;
+      const currentMappings = remoteControlMappingsRef.current;
 
       // Check if this data contains remote information
-      const hasRemoteData = Object.keys(newData).some((key) =>
-        key.startsWith("remote_")
+      const hasRemoteData = Object.keys(newData).some(
+        (key) =>
+          key.startsWith("remote_") ||
+          key.startsWith("encoderButton_") ||
+          key.startsWith("button_a_") ||
+          key.startsWith("button_b_")
       );
       if (hasRemoteData) {
         setHasActiveRemotes(true);
       }
 
-      // Get the current selected control at this moment
-      const currentSelectedControl = ALL_CONTROLS[currentIndex];
-
       // Apply remote mappings to all incoming data
-      const mappedNewData = applyRemoteMappings(
-        newData,
-        currentSelectedControl
-      );
+      const mappedNewData = applyRemoteMappings(newData, currentMappings);
 
       // Always update the latest hardware state with mapped data
       latestHardwareStateRef.current = {
@@ -221,37 +310,58 @@ export function SerialDataProvider({
     [multiPlayerMode, isSimulatorMode]
   );
 
+  // Helper function to get assigned control for a device
+  const getAssignedControl = useCallback(
+    (deviceId) => {
+      return remoteControlMappings[deviceId] || null;
+    },
+    [remoteControlMappings]
+  );
+
+  // Helper function to manually set control assignment for a device
+  const setControlAssignment = useCallback((deviceId, control) => {
+    setRemoteControlMappings((prevMappings) => ({
+      ...prevMappings,
+      [deviceId]: control
+    }));
+  }, []);
+
   useEffect(() => {
+    // Get the appropriate hardware configuration
+    const activeHardwareConfig = getHardwareConfig(externalController);
+
     // Initialize default values for all hardware items
     const defaultData = {};
 
     // Initialize buttons
-    Object.entries(hardwareConfig.buttons).forEach(([id, label]) => {
+    Object.entries(activeHardwareConfig.buttons).forEach(([id, label]) => {
       defaultData[label] = { value: false };
     });
 
     // Initialize potentiometers
-    Object.entries(hardwareConfig.potentiometers).forEach(([id, config]) => {
-      let value = 0;
-      if (isSimulatorMode) {
-        // In simulator mode, use localStorage
-        const savedValue = localStorage.getItem(`slider_${config.label}`);
-        if (savedValue !== null) {
-          value = parseInt(savedValue);
-        }
-      } else {
-        // In non-simulator mode, use the last known value from serial input
-        const lastValue = serialData[config.label]?.value;
-        if (lastValue !== undefined) {
-          value = lastValue;
-          // Invert the value if the potentiometer is configured as inverted
-          if (config.inverted) {
-            value = 100 - value;
+    Object.entries(activeHardwareConfig.potentiometers).forEach(
+      ([id, config]) => {
+        let value = 0;
+        if (isSimulatorMode) {
+          // In simulator mode, use localStorage
+          const savedValue = localStorage.getItem(`slider_${config.label}`);
+          if (savedValue !== null) {
+            value = parseInt(savedValue);
+          }
+        } else {
+          // In non-simulator mode, use the last known value from serial input
+          const lastValue = serialData[config.label]?.value;
+          if (lastValue !== undefined) {
+            value = lastValue;
+            // Invert the value if the potentiometer is configured as inverted
+            if (config.inverted) {
+              value = 100 - value;
+            }
           }
         }
+        defaultData[config.label] = { value };
       }
-      defaultData[config.label] = { value };
-    });
+    );
 
     // Initialize latestHardwareStateRef with default values
     latestHardwareStateRef.current = { ...defaultData };
@@ -259,17 +369,22 @@ export function SerialDataProvider({
     // Only set initial connected states and data in simulator mode
     if (isSimulatorMode) {
       setIsInputConnected(true);
+      // Always set output connected in simulator mode, or when LED serial is ignored
       setIsOutputConnected(true);
       setSerialData(defaultData);
     } else {
-      // In non-simulator mode, preserve existing values
+      // In non-simulator mode, set output connected if LED serial is ignored
+      if (externalController) {
+        setIsOutputConnected(true);
+      }
+      // Preserve existing values
       setSerialData((prevData) => ({
         ...prevData,
         ...defaultData
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSimulatorMode]);
+  }, [isSimulatorMode, externalController]);
 
   return (
     <SerialDataContext.Provider
@@ -283,11 +398,17 @@ export function SerialDataProvider({
         setIsOutputConnected,
         isSimulatorMode,
         multiPlayerMode,
+        externalController,
         writeToOutputDeviceRef,
-        selectedControlIndex,
-        setSelectedControlIndex,
-        selectedControl: ALL_CONTROLS[selectedControlIndex],
-        hasActiveRemotes
+        remoteControlMappings,
+        setRemoteControlMappings,
+        getAssignedControl,
+        setControlAssignment,
+        hasActiveRemotes,
+        // Legacy compatibility - returns the first assigned control or default
+        selectedControlIndex: 0,
+        selectedControl:
+          Object.values(remoteControlMappings)[0] || ALL_CONTROLS[0]
       }}
     >
       {children}

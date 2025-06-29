@@ -11,6 +11,18 @@ import hardware from "../config/Hardware.json";
 import ConvertRange from "../functions/ConvertRange";
 import { applyRemoteMappings } from "../utils/RemoteMapping";
 
+// Helper function to get the appropriate hardware configuration
+const getHardwareConfig = (useAltMapping = false) => {
+  if (useAltMapping && hardware.altMapping) {
+    return {
+      ...hardware,
+      potentiometers: hardware.altMapping.potentiometers,
+      buttons: hardware.altMapping.buttons
+    };
+  }
+  return hardware;
+};
+
 const roundToNearestTenth = (number) => Math.round(number);
 
 const ConnectButton = styled.button`
@@ -50,7 +62,9 @@ function ReadSerialData() {
     isOutputConnected,
     setIsOutputConnected,
     isSimulatorMode,
-    writeToOutputDeviceRef
+    externalController,
+    writeToOutputDeviceRef,
+    remoteControlMappings
   } = useSerial();
 
   const [lastProcessedTime, setLastProcessedTime] = useState(0);
@@ -67,6 +81,9 @@ function ReadSerialData() {
       const currentTime = Date.now();
       if (currentTime - lastProcessedTime < 10) return;
 
+      // Get the appropriate hardware configuration
+      const activeHardwareConfig = getHardwareConfig(externalController);
+
       const processedData = {};
       const dataStrings = dataString.split(";");
 
@@ -78,10 +95,10 @@ function ReadSerialData() {
 
         if (id.includes("button_")) {
           value = rawValue.trim().toLowerCase() === "true";
-          const label = hardware.buttons[id] || id;
+          const label = activeHardwareConfig.buttons[id] || id;
           processedData[label] = { value };
         } else if (id.includes("potentiometer_")) {
-          const config = hardware.potentiometers[id];
+          const config = activeHardwareConfig.potentiometers[id];
           if (config) {
             const rawNumValue = parseFloat(rawValue);
             const value0to100 = ConvertRange(
@@ -109,13 +126,21 @@ function ReadSerialData() {
       }
 
       // Apply remote mappings to override input data
-      const finalData = applyRemoteMappings(processedData);
+      const finalData = applyRemoteMappings(
+        processedData,
+        remoteControlMappings
+      );
 
       // Use functional update to avoid dependency on serialData
       updateSerialData(finalData);
       setLastProcessedTime(currentTime);
     },
-    [lastProcessedTime, updateSerialData]
+    [
+      lastProcessedTime,
+      updateSerialData,
+      remoteControlMappings,
+      externalController
+    ]
   );
 
   const readSerialData = useCallback(
@@ -179,6 +204,7 @@ function ReadSerialData() {
   const connectToPort = useCallback(
     async (isInput) => {
       const portRef = isInput ? inputPortRef : outputPortRef;
+      const activeHardwareConfig = getHardwareConfig(externalController);
 
       try {
         if (portRef.current) {
@@ -206,7 +232,9 @@ function ReadSerialData() {
             }
 
             try {
-              await port.open({ baudRate: hardware.serial.baudRate });
+              await port.open({
+                baudRate: activeHardwareConfig.serial.baudRate
+              });
               const writer = port.writable.getWriter();
 
               // Send identification request
@@ -254,7 +282,7 @@ function ReadSerialData() {
 
         if (port) {
           try {
-            await port.open({ baudRate: hardware.serial.baudRate });
+            await port.open({ baudRate: activeHardwareConfig.serial.baudRate });
             const writer = port.writable.getWriter();
 
             // Send identification request
@@ -300,13 +328,21 @@ function ReadSerialData() {
         );
       }
     },
-    [setIsInputConnected, setIsOutputConnected]
+    [setIsInputConnected, setIsOutputConnected, externalController]
   );
 
   const startSerialCommunication = useCallback(async () => {
     try {
       const inputPort = await connectToPort(true);
-      const outputPort = await connectToPort(false);
+      let outputPort = null;
+
+      // Only connect to LED controller if not ignored
+      if (!externalController) {
+        outputPort = await connectToPort(false);
+      } else {
+        // If LED serial is ignored, set output as connected (for UI purposes)
+        setIsOutputConnected(true);
+      }
 
       if (inputPort) {
         inputPort.ondisconnect = () => {
@@ -328,7 +364,8 @@ function ReadSerialData() {
     connectToPort,
     readSerialData,
     setIsInputConnected,
-    setIsOutputConnected
+    setIsOutputConnected,
+    externalController
   ]);
 
   useEffect(() => {
@@ -379,38 +416,54 @@ function ReadSerialData() {
     };
   }, [setIsInputConnected, setIsOutputConnected]);
 
-  const connectButton = useMemo(
-    () =>
-      (!isInputConnected || !isOutputConnected) &&
+  const connectButton = useMemo(() => {
+    // When LED serial is ignored, only require input connection
+    const needsConnection = externalController
+      ? !isInputConnected
+      : !isInputConnected || !isOutputConnected;
+
+    return (
+      needsConnection &&
       !isSimulatorMode && (
         <ConnectButton onClick={startSerialCommunication}>
           Tap anywhere to start
         </ConnectButton>
-      ),
-    [
-      isInputConnected,
-      isOutputConnected,
-      startSerialCommunication,
-      isSimulatorMode
-    ]
-  );
+      )
+    );
+  }, [
+    isInputConnected,
+    isOutputConnected,
+    startSerialCommunication,
+    isSimulatorMode,
+    externalController
+  ]);
 
-  const refreshButton = useMemo(
-    () =>
-      (!isInputConnected || !isOutputConnected) &&
+  const refreshButton = useMemo(() => {
+    // When LED serial is ignored, only require input connection
+    const needsConnection = externalController
+      ? !isInputConnected
+      : !isInputConnected || !isOutputConnected;
+
+    return (
+      needsConnection &&
       !isSimulatorMode && (
         <RefreshButton onClick={() => window.location.reload()}>
           Refresh
         </RefreshButton>
-      ),
-    [isInputConnected, isOutputConnected, isSimulatorMode]
-  );
+      )
+    );
+  }, [
+    isInputConnected,
+    isOutputConnected,
+    isSimulatorMode,
+    externalController
+  ]);
 
   // Add function to write to output device
   const writeToOutputDevice = useCallback(
     async (data) => {
-      if (isSimulatorMode) {
-        return; // Skip writing in simulator mode
+      if (isSimulatorMode || externalController) {
+        return; // Skip writing in simulator mode or when LED serial is ignored
       }
 
       if (!outputPortRef.current || !isOutputConnected) {
@@ -431,7 +484,7 @@ function ReadSerialData() {
         console.error("Error writing to output device:", error);
       }
     },
-    [isOutputConnected, isSimulatorMode]
+    [isOutputConnected, isSimulatorMode, externalController]
   );
 
   // Set the write function in the context
@@ -440,10 +493,15 @@ function ReadSerialData() {
   }, [writeToOutputDevice, writeToOutputDeviceRef]);
 
   useEffect(() => {
-    if (isOutputConnected && !isSimulatorMode) {
+    if (isOutputConnected && !isSimulatorMode && !externalController) {
       writeToOutputDevice("0,0,0,0");
     }
-  }, [isOutputConnected, writeToOutputDevice, isSimulatorMode]);
+  }, [
+    isOutputConnected,
+    writeToOutputDevice,
+    isSimulatorMode,
+    externalController
+  ]);
 
   return (
     <>

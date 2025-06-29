@@ -59,6 +59,18 @@ const Value = styled.span`
   font-size: 1.5rem;
 `;
 
+// Helper function to get the appropriate hardware configuration
+const getHardwareConfig = (useAltMapping = false) => {
+  if (useAltMapping && hardwareConfig.altMapping) {
+    return {
+      ...hardwareConfig,
+      potentiometers: hardwareConfig.altMapping.potentiometers,
+      buttons: hardwareConfig.altMapping.buttons
+    };
+  }
+  return hardwareConfig;
+};
+
 export default function PhysicalInputMonitor() {
   const {
     serialData,
@@ -66,17 +78,21 @@ export default function PhysicalInputMonitor() {
     isOutputConnected,
     isSimulatorMode,
     hasActiveRemotes,
-    selectedControl
+    remoteControlMappings,
+    externalController
   } = useSerial();
 
-  // Get all button labels from hardwareConfig
-  const allButtonLabels = Object.entries(hardwareConfig.buttons).map(
+  // Get the appropriate hardware configuration
+  const activeHardwareConfig = getHardwareConfig(externalController);
+
+  // Get all button labels from activeHardwareConfig
+  const allButtonLabels = Object.entries(activeHardwareConfig.buttons).map(
     ([id, label]) => label
   );
 
-  // Get all potentiometer labels from hardwareConfig
+  // Get all potentiometer labels from activeHardwareConfig
   const allPotentiometerLabels = Object.entries(
-    hardwareConfig.potentiometers
+    activeHardwareConfig.potentiometers
   ).map(([id, config]) => config.label);
 
   // Create a set of all legitimate hardware keys
@@ -87,24 +103,25 @@ export default function PhysicalInputMonitor() {
 
   // Function to check if a control is being overridden by remote
   const isRemoteOverride = (key) => {
-    return hasActiveRemotes && selectedControl?.id === key;
+    return (
+      hasActiveRemotes &&
+      Object.values(remoteControlMappings).some(
+        (control) => control?.id === key
+      )
+    );
   };
 
-  // Function to get the remote device ID from serial data
-  const getRemoteDeviceId = () => {
+  // Function to get the remote device ID for a specific control
+  const getRemoteDeviceIdForControl = (controlKey) => {
     if (!hasActiveRemotes) return null;
 
-    // Find the first remote_ key in serialData to extract the device ID
-    const remoteKey = Object.keys(serialData).find((key) =>
-      key.startsWith("remote_")
-    );
-    if (remoteKey) {
-      return remoteKey.replace("remote_", "");
-    }
-    return null;
-  };
+    // Find which remote device is assigned to this control
+    const deviceId = Object.entries(remoteControlMappings).find(
+      ([deviceId, control]) => control?.id === controlKey
+    )?.[0];
 
-  const remoteDeviceId = getRemoteDeviceId();
+    return deviceId || null;
+  };
 
   // Split the data into two columns
   const allItems = [
@@ -115,7 +132,8 @@ export default function PhysicalInputMonitor() {
         : isInputConnected && isOutputConnected
         ? "Connected"
         : "Disconnected",
-      isRemoteOverride: false
+      isRemoteOverride: false,
+      remoteDeviceId: null
     },
     // Add all other serial data items that correspond to actual hardware
     ...Object.entries(serialData)
@@ -126,13 +144,19 @@ export default function PhysicalInputMonitor() {
       .map(([key, data]) => ({
         key,
         value: JSON.stringify(data.value),
-        isRemoteOverride: isRemoteOverride(key)
+        isRemoteOverride: isRemoteOverride(key),
+        remoteDeviceId: isRemoteOverride(key)
+          ? getRemoteDeviceIdForControl(key)
+          : null
       })),
     // Add all buttons with their current values at the bottom
     ...allButtonLabels.map((label) => ({
       key: label,
       value: serialData[label]?.value ?? false,
-      isRemoteOverride: isRemoteOverride(label)
+      isRemoteOverride: isRemoteOverride(label),
+      remoteDeviceId: isRemoteOverride(label)
+        ? getRemoteDeviceIdForControl(label)
+        : null
     }))
   ];
 
@@ -151,7 +175,7 @@ export default function PhysicalInputMonitor() {
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
               {item.isRemoteOverride && (
                 <RemoteIndicator>
-                  Remote {remoteDeviceId || "Unknown"}
+                  Remote {item.remoteDeviceId || "Unknown"}
                 </RemoteIndicator>
               )}
             </Label>
@@ -168,7 +192,7 @@ export default function PhysicalInputMonitor() {
                 .replace(/\b\w/g, (c) => c.toUpperCase())}
               {item.isRemoteOverride && (
                 <RemoteIndicator>
-                  Remote {remoteDeviceId || "Unknown"}
+                  Remote {item.remoteDeviceId || "Unknown"}
                 </RemoteIndicator>
               )}
             </Label>
