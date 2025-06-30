@@ -23,7 +23,7 @@ const Root = styled.div`
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: magenta;
+  background-color: black;
   color: ${(props) => props.theme.text};
   font-family: ${(props) => props.theme.fontFamily};
   font-size: 1.25rem;
@@ -168,7 +168,7 @@ export default function CellMachine() {
     const canvasHeight = ctx.canvas.height;
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    ctx.fillStyle = "lime";
+    ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     const delaunay = Delaunay.from(points);
