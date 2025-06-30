@@ -1,56 +1,89 @@
-import styled from "styled-components";
-import { useEffect, useRef } from "react";
+import styled, { createGlobalStyle } from "styled-components";
+import { useEffect, useRef, useState } from "react";
 import { Delaunay } from "d3-delaunay";
 import hardware from "../../config/Hardware.json";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
 import ClipperLib from "clipper-lib";
 
+const GlobalStyle = createGlobalStyle`
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+`;
+
 const Root = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  height: calc(100%);
-  width: calc(100%);
-  background-color: ${(props) => props.theme.background};
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: magenta;
   color: ${(props) => props.theme.text};
   font-family: ${(props) => props.theme.fontFamily};
   font-size: 1.25rem;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 
   pre {
     margin: 0;
     padding: 0;
   }
+
+  * {
+    box-sizing: border-box;
+  }
 `;
 
 const Canvas = styled.canvas`
-  width: ${hardware.screen.width}px;
-  height: ${hardware.screen.height}px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background-color: black;
   image-rendering: smooth;
-  position: relative;
   z-index: 1;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  display: block;
 `;
 
 const BlurCanvas = styled.canvas`
   position: absolute;
   top: 0;
   left: 0;
-  width: ${hardware.screen.width}px;
-  height: ${hardware.screen.height}px;
+  width: 100vw;
+  height: 100vh;
   background-color: transparent;
   image-rendering: smooth;
   opacity: ${(props) => (props.isVisible ? 1 : 0)};
   transition: opacity 0.3s ease;
   z-index: 2;
   pointer-events: none;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  display: block;
 `;
 
 const CanvasContainer = styled.div`
-  position: relative;
-  width: ${hardware.screen.width}px;
-  height: ${hardware.screen.height}px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 `;
 
 export default function CellMachine() {
@@ -65,11 +98,26 @@ export default function CellMachine() {
   const velocitiesRef = useRef([]);
   const prevKnobValueRef = useRef(null);
   const targetPointsRef = useRef(20);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
   // Keep the ref up to date
   useEffect(() => {
     serialDataRef.current = serialData;
   }, [serialData]);
+
+  // Handle window resize
+  useEffect(() => {
+    const updateDimensions = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, []);
 
   // Handle button presses
   useEffect(() => {
@@ -102,34 +150,29 @@ export default function CellMachine() {
     prevButtonStateRef.current = currentButtonState;
   }, [serialData]);
 
-  const generateRandomPoints = (count) => {
+  const generateRandomPoints = (count, canvasWidth, canvasHeight) => {
     const points = [];
     const velocities = [];
     for (let i = 0; i < count; i++) {
-      points.push([
-        Math.random() * hardware.screen.width,
-        Math.random() * hardware.screen.height
-      ]);
+      points.push([Math.random() * canvasWidth, Math.random() * canvasHeight]);
       velocities.push({
         x: (Math.random() - 0.5) * 2,
-        y: (Math.random() - 0.5) * 2
+        y: (Math.random() - 0.5) * 2,
       });
     }
     return { points, velocities };
   };
 
   const drawVoronoi = (ctx, points) => {
-    ctx.clearRect(0, 0, hardware.screen.width, hardware.screen.height);
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
+    const canvasWidth = ctx.canvas.width;
+    const canvasHeight = ctx.canvas.height;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.fillStyle = "lime";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     const delaunay = Delaunay.from(points);
-    const voronoi = delaunay.voronoi([
-      0,
-      0,
-      hardware.screen.width,
-      hardware.screen.height
-    ]);
+    const voronoi = delaunay.voronoi([0, 0, canvasWidth, canvasHeight]);
 
     for (let i = 0; i < points.length; i++) {
       let cell = voronoi.cellPolygon(i);
@@ -223,7 +266,7 @@ export default function CellMachine() {
           const scale = 100;
           const clipperPath = cell.map((pt) => ({
             X: Math.round(pt[0] * scale),
-            Y: Math.round(pt[1] * scale)
+            Y: Math.round(pt[1] * scale),
           }));
 
           // If inset roundness is zero, draw sharp-cornered inset
@@ -320,7 +363,7 @@ export default function CellMachine() {
       while (tryRadius >= minRadius && !roundedPath) {
         const clipperPath = cell.map((pt) => ({
           X: Math.round(pt[0] * scale),
-          Y: Math.round(pt[1] * scale)
+          Y: Math.round(pt[1] * scale),
         }));
         const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
         co.AddPath(
@@ -484,16 +527,20 @@ export default function CellMachine() {
     }
   };
 
-  const updatePoints = (points, velocities, speed) => {
+  const updatePoints = (
+    points,
+    velocities,
+    speed,
+    canvasWidth,
+    canvasHeight
+  ) => {
     points.forEach((point, i) => {
       point[0] += velocities[i].x * speed;
       point[1] += velocities[i].y * speed;
 
       // Bounce off walls
-      if (point[0] < 0 || point[0] > hardware.screen.width)
-        velocities[i].x *= -1;
-      if (point[1] < 0 || point[1] > hardware.screen.height)
-        velocities[i].y *= -1;
+      if (point[0] < 0 || point[0] > canvasWidth) velocities[i].x *= -1;
+      if (point[1] < 0 || point[1] > canvasHeight) velocities[i].y *= -1;
     });
   };
 
@@ -507,11 +554,29 @@ export default function CellMachine() {
     blurCtx.imageSmoothingEnabled = true;
     blurCtx.imageSmoothingQuality = "high";
 
-    // Initial points generation
-    const { points, velocities } = generateRandomPoints(20);
-    pointsRef.current = points;
-    velocitiesRef.current = velocities;
-    targetPointsRef.current = 20;
+    // Set canvas dimensions to match display size
+    const updateCanvasSize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      blurCanvas.width = width;
+      blurCanvas.height = height;
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      blurCanvas.style.width = width + "px";
+      blurCanvas.style.height = height + "px";
+
+      // Regenerate points for new canvas size
+      const { points: newPoints, velocities: newVelocities } =
+        generateRandomPoints(targetPointsRef.current, width, height);
+      pointsRef.current = newPoints;
+      velocitiesRef.current = newVelocities;
+    };
+
+    // Call once at start
+    updateCanvasSize();
+    window.addEventListener("resize", updateCanvasSize);
 
     const updatePointsCount = () => {
       // Add safety check for knob_2
@@ -524,11 +589,13 @@ export default function CellMachine() {
         const targetPoints = Math.floor(ConvertRange(currentKnobValue, 5, 100));
         targetPointsRef.current = targetPoints;
         const currentPoints = pointsRef.current.length;
+        const width = canvas.width;
+        const height = canvas.height;
 
         if (targetPoints > currentPoints) {
           // Add new points
           const { points: newPoints, velocities: newVelocities } =
-            generateRandomPoints(targetPoints - currentPoints);
+            generateRandomPoints(targetPoints - currentPoints, width, height);
           pointsRef.current.push(...newPoints);
           velocitiesRef.current.push(...newVelocities);
         } else if (targetPoints < currentPoints) {
@@ -550,52 +617,54 @@ export default function CellMachine() {
           ? ConvertRange(serialDataRef.current.horizontal_slider.value, 0, 6)
           : 0;
 
-      updatePoints(pointsRef.current, velocitiesRef.current, speed);
+      updatePoints(
+        pointsRef.current,
+        velocitiesRef.current,
+        speed,
+        canvas.width,
+        canvas.height
+      );
       drawVoronoi(ctx, pointsRef.current);
 
       // Update blur canvas if enabled
       if (isBlurredRef.current) {
-        // Update blur canvas
-        blurCtx.clearRect(0, 0, hardware.screen.width, hardware.screen.height);
+        blurCtx.clearRect(0, 0, canvas.width, canvas.height);
         blurCtx.filter = `blur(${blurAmountRef.current}px)`;
         blurCtx.drawImage(canvas, 0, 0);
         blurCtx.filter = "none";
 
-        // Apply color dodge
         blurCtx.save();
         blurCtx.globalCompositeOperation = "color-dodge";
         blurCtx.fillStyle = "#cccbcb";
-        blurCtx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
+        blurCtx.fillRect(0, 0, canvas.width, canvas.height);
         blurCtx.restore();
 
-        // Apply color burn
         blurCtx.save();
         blurCtx.globalCompositeOperation = "color-burn";
         blurCtx.fillStyle = "#000";
-        blurCtx.fillRect(0, 0, hardware.screen.width, hardware.screen.height);
+        blurCtx.fillRect(0, 0, canvas.width, canvas.height);
         blurCtx.restore();
       }
 
       requestAnimationFrame(animate);
     };
     animate();
-  }, []);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener("resize", updateCanvasSize);
+    };
+  }, [dimensions]);
 
   return (
-    <Root>
-      <CanvasContainer>
-        <Canvas
-          ref={canvasRef}
-          width={hardware.screen.width}
-          height={hardware.screen.height}
-        />
-        <BlurCanvas
-          ref={blurCanvasRef}
-          width={hardware.screen.width}
-          height={hardware.screen.height}
-          isVisible={isBlurredRef.current}
-        />
-      </CanvasContainer>
-    </Root>
+    <>
+      <GlobalStyle />
+      <Root>
+        <CanvasContainer>
+          <Canvas ref={canvasRef} />
+          <BlurCanvas ref={blurCanvasRef} isVisible={isBlurredRef.current} />
+        </CanvasContainer>
+      </Root>
+    </>
   );
 }
