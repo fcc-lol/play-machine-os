@@ -101,19 +101,19 @@
         "label": "vertical_slider_1",
         "range": [0, 1023],
         "outputRange": [0, 100],
-        "inverted": false
+        "inverted": true
       },
       "potentiometer_6": {
         "label": "vertical_slider_2",
         "range": [0, 1023],
         "outputRange": [0, 100],
-        "inverted": false
+        "inverted": true
       },
       "potentiometer_7": {
         "label": "vertical_slider_3",
         "range": [0, 1023],
         "outputRange": [0, 100],
-        "inverted": false
+        "inverted": true
       },
       "potentiometer_8": {
         "label": "horizontal_slider",
