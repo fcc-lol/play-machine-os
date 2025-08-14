@@ -236,7 +236,7 @@ const Bootloader = () => {
       label: "API Key",
       description: "Required to enable server and socket comms",
       type: "text",
-      placeholder: "Enter your API key...",
+      placeholder: "Enter API key...",
       default: ""
     },
     {
