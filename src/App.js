@@ -7,6 +7,7 @@ import ReadSerialData from "./functions/ReadSerialData";
 import Menu from "./components/UI/Menu";
 import Loading from "./components/UI/Loading";
 import Hardware from "./components/Simulator/Hardware";
+import Bootloader from "./components/UI/Bootloader";
 import styled, {
   StyleSheetManager,
   ThemeProvider as StyledThemeProvider
@@ -452,10 +453,22 @@ function App() {
   const [hasApiKey, setHasApiKey] = useState(true);
   const [isApiKeyValid, setIsApiKeyValid] = useState(true);
   const [isValidating, setIsValidating] = useState(true);
+  const [showBootloader, setShowBootloader] = useState(false);
 
   useEffect(() => {
     const validateApiKey = async () => {
       const urlParams = new URLSearchParams(window.location.search);
+
+      // Check if any URL parameters are present
+      const hasAnyParams = Array.from(urlParams.keys()).length > 0;
+
+      // If no parameters are present, show bootloader
+      if (!hasAnyParams) {
+        setShowBootloader(true);
+        setIsValidating(false);
+        return;
+      }
+
       const onDevice = urlParams.get("onDevice");
       const apiKey = urlParams.get("apiKey");
       const multiPlayerModeParam = urlParams.get("multiPlayerMode");
@@ -485,6 +498,14 @@ function App() {
 
     validateApiKey();
   }, []);
+
+  if (showBootloader) {
+    return (
+      <StyleSheetManager shouldForwardProp={isPropValid}>
+        <Bootloader />
+      </StyleSheetManager>
+    );
+  }
 
   if (isValidating) {
     return (
