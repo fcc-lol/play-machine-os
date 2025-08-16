@@ -49,7 +49,9 @@ export const ALL_CONTROLS = [...sliders, ...knobs];
 export function SerialDataProvider({
   children,
   isSimulatorMode,
-  multiPlayerMode = false
+  multiPlayerMode = false,
+  sendMessage = null,
+  sendMessageRef = null
 }) {
   const [serialData, setSerialData] = useState({});
   const [isInputConnected, setIsInputConnected] = useState(false);
@@ -138,6 +140,30 @@ export function SerialDataProvider({
             // This handles the edge case where we have more remotes than controls
             const newControl = ALL_CONTROLS[newControlIndex];
 
+            // Send socket event when control selection changes
+            const effectiveSendMessage = sendMessage || sendMessageRef?.current;
+            if (
+              effectiveSendMessage &&
+              typeof effectiveSendMessage === "function"
+            ) {
+              try {
+                effectiveSendMessage({
+                  action: "parameterChanged",
+                  data: {
+                    controlName: newControl.id,
+                    controlLabel: newControl.label,
+                    value: serialDataRef.current[newControl.id]?.value || 0,
+                    deviceId: deviceId
+                  }
+                });
+              } catch (error) {
+                console.warn(
+                  "Failed to send parameterChanged socket event:",
+                  error
+                );
+              }
+            }
+
             return {
               ...prevMappings,
               [deviceId]: newControl
@@ -148,7 +174,7 @@ export function SerialDataProvider({
         previousEncoderButtonsRef.current[deviceId] = currentEncoderButton;
       }
     });
-  }, [serialData]);
+  }, [serialData, sendMessage, sendMessageRef]);
 
   // Function to set serial data from socket events
   const setSerialDataFromSocket = useCallback(
@@ -192,7 +218,12 @@ export function SerialDataProvider({
       }
 
       // Apply remote mappings to socket data before using it
-      const mappedData = applyRemoteMappings(data, currentMappings);
+      const effectiveSendMessage = sendMessage || sendMessageRef?.current;
+      const mappedData = applyRemoteMappings(
+        data,
+        currentMappings,
+        effectiveSendMessage
+      );
 
       // Store the latest actual hardware state when socket data arrives
       hardwareStateAtSetSerialDataRef.current = {
@@ -203,7 +234,7 @@ export function SerialDataProvider({
       // Update the serial data with the mapped socket data
       setSerialData(mappedData);
     },
-    [multiPlayerMode]
+    [multiPlayerMode, sendMessage, sendMessageRef]
   );
 
   // Function to update serial data that respects setSerialData overrides
@@ -253,7 +284,12 @@ export function SerialDataProvider({
       }
 
       // Apply remote mappings to all incoming data
-      const mappedNewData = applyRemoteMappings(newData, currentMappings);
+      const effectiveSendMessage = sendMessage || sendMessageRef?.current;
+      const mappedNewData = applyRemoteMappings(
+        newData,
+        currentMappings,
+        effectiveSendMessage
+      );
 
       // Always update the latest hardware state with mapped data
       latestHardwareStateRef.current = {
@@ -307,7 +343,7 @@ export function SerialDataProvider({
         setSerialData({ ...serialDataRef.current, ...mappedNewData });
       }
     },
-    [multiPlayerMode, isSimulatorMode]
+    [multiPlayerMode, isSimulatorMode, sendMessage, sendMessageRef]
   );
 
   // Helper function to get assigned control for a device

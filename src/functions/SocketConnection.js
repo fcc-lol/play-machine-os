@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSerial } from "./SerialDataContext";
 import html2canvas from "html2canvas";
 import hardware from "../config/Hardware.json";
 import { API_URL, SOCKET_URL } from "../config/API";
@@ -27,7 +26,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const useSocketConnection = (
   onMessage,
   initialShouldConnect = true,
-  onOutgoingMessage = null
+  onOutgoingMessage = null,
+  serialDataFunctions = null
 ) => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
@@ -41,8 +41,11 @@ export const useSocketConnection = (
   const isConnectedRef = useRef(false);
   const latestSerialDataRef = useRef(null);
   const currentAppRef = useRef(null);
-  const { serialData, setSerialData, updateSerialData } = useSerial();
   const apiKeyRef = useRef(getApiKeyFromUrl());
+
+  // Extract serial data functions from the passed parameter
+  const { serialData, setSerialData, updateSerialData } =
+    serialDataFunctions || {};
 
   // Define disconnect function first since it's used in the environment effect
   const disconnect = useCallback(() => {

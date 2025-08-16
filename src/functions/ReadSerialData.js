@@ -6,6 +6,7 @@ import React, {
   useRef
 } from "react";
 import { useSerial } from "./SerialDataContext";
+import { useSocket } from "./SocketContext";
 import styled from "styled-components";
 import hardware from "../config/Hardware.json";
 import ConvertRange from "../functions/ConvertRange";
@@ -66,6 +67,8 @@ function ReadSerialData() {
     writeToOutputDeviceRef,
     remoteControlMappings
   } = useSerial();
+
+  const { sendMessage } = useSocket();
 
   const [lastProcessedTime, setLastProcessedTime] = useState(0);
   const inputDataBufferRef = useRef("");
@@ -128,7 +131,8 @@ function ReadSerialData() {
       // Apply remote mappings to override input data
       const finalData = applyRemoteMappings(
         processedData,
-        remoteControlMappings
+        remoteControlMappings,
+        sendMessage
       );
 
       // Use functional update to avoid dependency on serialData
@@ -139,7 +143,8 @@ function ReadSerialData() {
       lastProcessedTime,
       updateSerialData,
       remoteControlMappings,
-      externalController
+      externalController,
+      sendMessage
     ]
   );
 

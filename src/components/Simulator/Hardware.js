@@ -372,6 +372,7 @@ const Hardware = () => {
 
   return (
     <SimulatorContainer>
+      <div>Active remotes: {hasActiveRemotes ? "true" : "false"}</div>
       <VerticalSlidersContainer>
         {sliders.map((slider) => (
           <SliderContainer

@@ -1,5 +1,9 @@
 // Utility function to apply remote mappings to any input data
-export const applyRemoteMappings = (inputData, remoteControlMappings = {}) => {
+export const applyRemoteMappings = (
+  inputData,
+  remoteControlMappings = {},
+  sendMessage = null
+) => {
   // Early return if no input data
   if (!inputData || typeof inputData !== "object") {
     return inputData || {};

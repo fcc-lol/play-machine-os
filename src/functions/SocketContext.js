@@ -3,7 +3,7 @@ import { useSocketConnection } from "./SocketConnection";
 
 const SocketContext = createContext();
 
-export const SocketProvider = ({ children }) => {
+export const SocketProvider = ({ children, serialDataFunctions = null }) => {
   // Keep track of registered message handlers
   const messageHandlers = useRef(new Set());
   // Keep track of registered outgoing message handlers
@@ -40,7 +40,8 @@ export const SocketProvider = ({ children }) => {
   const socket = useSocketConnection(
     handleMessage,
     !shouldDisableSocket,
-    handleOutgoingMessage
+    handleOutgoingMessage,
+    serialDataFunctions
   );
 
   // Add registerHandler and registerOutgoingHandler to the context value

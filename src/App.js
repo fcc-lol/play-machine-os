@@ -157,6 +157,56 @@ const InvalidAPIKey = styled(MissingAPIKey)`
   color: #ff4444;
 `;
 
+// Wrapper component that provides both socket and serial contexts using ref approach
+const SerialDataWithSocket = ({
+  children,
+  isSimulatorMode,
+  multiPlayerMode
+}) => {
+  const sendMessageRef = useRef(null);
+
+  // Component that provides SocketProvider with access to serial data and sets the ref
+  const SocketProviderWithSerial = ({ children }) => {
+    const { serialData, setSerialData, updateSerialData } = useSerial();
+
+    const serialDataFunctions = {
+      serialData,
+      setSerialData,
+      updateSerialData
+    };
+
+    return (
+      <SocketProvider serialDataFunctions={serialDataFunctions}>
+        <SocketRefSetter sendMessageRef={sendMessageRef}>
+          {children}
+        </SocketRefSetter>
+      </SocketProvider>
+    );
+  };
+
+  // Component that sets the sendMessage ref after socket is available
+  const SocketRefSetter = ({ children, sendMessageRef }) => {
+    const { sendMessage } = useSocket();
+
+    // Set the ref so SerialDataProvider can access it
+    useEffect(() => {
+      sendMessageRef.current = sendMessage;
+    }, [sendMessage, sendMessageRef]);
+
+    return children;
+  };
+
+  return (
+    <SerialDataProvider
+      isSimulatorMode={isSimulatorMode}
+      multiPlayerMode={multiPlayerMode}
+      sendMessageRef={sendMessageRef}
+    >
+      <SocketProviderWithSerial>{children}</SocketProviderWithSerial>
+    </SerialDataProvider>
+  );
+};
+
 const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
   const {
     serialData,
@@ -511,27 +561,25 @@ function App() {
     return (
       <StyleSheetManager shouldForwardProp={isPropValid}>
         <ThemeProvider>
-          <SerialDataProvider
+          <SerialDataWithSocket
             isSimulatorMode={isSimulatorMode}
             multiPlayerMode={multiPlayerMode}
           >
-            <SocketProvider>
-              <ThemeWrapper>
-                <AppContainer
-                  $stretchToFill={stretchToFill}
-                  $fullScreen={fullScreen}
+            <ThemeWrapper>
+              <AppContainer
+                $stretchToFill={stretchToFill}
+                $fullScreen={fullScreen}
+              >
+                <ScreenContainer
+                  id="screen-container"
+                  $onDevice={!isSimulatorMode}
                 >
-                  <ScreenContainer
-                    id="screen-container"
-                    $onDevice={!isSimulatorMode}
-                  >
-                    <Loading />
-                  </ScreenContainer>
-                </AppContainer>
-                {isSimulatorMode && <Hardware />}
-              </ThemeWrapper>
-            </SocketProvider>
-          </SerialDataProvider>
+                  <Loading />
+                </ScreenContainer>
+              </AppContainer>
+              {isSimulatorMode && <Hardware />}
+            </ThemeWrapper>
+          </SerialDataWithSocket>
         </ThemeProvider>
       </StyleSheetManager>
     );
@@ -541,27 +589,25 @@ function App() {
     return (
       <StyleSheetManager shouldForwardProp={isPropValid}>
         <ThemeProvider>
-          <SerialDataProvider
+          <SerialDataWithSocket
             isSimulatorMode={isSimulatorMode}
             multiPlayerMode={multiPlayerMode}
           >
-            <SocketProvider>
-              <ThemeWrapper>
-                <AppContainer
-                  $stretchToFill={stretchToFill}
-                  $fullScreen={fullScreen}
+            <ThemeWrapper>
+              <AppContainer
+                $stretchToFill={stretchToFill}
+                $fullScreen={fullScreen}
+              >
+                <ScreenContainer
+                  id="screen-container"
+                  $onDevice={!isSimulatorMode}
                 >
-                  <ScreenContainer
-                    id="screen-container"
-                    $onDevice={!isSimulatorMode}
-                  >
-                    <MissingAPIKey>No API key set</MissingAPIKey>
-                  </ScreenContainer>
-                </AppContainer>
-                {isSimulatorMode && <Hardware />}
-              </ThemeWrapper>
-            </SocketProvider>
-          </SerialDataProvider>
+                  <MissingAPIKey>No API key set</MissingAPIKey>
+                </ScreenContainer>
+              </AppContainer>
+              {isSimulatorMode && <Hardware />}
+            </ThemeWrapper>
+          </SerialDataWithSocket>
         </ThemeProvider>
       </StyleSheetManager>
     );
@@ -571,27 +617,25 @@ function App() {
     return (
       <StyleSheetManager shouldForwardProp={isPropValid}>
         <ThemeProvider>
-          <SerialDataProvider
+          <SerialDataWithSocket
             isSimulatorMode={isSimulatorMode}
             multiPlayerMode={multiPlayerMode}
           >
-            <SocketProvider>
-              <ThemeWrapper>
-                <AppContainer
-                  $stretchToFill={stretchToFill}
-                  $fullScreen={fullScreen}
+            <ThemeWrapper>
+              <AppContainer
+                $stretchToFill={stretchToFill}
+                $fullScreen={fullScreen}
+              >
+                <ScreenContainer
+                  id="screen-container"
+                  $onDevice={!isSimulatorMode}
                 >
-                  <ScreenContainer
-                    id="screen-container"
-                    $onDevice={!isSimulatorMode}
-                  >
-                    <InvalidAPIKey>Invalid API key</InvalidAPIKey>
-                  </ScreenContainer>
-                </AppContainer>
-                {isSimulatorMode && <Hardware />}
-              </ThemeWrapper>
-            </SocketProvider>
-          </SerialDataProvider>
+                  <InvalidAPIKey>Invalid API key</InvalidAPIKey>
+                </ScreenContainer>
+              </AppContainer>
+              {isSimulatorMode && <Hardware />}
+            </ThemeWrapper>
+          </SerialDataWithSocket>
         </ThemeProvider>
       </StyleSheetManager>
     );
@@ -600,20 +644,18 @@ function App() {
   return (
     <StyleSheetManager shouldForwardProp={isPropValid}>
       <ThemeProvider>
-        <SerialDataProvider
+        <SerialDataWithSocket
           isSimulatorMode={isSimulatorMode}
           multiPlayerMode={multiPlayerMode}
         >
-          <SocketProvider>
-            <ThemeWrapper>
-              <AppContent
-                isSimulatorMode={isSimulatorMode}
-                stretchToFill={stretchToFill}
-                fullScreen={fullScreen}
-              />
-            </ThemeWrapper>
-          </SocketProvider>
-        </SerialDataProvider>
+          <ThemeWrapper>
+            <AppContent
+              isSimulatorMode={isSimulatorMode}
+              stretchToFill={stretchToFill}
+              fullScreen={fullScreen}
+            />
+          </ThemeWrapper>
+        </SerialDataWithSocket>
       </ThemeProvider>
     </StyleSheetManager>
   );
