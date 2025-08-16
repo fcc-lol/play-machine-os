@@ -370,9 +370,6 @@ const Hardware = () => {
     return null;
   }
 
-  // Only show selection highlighting when remotes are active
-  const showSelection = hasActiveRemotes;
-
   return (
     <SimulatorContainer>
       <VerticalSlidersContainer>
@@ -380,9 +377,11 @@ const Hardware = () => {
           <SliderContainer
             key={slider.id}
             vertical={true}
-            isSelected={showSelection && isControlAssigned(slider.id)}
+            isSelected={hasActiveRemotes && isControlAssigned(slider.id)}
           >
-            <Label isSelected={showSelection && isControlAssigned(slider.id)}>
+            <Label
+              isSelected={hasActiveRemotes && isControlAssigned(slider.id)}
+            >
               {slider.label}
             </Label>
             <Slider
@@ -392,9 +391,11 @@ const Hardware = () => {
               value={serialData[slider.id]?.value || 0}
               onChange={(e) => handleSliderChange(slider.id, e.target.value)}
               vertical={true}
-              isSelected={showSelection && isControlAssigned(slider.id)}
+              isSelected={hasActiveRemotes && isControlAssigned(slider.id)}
             />
-            <Value isSelected={showSelection && isControlAssigned(slider.id)}>
+            <Value
+              isSelected={hasActiveRemotes && isControlAssigned(slider.id)}
+            >
               {serialData[slider.id]?.value || 0}%
             </Value>
           </SliderContainer>
@@ -404,9 +405,9 @@ const Hardware = () => {
         {knobs.map((knob) => (
           <Knob
             key={knob.id}
-            isSelected={showSelection && isControlAssigned(knob.id)}
+            isSelected={hasActiveRemotes && isControlAssigned(knob.id)}
           >
-            <Label isSelected={showSelection && isControlAssigned(knob.id)}>
+            <Label isSelected={hasActiveRemotes && isControlAssigned(knob.id)}>
               {knob.label}
             </Label>
             <Slider
@@ -415,9 +416,9 @@ const Hardware = () => {
               max="100"
               value={serialData[knob.id]?.value || 0}
               onChange={(e) => handleSliderChange(knob.id, e.target.value)}
-              isSelected={showSelection && isControlAssigned(knob.id)}
+              isSelected={hasActiveRemotes && isControlAssigned(knob.id)}
             />
-            <Value isSelected={showSelection && isControlAssigned(knob.id)}>
+            <Value isSelected={hasActiveRemotes && isControlAssigned(knob.id)}>
               {serialData[knob.id]?.value || 0}%
             </Value>
           </Knob>
