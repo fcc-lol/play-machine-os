@@ -167,12 +167,18 @@ const SerialDataWithSocket = ({
 
   // Component that provides SocketProvider with access to serial data and sets the ref
   const SocketProviderWithSerial = ({ children }) => {
-    const { serialData, setSerialData, updateSerialData } = useSerial();
+    const {
+      serialData,
+      setSerialData,
+      updateSerialData,
+      handleRemoteRegistration
+    } = useSerial();
 
     const serialDataFunctions = {
       serialData,
       setSerialData,
-      updateSerialData
+      updateSerialData,
+      handleRemoteRegistration
     };
 
     return (

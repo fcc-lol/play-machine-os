@@ -11,7 +11,8 @@ import {
   applyRemoteMappings,
   initializeRemoteControlMappings,
   saveRemoteControlMappings,
-  getNextControlIndex
+  getNextControlIndex,
+  findNextAvailableControl
 } from "../utils/RemoteMapping";
 
 // Helper function to get the appropriate hardware configuration
@@ -362,6 +363,43 @@ export function SerialDataProvider({
     }));
   }, []);
 
+  // Handle remote registration events for auto-assignment
+  const handleRemoteRegistration = useCallback((registrationData) => {
+    const { deviceId } = registrationData;
+
+    if (!deviceId) {
+      console.warn("Remote registration received without deviceId");
+      return;
+    }
+
+    // Check if this device is already mapped
+    if (remoteControlMappingsRef.current[deviceId]) {
+      console.log(
+        `Remote ${deviceId} already has an assigned control:`,
+        remoteControlMappingsRef.current[deviceId]
+      );
+      return;
+    }
+
+    // Find the next available control
+    const availableControl = findNextAvailableControl(
+      ALL_CONTROLS,
+      remoteControlMappingsRef.current
+    );
+
+    if (availableControl) {
+      console.log(
+        `Auto-assigning remote ${deviceId} to control ${availableControl.id}`
+      );
+      setRemoteControlMappings((prev) => ({
+        ...prev,
+        [deviceId]: availableControl
+      }));
+    } else {
+      console.warn(`No available controls to assign to remote ${deviceId}`);
+    }
+  }, []);
+
   useEffect(() => {
     // Get the appropriate hardware configuration
     const activeHardwareConfig = getHardwareConfig(externalController);
@@ -440,6 +478,7 @@ export function SerialDataProvider({
         setRemoteControlMappings,
         getAssignedControl,
         setControlAssignment,
+        handleRemoteRegistration,
         hasActiveRemotes,
         // Legacy compatibility - returns the first assigned control or default
         selectedControlIndex: 0,

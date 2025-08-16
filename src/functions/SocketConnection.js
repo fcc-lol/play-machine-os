@@ -208,6 +208,17 @@ export const useSocketConnection = (
         }
       }
 
+      // Handle remoteRegistration events
+      if (data.action === "remoteRegistration") {
+        // Pass the registration event to the serial data functions for auto-assignment
+        if (
+          serialDataFunctions &&
+          serialDataFunctions.handleRemoteRegistration
+        ) {
+          serialDataFunctions.handleRemoteRegistration(data.data);
+        }
+      }
+
       // Handle appChanged events
       if (data.action === "appChanged") {
         currentAppRef.current = data.data.appId;

@@ -137,3 +137,18 @@ export const saveRemoteControlMappings = (mappings) => {
     console.warn("Failed to save remote control mappings:", error);
   }
 };
+
+// Utility function to find the next available control for auto-assignment
+export const findNextAvailableControl = (controlsArray, currentMappings) => {
+  // Get all currently assigned control IDs
+  const assignedControlIds = new Set(
+    Object.values(currentMappings).map((mapping) => mapping.id)
+  );
+
+  // Find the first control that isn't assigned to any remote
+  const availableControl = controlsArray.find(
+    (control) => !assignedControlIds.has(control.id)
+  );
+
+  return availableControl || null;
+};
