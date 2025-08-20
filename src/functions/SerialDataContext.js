@@ -152,7 +152,7 @@ export function SerialDataProvider({
                   action: "parameterChanged",
                   data: {
                     controlName: newControl.id,
-                    controlLabel: newControl.label,
+                    controlLabel: newControl.label.toUpperCase(),
                     value: serialDataRef.current[newControl.id]?.value || 0,
                     deviceId: deviceId
                   }
