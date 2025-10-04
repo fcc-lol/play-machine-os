@@ -1,7 +1,6 @@
 import styled, { createGlobalStyle } from "styled-components";
 import { useEffect, useRef, useState } from "react";
 import { Delaunay } from "d3-delaunay";
-import hardware from "../../config/Hardware.json";
 import { useSerial } from "../../functions/SerialDataContext";
 import ConvertRange from "../../functions/ConvertRange";
 import ClipperLib from "clipper-lib";
@@ -110,7 +109,7 @@ export default function CellMachine() {
     const updateDimensions = () => {
       setDimensions({
         width: window.innerWidth,
-        height: window.innerHeight,
+        height: window.innerHeight
       });
     };
 
@@ -157,7 +156,7 @@ export default function CellMachine() {
       points.push([Math.random() * canvasWidth, Math.random() * canvasHeight]);
       velocities.push({
         x: (Math.random() - 0.5) * 2,
-        y: (Math.random() - 0.5) * 2,
+        y: (Math.random() - 0.5) * 2
       });
     }
     return { points, velocities };
@@ -266,7 +265,7 @@ export default function CellMachine() {
           const scale = 100;
           const clipperPath = cell.map((pt) => ({
             X: Math.round(pt[0] * scale),
-            Y: Math.round(pt[1] * scale),
+            Y: Math.round(pt[1] * scale)
           }));
 
           // If inset roundness is zero, draw sharp-cornered inset
@@ -363,7 +362,7 @@ export default function CellMachine() {
       while (tryRadius >= minRadius && !roundedPath) {
         const clipperPath = cell.map((pt) => ({
           X: Math.round(pt[0] * scale),
-          Y: Math.round(pt[1] * scale),
+          Y: Math.round(pt[1] * scale)
         }));
         const co = new ClipperLib.ClipperOffset(2, 0.25 * scale);
         co.AddPath(
