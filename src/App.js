@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, lazy } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  lazy
+} from "react";
 import { SerialDataProvider, useSerial } from "./functions/SerialDataContext";
 import { ThemeProvider, useTheme } from "./functions/ThemeContext";
 import { SocketProvider, useSocket } from "./functions/SocketContext";
@@ -175,12 +182,15 @@ const SerialDataWithSocket = ({
       handleRemoteRegistration
     } = useSerial();
 
-    const serialDataFunctions = {
-      serialData,
-      setSerialData,
-      updateSerialData,
-      handleRemoteRegistration
-    };
+    const serialDataFunctions = useMemo(
+      () => ({
+        serialData,
+        setSerialData,
+        updateSerialData,
+        handleRemoteRegistration
+      }),
+      [serialData, setSerialData, updateSerialData, handleRemoteRegistration]
+    );
 
     return (
       <SocketProvider serialDataFunctions={serialDataFunctions}>

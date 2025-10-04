@@ -273,7 +273,8 @@ export const useSocketConnection = (
       updateSerialData,
       latestSerialDataRef,
       isApiKeyValid,
-      captureMultipleScreenshots
+      captureMultipleScreenshots,
+      serialDataFunctions
     ]
   );
 
