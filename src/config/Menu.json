@@ -42,6 +42,11 @@
               "id": "hand-detection",
               "label": "Hand Detection",
               "app": "HandDetection"
+            },
+            {
+              "id": "kaleidoscope",
+              "label": "Kaleidoscope",
+              "app": "Kaleidoscope"
             }
           ]
         }
