@@ -60,7 +60,7 @@ export default function Kaleidoscope() {
     return {
       r: Math.round((r + m) * 255),
       g: Math.round((g + m) * 255),
-      b: Math.round((b + m) * 255),
+      b: Math.round((b + m) * 255)
     };
   };
 

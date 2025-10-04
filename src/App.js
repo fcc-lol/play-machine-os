@@ -10,7 +10,7 @@ import Hardware from "./components/Simulator/Hardware";
 import Bootloader from "./components/UI/Bootloader";
 import styled, {
   StyleSheetManager,
-  ThemeProvider as StyledThemeProvider,
+  ThemeProvider as StyledThemeProvider
 } from "styled-components";
 import isPropValid from "@emotion/is-prop-valid";
 import menu from "./config/Menu.json";
@@ -31,7 +31,7 @@ const screens = {
     import("./components/UI/Screens/CameraHandDetection")
   ),
   RemoteViewer: lazy(() => import("./components/UI/Screens/RemoteViewer")),
-  About: lazy(() => import("./components/UI/Screens/About")),
+  About: lazy(() => import("./components/UI/Screens/About"))
 };
 
 const apps = {
@@ -43,7 +43,7 @@ const apps = {
   CellMachine: lazy(() => import("./components/Apps/CellMachine")),
   BlobMachine: lazy(() => import("./components/Apps/BlobMachine")),
   HandDetection: lazy(() => import("./components/Apps/HandDetection")),
-  Kaleidoscope: lazy(() => import("./components/Apps/Kaleidoscope")),
+  Kaleidoscope: lazy(() => import("./components/Apps/Kaleidoscope"))
 };
 
 const AppContainer = styled.div.attrs((props) => ({
@@ -57,16 +57,16 @@ const AppContainer = styled.div.attrs((props) => ({
       justifyContent: "center",
       position: "fixed",
       top: 0,
-      left: 0,
+      left: 0
     }),
     ...(props.$fullScreen && {
       width: "100vw",
       height: "100vh",
       position: "fixed",
       top: 0,
-      left: 0,
-    }),
-  },
+      left: 0
+    })
+  }
 }))`
   width: ${(props) => {
     if (props.$fullScreen) return "100vw";
@@ -101,8 +101,8 @@ const AppContainer = styled.div.attrs((props) => ({
 const ScreenContainer = styled.div.attrs((props) => ({
   style: {
     color: props.theme.text,
-    fontFamily: props.theme.fontFamily,
-  },
+    fontFamily: props.theme.fontFamily
+  }
 }))`
   position: absolute;
   top: 0;
@@ -162,7 +162,7 @@ const InvalidAPIKey = styled(MissingAPIKey)`
 const SerialDataWithSocket = ({
   children,
   isSimulatorMode,
-  multiPlayerMode,
+  multiPlayerMode
 }) => {
   const sendMessageRef = useRef(null);
 
@@ -172,14 +172,14 @@ const SerialDataWithSocket = ({
       serialData,
       setSerialData,
       updateSerialData,
-      handleRemoteRegistration,
+      handleRemoteRegistration
     } = useSerial();
 
     const serialDataFunctions = {
       serialData,
       setSerialData,
       updateSerialData,
-      handleRemoteRegistration,
+      handleRemoteRegistration
     };
 
     return (
@@ -207,7 +207,8 @@ const SerialDataWithSocket = ({
     <SerialDataProvider
       isSimulatorMode={isSimulatorMode}
       multiPlayerMode={multiPlayerMode}
-      sendMessageRef={sendMessageRef}>
+      sendMessageRef={sendMessageRef}
+    >
       <SocketProviderWithSerial>{children}</SocketProviderWithSerial>
     </SerialDataProvider>
   );
@@ -220,13 +221,13 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
     isOutputConnected,
     setSerialData,
     multiPlayerMode,
-    externalController,
+    externalController
   } = useSerial();
   const {
     connect: connectSocket,
     registerHandler,
     sendMessage,
-    setCurrentAppRef,
+    setCurrentAppRef
   } = useSocket();
   const [currentScreen, setCurrentScreen] = useState(null);
   const [currentApp, setCurrentApp] = useState(null);
@@ -282,7 +283,7 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
       if (currentApp) {
         sendMessage({
           action: "appChanged",
-          data: { appId: null },
+          data: { appId: null }
         });
       }
       setCurrentScreen(null);
@@ -305,7 +306,7 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
       setCurrentAppRef(null);
       sendMessage({
         action: "appChanged",
-        data: { appId: null },
+        data: { appId: null }
       });
     },
     [menuStack, sendMessage, setCurrentAppRef]
@@ -321,7 +322,7 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
       // Emit socket event when app changes
       sendMessage({
         action: "appChanged",
-        data: { appId },
+        data: { appId }
       });
     },
     [menuStack, sendMessage, setCurrentAppRef]
@@ -391,7 +392,7 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
     registerHandler,
     setSerialData,
     sendMessage,
-    setCurrentAppRef,
+    setCurrentAppRef
   ]);
 
   const renderContent = () => {
@@ -462,7 +463,7 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
   return (
     <>
       <AppContainer $stretchToFill={stretchToFill} $fullScreen={fullScreen}>
-        <ScreenContainer id='screen-container' $onDevice={!isSimulatorMode}>
+        <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
           <ReadSerialData />
           {isInputConnected &&
             (isOutputConnected || externalController) &&
@@ -490,7 +491,7 @@ function ThemeWrapper({ children }) {
     menuText: "#00ff00",
     menuSelectedBackground: "#00ff00",
     menuSelectedText: "#000000",
-    border: "#00ff00",
+    border: "#00ff00"
   };
 
   const themeToUse = themeValues || fallbackTheme;
@@ -569,14 +570,17 @@ function App() {
         <ThemeProvider>
           <SerialDataWithSocket
             isSimulatorMode={isSimulatorMode}
-            multiPlayerMode={multiPlayerMode}>
+            multiPlayerMode={multiPlayerMode}
+          >
             <ThemeWrapper>
               <AppContainer
                 $stretchToFill={stretchToFill}
-                $fullScreen={fullScreen}>
+                $fullScreen={fullScreen}
+              >
                 <ScreenContainer
-                  id='screen-container'
-                  $onDevice={!isSimulatorMode}>
+                  id="screen-container"
+                  $onDevice={!isSimulatorMode}
+                >
                   <Loading />
                 </ScreenContainer>
               </AppContainer>
@@ -594,14 +598,17 @@ function App() {
         <ThemeProvider>
           <SerialDataWithSocket
             isSimulatorMode={isSimulatorMode}
-            multiPlayerMode={multiPlayerMode}>
+            multiPlayerMode={multiPlayerMode}
+          >
             <ThemeWrapper>
               <AppContainer
                 $stretchToFill={stretchToFill}
-                $fullScreen={fullScreen}>
+                $fullScreen={fullScreen}
+              >
                 <ScreenContainer
-                  id='screen-container'
-                  $onDevice={!isSimulatorMode}>
+                  id="screen-container"
+                  $onDevice={!isSimulatorMode}
+                >
                   <MissingAPIKey>No API key set</MissingAPIKey>
                 </ScreenContainer>
               </AppContainer>
@@ -619,14 +626,17 @@ function App() {
         <ThemeProvider>
           <SerialDataWithSocket
             isSimulatorMode={isSimulatorMode}
-            multiPlayerMode={multiPlayerMode}>
+            multiPlayerMode={multiPlayerMode}
+          >
             <ThemeWrapper>
               <AppContainer
                 $stretchToFill={stretchToFill}
-                $fullScreen={fullScreen}>
+                $fullScreen={fullScreen}
+              >
                 <ScreenContainer
-                  id='screen-container'
-                  $onDevice={!isSimulatorMode}>
+                  id="screen-container"
+                  $onDevice={!isSimulatorMode}
+                >
                   <InvalidAPIKey>Invalid API key</InvalidAPIKey>
                 </ScreenContainer>
               </AppContainer>
@@ -643,7 +653,8 @@ function App() {
       <ThemeProvider>
         <SerialDataWithSocket
           isSimulatorMode={isSimulatorMode}
-          multiPlayerMode={multiPlayerMode}>
+          multiPlayerMode={multiPlayerMode}
+        >
           <ThemeWrapper>
             <AppContent
               isSimulatorMode={isSimulatorMode}
