@@ -13,10 +13,12 @@ const Root = styled.div`
 `;
 
 const MenuTitle = styled.div`
+  height: 3.75rem;
+  box-sizing: border-box;
   padding: 1rem 4rem;
   margin: 0;
   color: ${(props) => props.theme.menuText};
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-family: ${(props) => props.theme.fontFamily};
   font-weight: bold;
   border-bottom: 1px solid ${(props) => props.theme.border};
