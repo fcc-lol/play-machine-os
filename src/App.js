@@ -42,7 +42,8 @@ const apps = {
   RainMachine: lazy(() => import("./components/Apps/RainMachine")),
   CellMachine: lazy(() => import("./components/Apps/CellMachine")),
   BlobMachine: lazy(() => import("./components/Apps/BlobMachine")),
-  HandDetection: lazy(() => import("./components/Apps/HandDetection"))
+  HandDetection: lazy(() => import("./components/Apps/HandDetection")),
+  Kaleidoscope: lazy(() => import("./components/Apps/Kaleidoscope"))
 };
 
 const AppContainer = styled.div.attrs((props) => ({
