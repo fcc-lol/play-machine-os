@@ -44,11 +44,20 @@ export const ThemeSettings = ({
     } else if (selectedItem.id) {
       // Apply the theme permanently and save to localStorage
       changeTheme(selectedItem.id, true);
-      // Send socket event for theme change
-      sendMessage({
-        action: "currentTheme",
-        data: { theme: selectedItem.id }
-      });
+
+      // Check if sockets are disabled via URL parameter
+      const shouldDisableSocket =
+        new URLSearchParams(window.location.search).get("useSocket") ===
+        "false";
+
+      if (!shouldDisableSocket) {
+        // Send socket event for theme change
+        sendMessage({
+          action: "currentTheme",
+          data: { theme: selectedItem.id }
+        });
+      }
+
       onThemeSelect?.(selectedItem);
       return true;
     }

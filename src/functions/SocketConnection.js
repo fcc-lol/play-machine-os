@@ -155,6 +155,16 @@ export const useSocketConnection = (
 
   const sendMessage = useCallback(
     (message) => {
+      // Check if sockets are disabled via URL parameter
+      const shouldDisableSocket =
+        new URLSearchParams(window.location.search).get("useSocket") ===
+        "false";
+
+      if (shouldDisableSocket) {
+        // Silently ignore socket events when sockets are disabled
+        return;
+      }
+
       if (!isApiKeyValid) {
         console.error("Cannot send message - API key is invalid");
         return;

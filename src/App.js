@@ -291,10 +291,17 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
   const handleBack = useCallback(
     (submenu) => {
       if (currentApp) {
-        sendMessage({
-          action: "appChanged",
-          data: { appId: null }
-        });
+        // Check if sockets are disabled via URL parameter
+        const shouldDisableSocket =
+          new URLSearchParams(window.location.search).get("useSocket") ===
+          "false";
+
+        if (!shouldDisableSocket) {
+          sendMessage({
+            action: "appChanged",
+            data: { appId: null }
+          });
+        }
       }
       setCurrentScreen(null);
       setCurrentApp(null);
@@ -314,10 +321,18 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
       setCurrentApp(null);
       // Update currentAppRef in the socket connection and notify other clients
       setCurrentAppRef(null);
-      sendMessage({
-        action: "appChanged",
-        data: { appId: null }
-      });
+
+      // Check if sockets are disabled via URL parameter
+      const shouldDisableSocket =
+        new URLSearchParams(window.location.search).get("useSocket") ===
+        "false";
+
+      if (!shouldDisableSocket) {
+        sendMessage({
+          action: "appChanged",
+          data: { appId: null }
+        });
+      }
     },
     [menuStack, sendMessage, setCurrentAppRef]
   );
@@ -329,11 +344,19 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
       setCurrentScreen(null);
       // Update currentAppRef in the socket connection
       setCurrentAppRef(appId);
-      // Emit socket event when app changes
-      sendMessage({
-        action: "appChanged",
-        data: { appId }
-      });
+
+      // Check if sockets are disabled via URL parameter
+      const shouldDisableSocket =
+        new URLSearchParams(window.location.search).get("useSocket") ===
+        "false";
+
+      if (!shouldDisableSocket) {
+        // Emit socket event when app changes
+        sendMessage({
+          action: "appChanged",
+          data: { appId }
+        });
+      }
     },
     [menuStack, sendMessage, setCurrentAppRef]
   );

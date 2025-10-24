@@ -143,7 +143,14 @@ export function SerialDataProvider({
 
             // Send socket event when control selection changes
             const effectiveSendMessage = sendMessage || sendMessageRef?.current;
+
+            // Check if sockets are disabled via URL parameter
+            const shouldDisableSocket =
+              new URLSearchParams(window.location.search).get("useSocket") ===
+              "false";
+
             if (
+              !shouldDisableSocket &&
               effectiveSendMessage &&
               typeof effectiveSendMessage === "function"
             ) {
