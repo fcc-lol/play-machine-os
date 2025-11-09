@@ -44,10 +44,10 @@
       "outputRange": [0, 100],
       "inverted": false
     },
-    "_disabled_potentiometer_7": {
+    "potentiometer_7": {
       "label": "knob_5",
       "range": [0, 1023],
-      "outputRange": [50, 50],
+      "outputRange": [0, 100],
       "inverted": false
     },
     "potentiometer_8": {
@@ -85,7 +85,7 @@
         "outputRange": [0, 100],
         "inverted": true
       },
-      "potentiometer_3": {
+      "_disabled_potentiometer_3": {
         "label": "knob_2",
         "range": [0, 1023],
         "outputRange": [0, 100],
@@ -109,10 +109,10 @@
         "outputRange": [0, 100],
         "inverted": true
       },
-      "_disabled_potentiometer_7": {
+      "potentiometer_7": {
         "label": "vertical_slider_3",
         "range": [0, 1023],
-        "outputRange": [50, 50],
+        "outputRange": [0, 100],
         "inverted": true
       },
       "potentiometer_8": {
