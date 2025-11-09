@@ -56,7 +56,7 @@
       "outputRange": [0, 100],
       "inverted": false
     },
-    "potentiometer_9": {
+    "_disabled_potentiometer_9": {
       "label": "knob_2",
       "range": [0, 1023],
       "outputRange": [0, 100],
@@ -121,7 +121,7 @@
         "outputRange": [0, 100],
         "inverted": false
       },
-      "potentiometer_9": {
+      "_disabled_potentiometer_9": {
         "label": "knob_5",
         "range": [0, 1023],
         "outputRange": [0, 100],
