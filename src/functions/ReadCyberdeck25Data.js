@@ -135,7 +135,31 @@ function ReadCyberdeck25Data() {
       writeEncoder(data?.encoder_id, 0)
     );
 
+    const keyMap = {
+      ArrowUp: "button_up",
+      ArrowDown: "button_down",
+      ArrowLeft: "button_left",
+      ArrowRight: "button_right",
+      Enter: "button_a",
+      Space: "button_a",
+      Escape: "button_b"
+    };
+
+    const handleKey = (active) => (e) => {
+      const label = keyMap[e.code] || keyMap[e.key];
+      if (!label) return;
+      e.preventDefault();
+      if (e.repeat && active) return;
+      updateSerialDataRef.current({ [label]: { value: active } });
+    };
+    const onKeyDown = handleKey(true);
+    const onKeyUp = handleKey(false);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+
     return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
       socket.disconnect();
       socketRef.current = null;
       setIsInputConnected(false);

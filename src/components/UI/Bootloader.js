@@ -257,7 +257,8 @@ const Bootloader = () => {
       type: "select",
       options: [
         { value: "false", label: "Simulator" },
-        { value: "true", label: "Device" }
+        { value: "true", label: "Play Machine" },
+        { value: "cyberdeck-25", label: "Cyberdeck 25" }
       ],
       default: "false"
     },
@@ -328,6 +329,17 @@ const Bootloader = () => {
       default: "false"
     },
     {
+      key: "hardwareClient",
+      label: "Hardware Client",
+      description: "Which physical controller to read inputs from",
+      type: "select",
+      options: [
+        { value: "play-machine", label: "Play Machine" },
+        { value: "cyberdeck-25", label: "Cyberdeck 25" }
+      ],
+      default: "play-machine"
+    },
+    {
       key: "brightness",
       label: "Screen Brightness",
       description: "Overlay to simulate screen brightness",
@@ -359,8 +371,13 @@ const Bootloader = () => {
   const constructURL = () => {
     const queryParams = new URLSearchParams();
 
-    // Always include onDevice parameter
-    queryParams.set("onDevice", params.onDevice);
+    // The Mode select packs both onDevice and hardwareClient into one value.
+    if (params.onDevice === "cyberdeck-25") {
+      queryParams.set("onDevice", "true");
+      queryParams.set("hardwareClient", "cyberdeck-25");
+    } else {
+      queryParams.set("onDevice", params.onDevice);
+    }
 
     // Add other non-default parameters to keep URL clean
     parameterDefinitions.forEach((param) => {
