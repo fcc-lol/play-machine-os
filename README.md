@@ -20,14 +20,14 @@ Created: Sat 31 Aug 2024 07:15:41 PM EDT
 
 ### Cyberdeck-25 client
 
-When `hardwareClient=cyberdeck-25`, the app subscribes to the cyberdeck-25 firmware's socket.io feed instead of opening a Web Serial port. Inputs are mapped to existing play-machine controls (see `config/Hardware.json → cyberdeck25`):
+When `hardwareClient=cyberdeck-25`, the app subscribes to the cyberdeck-25 firmware's socket.io feed instead of opening a Web Serial port. Each cyberdeck input maps one-to-one to a play-machine control (see `config/Hardware.json → cyberdeck25`); play-machine controls without a cyberdeck counterpart are simply unmapped:
 
-| Cyberdeck input | Play-machine label(s) |
+| Cyberdeck input | Play-machine label |
 |---|---|
-| `E1` | `knob_1`, `vertical_slider_1` |
-| `E2` | `knob_2`, `vertical_slider_2` |
-| `E3` | `knob_3`, `vertical_slider_3` |
-| `E4` | `knob_4`, `horizontal_slider` |
+| `E1` | `knob_1` |
+| `E2` | `knob_2` |
+| `E3` | `knob_3` |
+| `E4` | `knob_4` |
 | `KEY` | `button_a` |
 | `RED` switch | `button_left` |
 | `GREEN` switch | `button_up` |

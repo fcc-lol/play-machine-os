@@ -57,14 +57,10 @@ function ReadCyberdeck25Data() {
 
   const writeEncoder = useCallback(
     (encoderId, rawValue) => {
-      const labels = encoderMap[String(encoderId)] || [];
-      if (labels.length === 0) return;
+      const label = encoderMap[String(encoderId)];
+      if (!label) return;
       const value = wrapTo100(rawValue, encoderScale);
-      const payload = {};
-      labels.forEach((label) => {
-        payload[label] = { value };
-      });
-      updateSerialDataRef.current(payload);
+      updateSerialDataRef.current({ [label]: { value } });
     },
     [encoderMap, encoderScale]
   );
