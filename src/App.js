@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme } from "./functions/ThemeContext";
 import { SocketProvider, useSocket } from "./functions/SocketContext";
 import { HandDetectionProvider } from "./functions/HandDetectionContext";
 import ReadSerialData from "./functions/ReadSerialData";
+import ReadCyberdeck25Data from "./functions/ReadCyberdeck25Data";
 import Menu from "./components/UI/Menu";
 import Loading from "./components/UI/Loading";
 import Hardware from "./components/Simulator/Hardware";
@@ -224,7 +225,12 @@ const SerialDataWithSocket = ({
   );
 };
 
-const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
+const AppContent = ({
+  isSimulatorMode,
+  stretchToFill,
+  fullScreen,
+  hardwareClient
+}) => {
   const {
     serialData,
     isInputConnected,
@@ -497,7 +503,11 @@ const AppContent = ({ isSimulatorMode, stretchToFill, fullScreen }) => {
     <>
       <AppContainer $stretchToFill={stretchToFill} $fullScreen={fullScreen}>
         <ScreenContainer id="screen-container" $onDevice={!isSimulatorMode}>
-          <ReadSerialData />
+          {hardwareClient === "cyberdeck-25" ? (
+            <ReadCyberdeck25Data />
+          ) : (
+            <ReadSerialData />
+          )}
           {isInputConnected &&
             (isOutputConnected || externalController) &&
             renderContent()}
@@ -540,6 +550,7 @@ function App() {
   const [multiPlayerMode, setMultiPlayerMode] = useState(false);
   const [stretchToFill, setStretchToFill] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
+  const [hardwareClient, setHardwareClient] = useState(null);
   const [hasApiKey, setHasApiKey] = useState(true);
   const [isApiKeyValid, setIsApiKeyValid] = useState(true);
   const [isValidating, setIsValidating] = useState(true);
@@ -571,6 +582,7 @@ function App() {
       setMultiPlayerMode(multiPlayerModeParam === "true");
       setStretchToFill(stretchToFillParam === "true");
       setFullScreen(fullScreenParam === "true");
+      setHardwareClient(urlParams.get("hardwareClient"));
       setHasApiKey(!!apiKey);
 
       if (apiKey) {
@@ -693,6 +705,7 @@ function App() {
               isSimulatorMode={isSimulatorMode}
               stretchToFill={stretchToFill}
               fullScreen={fullScreen}
+              hardwareClient={hardwareClient}
             />
           </ThemeWrapper>
         </SerialDataWithSocket>

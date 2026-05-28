@@ -16,6 +16,24 @@ Created: Sat 31 Aug 2024 07:15:41 PM EDT
 - `server`: Overrides environment detection (`local` or `production`)
 - `multiPlayerMode`: Enables multiplayer mode (`true`/`false`)
 - `externalController`: Enables external controller mode (`true`/`false`)
+- `hardwareClient`: Selects the input device. Defaults to the built-in Web Serial controller. Set to `cyberdeck-25` to read inputs from the cyberdeck-25 firmware's socket.io server (default `http://localhost:3001`)
+
+### Cyberdeck-25 client
+
+When `hardwareClient=cyberdeck-25`, the app subscribes to the cyberdeck-25 firmware's socket.io feed instead of opening a Web Serial port. Inputs are mapped to existing play-machine controls (see `config/Hardware.json → cyberdeck25`):
+
+| Cyberdeck input | Play-machine label(s) |
+|---|---|
+| `E1` | `knob_1`, `vertical_slider_1` |
+| `E2` | `knob_2`, `vertical_slider_2` |
+| `E3` | `knob_3`, `vertical_slider_3` |
+| `E4` | `knob_4`, `horizontal_slider` |
+| `KEY` | `button_a` |
+| `RED` switch | `button_left` |
+| `GREEN` switch | `button_up` |
+| `BLUE` switch | `button_right` |
+
+Encoder counts wrap into the 0–100 range expected by play-machine visualizations. Pressing the encoder button resets that channel to 0.
 
 ## Usage Examples
 

@@ -71,6 +71,24 @@
     "button_5": "button_down",
     "button_6": "button_up"
   },
+  "cyberdeck25": {
+    "socket": {
+      "url": "http://localhost:3001"
+    },
+    "encoders": {
+      "1": ["knob_1", "vertical_slider_1"],
+      "2": ["knob_2", "vertical_slider_2"],
+      "3": ["knob_3", "vertical_slider_3"],
+      "4": ["knob_4", "horizontal_slider"]
+    },
+    "switches": {
+      "red": "button_left",
+      "green": "button_up",
+      "blue": "button_right"
+    },
+    "key": "button_a",
+    "encoderScale": 1
+  },
   "altMapping": {
     "potentiometers": {
       "potentiometer_1": {
